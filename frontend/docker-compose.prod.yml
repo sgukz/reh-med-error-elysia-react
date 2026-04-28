@@ -1,0 +1,12 @@
+services:
+  rehMEDErrorApp:
+    image: sgdev/react-app-mederror:1.10.15
+    container_name: reh-med-error-app
+    restart: always
+    ports:
+      - "${PORT:-3016}:80"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"

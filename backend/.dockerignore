@@ -1,0 +1,15 @@
+node_modules
+.env
+.env.development
+.env.production
+.gitignore
+backup.txt
+bunfig.toml
+docker-compose.yml
+docker-compose-prod.yml
+Dockerfile
+.git
+CHANGELOG.md
+README.md
+DEPLOY.md
+production_deploy

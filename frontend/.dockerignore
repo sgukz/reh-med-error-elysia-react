@@ -1,0 +1,9 @@
+*
+!build
+!nginx.conf
+
+# Agent Skills
+.agents
+.claude
+.codex
+.opencode
