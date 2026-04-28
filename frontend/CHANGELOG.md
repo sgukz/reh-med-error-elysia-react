@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2] - 2026-04-28
+
+### ปรับปรุง (Cleanup)
+- เคลียร์ ESLint warnings ที่เหลือทั้งหมด (11 → 0)
+- เพิ่ม `PropTypes` validation ที่ขาด:
+  - `AuthContext.AuthProvider`: `children: PropTypes.node`
+  - `NotificationsPopover`: `users: PropTypes.array`
+  - `Nav`: `user: PropTypes.array`
+  - `MedErrorForm`: `userLogin: PropTypes.array`
+- `MedErrorPage`: ใช้ object destructuring `const { error_analysis } = ...` แทน `let error_analysis = ....error_analysis`
+- `MedErrorPage`: เพิ่ม `// eslint-disable-next-line react/prop-types` สำหรับ `key` ใน MUI Autocomplete `renderOption` (props เป็น MUI internal ไม่ต้อง validate)
+- `AppWebsiteVisits`: เปลี่ยน `click: function () {}` เป็น `click() {}` (ES2015 method shorthand) แก้ `func-names`
+
 ## [1.11.1] - 2026-04-28
 
 ### ปรับปรุง (Cleanup)

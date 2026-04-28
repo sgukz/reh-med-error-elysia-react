@@ -30,6 +30,7 @@ const StyledAccount = styled('div')(({ theme }) => ({
 Nav.propTypes = {
   openNav: PropTypes.bool,
   onCloseNav: PropTypes.func,
+  user: PropTypes.array,
 };
 
 export default function Nav({ openNav, onCloseNav, user }) {

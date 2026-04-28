@@ -1176,7 +1176,7 @@ export default function MedErrorPage() {
       const fieldValue = medErrorShowData[labelError.error_field];
       checkErrorType(fieldValue, errorTypeValue);
 
-      let error_analysis = medErrorShowData.error_analysis;
+      const { error_analysis } = medErrorShowData;
       let subAnalysis = error_analysis.split(',');
       let dataAnalysis = [];
       let arrAnalysis = [];
@@ -2055,6 +2055,7 @@ export default function MedErrorPage() {
                                       return option.error_key_person_name ?? '';
                                     }}
                                     renderOption={(props, option) => {
+                                      // eslint-disable-next-line react/prop-types
                                       const { key, ...otherProps } = props;
                                       return (
                                         <li key={key} {...otherProps}>

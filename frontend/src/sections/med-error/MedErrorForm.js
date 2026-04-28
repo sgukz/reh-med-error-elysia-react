@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -64,9 +65,9 @@ const Toast = MySwal.mixin({
   },
 });
 
-// MedErrorForm.propTypes = {
-//   medError: PropTypes.array,
-// };
+MedErrorForm.propTypes = {
+  userLogin: PropTypes.array,
+};
 
 const d = new Date();
 

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import {
   verifyToken,
   storeTokenInLocalStorage,
@@ -7,6 +8,10 @@ import {
 } from '../libs/Auth';
 
 const AuthContext = createContext(null);
+
+AuthProvider.propTypes = {
+  children: PropTypes.node,
+};
 
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);

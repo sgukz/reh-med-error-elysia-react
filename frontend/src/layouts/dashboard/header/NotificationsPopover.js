@@ -24,6 +24,10 @@ import { fToNow } from '../../../utils/formatTime';
 // components
 import Iconify from '../../../components/iconify';
 
+NotificationsPopover.propTypes = {
+  users: PropTypes.array,
+};
+
 export default function NotificationsPopover({ users }) {
   const navigate = useNavigate();
   const [isLogout, setIsLogout] = useState(false);

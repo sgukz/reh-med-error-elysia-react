@@ -32,7 +32,7 @@ export default function AppWebsiteVisits({ title, subheader, chartLabels, chartD
         },
       },
     },
-    click: function (event, chartContext, opts) {
+    click(event, chartContext, opts) {
       console.log(event, chartContext, opts);
     },
   });
