@@ -38,7 +38,6 @@ import {
   getMedErrorPerson,
   getDrugItems,
   getMedErrorDeptBySectionMain,
-  medErrorById,
 } from '../../libs/MedError';
 import { MedErrorLevel } from '../../data/DataMedError';
 import { verifyToken } from '../../libs/Auth';
@@ -49,19 +48,6 @@ function formatDate(date) {
   const formatDate = new Date(date);
   const toTwoDigits = (num) => (num < 10 ? `0${num}` : num);
   return `${formatDate.getFullYear()}-${toTwoDigits(formatDate.getMonth() + 1)}-${toTwoDigits(formatDate.getDate())}`;
-}
-
-function popKeys(obj, keys) {
-  const removed = {};
-
-  keys.forEach((key) => {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      removed[key] = obj[key];
-      delete obj[key];
-    }
-  });
-
-  return removed;
 }
 
 const color = red[500];
@@ -91,17 +77,17 @@ export default function MedErrorForm({ userLogin }) {
   const id = ac ? +ac : null; // แปลงเป็น number ถ้ามีค่า
   const navigate = useNavigate();
   const auth = useAuth();
-  const [user, setUser] = useState(userLogin);
+  const [, setUser] = useState(userLogin);
 
   const [page, setPage] = useState('');
-  const [value, setValue] = useState(dayjs(new Date()));
+  const [value] = useState(dayjs(new Date()));
   const [department, setDepartment] = useState([
     {
       med_error_depcode: '',
       med_error_depname: '',
     },
   ]);
-  const [departmentMain, setDepartmentMain] = useState([
+  const [, setDepartmentMain] = useState([
     {
       med_error_depcode: '',
       med_error_depname: '',
@@ -587,31 +573,6 @@ export default function MedErrorForm({ userLogin }) {
     }
   };
 
-  // #ยังไม่ใช้งาน
-  const loadEditData = async (errorId) => {
-    // const getMedErrorById = await medErrorById(token, errorId);
-    // const { statusCode, medErrorList, errorType, errorTypeList } = getMedErrorById.data;
-    // if (statusCode === 200 && medErrorList && !_.isEmpty(medErrorList)) {
-    //   const medErrorData = medErrorList[0] || {};
-    //   setErrorTypeField(errorType[0].error_field);
-    //   setErrorTypeWardField(errorType[0].error_field_ward);
-    //   setErrorTypeWardFieldCode(errorType[0].error_field_ward_code);
-    //   setLabelErrorType(errorType[0].error_type_name);
-    //   setOptionErrorType(errorTypeList);
-    //   setFormRegister(medErrorData);
-    //   loadPerson(token, +errorType[0].error_type);
-    //   if (+errorType[0].error_type === 2 || +errorType[0].error_type === 5) {
-    //     loadDrugItems(token);
-    //   }
-    //   setFormRegister((prestate) => ({
-    //     ...prestate,
-    //     error_type: medErrorData.error_type.toString(),
-    //     error_date: moment(medErrorData.error_date).format('YYYY-MM-DD'),
-    //     error_type_name: errorType[0].error_type_name,
-    //   }));
-    // }
-  };
-
   // #ใช้งานอยู่
   useEffect(() => {
     async function checkVerifyToken() {
@@ -721,7 +682,7 @@ export default function MedErrorForm({ userLogin }) {
                   fullWidth
                   disablePortal
                   options={department}
-                  isOptionEqualToValue={(option, value) => option.med_error_depcode === formRegister.error_ward}
+                  isOptionEqualToValue={(option) => option.med_error_depcode === formRegister.error_ward}
                   getOptionLabel={(option) => option.med_error_depname}
                   onChange={(event, newValue) => {
                     handleChangeAutoComplte(
@@ -799,7 +760,7 @@ export default function MedErrorForm({ userLogin }) {
                   fullWidth
                   disablePortal
                   options={MedErrorLevel}
-                  isOptionEqualToValue={(option, value) => option.med_error_level_code === formRegister.error_level}
+                  isOptionEqualToValue={(option) => option.med_error_level_code === formRegister.error_level}
                   getOptionLabel={(option) => `${option.med_error_level_code} ${option.med_error_level_detail}`}
                   onChange={(event, newValue) => {
                     handleChangeAutoComplte(
@@ -876,7 +837,7 @@ export default function MedErrorForm({ userLogin }) {
                   fullWidth
                   disablePortal
                   options={errerAnalysis}
-                  isOptionEqualToValue={(option, value) => option.error_analysis_id === formRegister.error_analysis_id}
+                  isOptionEqualToValue={(option) => option.error_analysis_id === formRegister.error_analysis_id}
                   getOptionLabel={(option) => `${option.error_analysis_name}`}
                   onChange={(event, newValue) => {
                     handleChangeAutoComplte(
@@ -950,7 +911,7 @@ export default function MedErrorForm({ userLogin }) {
                       fullWidth
                       disablePortal
                       options={department}
-                      isOptionEqualToValue={(option, value) =>
+                      isOptionEqualToValue={(option) =>
                         option.med_error_depcode === formRegister[errorTypeWardFieldCode]
                       }
                       getOptionLabel={(option) => option.med_error_depname}
@@ -978,7 +939,7 @@ export default function MedErrorForm({ userLogin }) {
                           fullWidth
                           disablePortal
                           options={doctor}
-                          isOptionEqualToValue={(option, value) =>
+                          isOptionEqualToValue={(option) =>
                             option.doctor_code === formRegister.error_doctor_code
                           }
                           getOptionLabel={(option) => option.doctor_name}
@@ -1007,7 +968,7 @@ export default function MedErrorForm({ userLogin }) {
                       fullWidth
                       disablePortal
                       options={optionErrorType}
-                      isOptionEqualToValue={(option, value) =>
+                      isOptionEqualToValue={(option) =>
                         option.error_type_list_detail === formRegister[errorTypeField]
                       }
                       getOptionLabel={(option) => `${option.error_type_list_detail}`}
@@ -1034,7 +995,7 @@ export default function MedErrorForm({ userLogin }) {
                           id="error_dispensing_person"
                           name="error_dispensing_person"
                           options={keyPerson}
-                          isOptionEqualToValue={(option, value) =>
+                          isOptionEqualToValue={(option) =>
                             option.error_key_person_name === formRegister.error_dispensing_person
                           }
                           getOptionLabel={(option) => `${option.error_key_person_name} (${option.error_key_sec_name})`}
@@ -1061,7 +1022,7 @@ export default function MedErrorForm({ userLogin }) {
                           id="error_key_person"
                           name="error_key_person"
                           options={keyPerson}
-                          isOptionEqualToValue={(option, value) =>
+                          isOptionEqualToValue={(option) =>
                             option.error_key_person_name === formRegister.error_dispensing_person
                           }
                           getOptionLabel={(option) => `${option.error_key_person_name} (${option.error_key_sec_name})`}
@@ -1111,7 +1072,7 @@ export default function MedErrorForm({ userLogin }) {
                               fullWidth
                               disablePortal
                               options={drugItem}
-                              isOptionEqualToValue={(option, value) =>
+                              isOptionEqualToValue={(option) =>
                                 option.icode === formRegister.error_processing_right_icode
                               }
                               getOptionLabel={(option) => option.drugName}
@@ -1193,7 +1154,7 @@ export default function MedErrorForm({ userLogin }) {
                               fullWidth
                               disablePortal
                               options={drugItem}
-                              isOptionEqualToValue={(option, value) =>
+                              isOptionEqualToValue={(option) =>
                                 option.icode === formRegister.error_processing_right_icode
                               }
                               getOptionLabel={(option) => option.drugName}

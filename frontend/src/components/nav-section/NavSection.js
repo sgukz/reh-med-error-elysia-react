@@ -28,7 +28,6 @@ export default function NavSection({ data = [], page, ...other }) {
 
 NavItem.propTypes = {
   item: PropTypes.object,
-  page: PropTypes.number
 };
 
 function NavItem({ item }) {

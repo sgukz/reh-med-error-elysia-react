@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import _ from 'lodash';
 // @mui
 import { styled } from '@mui/material/styles';
 //
@@ -8,8 +7,6 @@ import Header from './header';
 import Nav from './nav';
 import { verifyToken } from '../../libs/Auth';
 
-// contexts
-import { useAuth } from '../../contexts/AuthContext';
 // hooks
 import useResponsive from '../../hooks/useResponsive';
 

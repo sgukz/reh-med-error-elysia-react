@@ -15,7 +15,7 @@ import { AdapterDateFnsTH } from '../../../utils/AdapterDateFnsTH';
 import Iconify from '../../../components/iconify';
 
 // ----------------------------------------------------------------------
-const StyledRoot = styled(Toolbar)(({ theme }) => ({
+const StyledRoot = styled(Toolbar)(() => ({
   height: 96,
   display: 'flex',
   justifyContent: 'space-start',

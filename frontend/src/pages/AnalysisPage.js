@@ -34,9 +34,6 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import { red } from '@mui/material/colors';
 
-// Cookie
-import Cookies from 'js-cookie';
-
 // Hook form
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -158,8 +155,6 @@ export default function AnalysisPage() {
     control,
     handleSubmit,
     reset,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(analysisSchema),
@@ -169,8 +164,6 @@ export default function AnalysisPage() {
       error_analysis_id: 0,
     },
   });
-
-  const isActiveValue = watch('is_active') || 'Y';
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -207,7 +200,7 @@ export default function AnalysisPage() {
     }
   };
 
-  const handleCatchAxios = (errorCatch, sec) => {
+  const handleCatchAxios = (errorCatch) => {
     if (errorCatch.response) {
       const { status } = errorCatch.response;
       if (status === 404) {

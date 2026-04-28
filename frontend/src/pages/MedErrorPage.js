@@ -256,7 +256,7 @@ export default function MedErrorPage() {
   const [user, setUser] = useState([]);
   const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
 
-  const [valueErrorDate, setValueErrorDate] = useState(dayjs(new Date()));
+  const [valueErrorDate] = useState(dayjs(new Date()));
   const [isOpenForm, setIsOpenForm] = useState(false);
   const [department, setDepartment] = useState([]);
 
@@ -323,7 +323,7 @@ export default function MedErrorPage() {
 
   // End Form Register & Update
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [, setIsOpen] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [open, setOpen] = useState(null);
   const [isShowModal, setIsShowModal] = useState(false);
@@ -355,7 +355,7 @@ export default function MedErrorPage() {
   const [patientInfo, setPatientInfo] = useState([]);
 
   // Filter by Date
-  const [isUseFilterDate, setIsUseFilterDate] = useState(false);
+  const [, setIsUseFilterDate] = useState(false);
 
   // State RCA
   const [showRcaInput, setShowRcaInput] = useState(false);
@@ -582,7 +582,7 @@ export default function MedErrorPage() {
 
   const descriptionElementRef = useRef(null);
 
-  const handleCatchAxios = (errorCatch, sec) => {
+  const handleCatchAxios = (errorCatch) => {
     if (errorCatch.response) {
       const { status } = errorCatch.response;
       if (status === 404) {
@@ -1382,7 +1382,7 @@ export default function MedErrorPage() {
                     <Autocomplete
                       fullWidth
                       options={department}
-                      isOptionEqualToValue={(option, value) => option.med_error_depcode === formRegister.error_ward}
+                      isOptionEqualToValue={(option) => option.med_error_depcode === formRegister.error_ward}
                       getOptionLabel={(option) => option.med_error_depname}
                       onChange={(event, newValue) => {
                         handleChangeAutoComplte(
@@ -1469,7 +1469,7 @@ export default function MedErrorPage() {
                       fullWidth
                       disablePortal
                       options={MedErrorLevel}
-                      isOptionEqualToValue={(option, value) => option.med_error_level_code === formRegister.error_level}
+                      isOptionEqualToValue={(option) => option.med_error_level_code === formRegister.error_level}
                       getOptionLabel={(option) => {
                         if (!option) return '';
                         if (typeof option === 'string') return option;
@@ -1678,7 +1678,7 @@ export default function MedErrorPage() {
                           fullWidth
                           disablePortal
                           options={department}
-                          isOptionEqualToValue={(option, value) =>
+                          isOptionEqualToValue={(option) =>
                             option.med_error_depcode === formRegister[errorTypeWardFieldCode]
                           }
                           getOptionLabel={(option) => option.med_error_depname}
@@ -1722,7 +1722,7 @@ export default function MedErrorPage() {
                               fullWidth
                               disablePortal
                               options={doctor}
-                              isOptionEqualToValue={(option, value) =>
+                              isOptionEqualToValue={(option) =>
                                 option.doctor_code === formRegister.error_doctor_code
                               }
                               getOptionLabel={(option) => option.doctor_name}
@@ -1751,7 +1751,7 @@ export default function MedErrorPage() {
                           fullWidth
                           disablePortal
                           options={optionErrorType}
-                          isOptionEqualToValue={(option, value) =>
+                          isOptionEqualToValue={(option) =>
                             option.error_type_list_detail === formRegister[errorTypeField]
                           }
                           getOptionLabel={(option) => `${option.error_type_list_detail}`}
@@ -1780,7 +1780,7 @@ export default function MedErrorPage() {
                                 id="error_dispensing_person"
                                 name="error_dispensing_person"
                                 options={keyPerson}
-                                isOptionEqualToValue={(option, value) =>
+                                isOptionEqualToValue={(option) =>
                                   option.error_key_person_name === formRegister.error_dispensing_person
                                 }
                                 getOptionLabel={(option) =>
@@ -1838,7 +1838,7 @@ export default function MedErrorPage() {
                                     fullWidth
                                     disablePortal
                                     options={drugItem}
-                                    isOptionEqualToValue={(option, value) =>
+                                    isOptionEqualToValue={(option) =>
                                       option.icode === formRegister.error_processing_right_icode
                                     }
                                     getOptionLabel={(option) => option.drugName}
@@ -1945,7 +1945,7 @@ export default function MedErrorPage() {
                                     fullWidth
                                     disablePortal
                                     options={drugItem}
-                                    isOptionEqualToValue={(option, value) =>
+                                    isOptionEqualToValue={(option) =>
                                       option.icode === formRegister.error_processing_right_icode
                                     }
                                     getOptionLabel={(option) => option.drugName}

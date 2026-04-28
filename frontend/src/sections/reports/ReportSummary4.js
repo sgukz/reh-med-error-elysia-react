@@ -1,20 +1,10 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import React, { useEffect, useState } from 'react';
 import _ from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import { styled, useTheme } from '@mui/material/styles';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Backdrop from '@mui/material/Backdrop';
-import CircularProgress from '@mui/material/CircularProgress';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -23,41 +13,14 @@ import dayjs from 'dayjs';
 
 import { getReportSummary1 } from '../../libs/MedError';
 
-// import Iconify from '../components/iconify';
-import Scrollbar from '../../components/scrollbar';
-
 // Lib Auth
 import { verifyToken, getTokenFromLocalStorage } from '../../libs/Auth';
 
 // Utils
 import { formatDateTime, formatDateEN } from '../../utils/formatTime';
 
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.common.white,
-    borderColor: theme.palette.common.white,
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 12,
-  },
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover,
-  },
-  // hide last border
-  '&:last-child td, &:last-child th': {
-    border: 1,
-  },
-}));
-
-const severityLevels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
-
 const ReportSummary4 = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const todayDate = dayjs();
   const startOfMonth = todayDate.startOf('month');
@@ -68,9 +31,6 @@ const ReportSummary4 = () => {
     firstDate: formatDateEN(dayjs().startOf('month')),
     lastDate: formatDateEN(dayjs()), // วันนี้
   });
-
-  const [dataReport, setDataReport] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleFirstDateChange = (newDate) => {
     setFirstDate(newDate);
@@ -96,15 +56,10 @@ const ReportSummary4 = () => {
 
   const loadReportResult = async (auth_token, startAndEndDateOrDepcode) => {
     const GetReportSummary1 = await getReportSummary1(auth_token || token, startAndEndDateOrDepcode);
-
     const { statusCode, reportList } = GetReportSummary1.data;
-    setIsLoading(true);
-    setTimeout(() => {
-      if (statusCode === 200 && !_.isEmpty(reportList)) {
-        setDataReport(reportList);
-        setIsLoading(false);
-      }
-    }, 1500);
+    if (statusCode === 200 && !_.isEmpty(reportList)) {
+      // (ตารางถูก comment ออกในเทมเพลตนี้ – คงโครงไว้สำหรับเปิดใช้ในอนาคต)
+    }
   };
 
   useEffect(() => {

@@ -27,7 +27,7 @@ import Iconify from '../../../components/iconify';
 export default function NotificationsPopover({ users }) {
   const navigate = useNavigate();
   const [isLogout, setIsLogout] = useState(false);
-  const handleLogout = (event) => {
+  const handleLogout = () => {
     setIsLogout(true);
   };
 

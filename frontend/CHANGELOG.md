@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2026-04-28
+
+### ปรับปรุง (Cleanup)
+- ลบ ESLint warnings ทั้งหมดประเภท `is defined but never used`, `is assigned a value but never used`, `PropType is defined but prop is never used` (108 warnings → 0)
+- ลบ unused imports: `Cookies`, `Iconify`, `_`, `Fragment`, `useRef`, `useAuth`, MUI components ที่ไม่ใช้, `Scrollbar`, ฯลฯ
+- ลบ unused state hooks: `[isOpen, setIsOpen]`, `[isShowModal, setIsShowModal]`, `[currentDate, setCurrentDate]`, `[months]`, `[yearSelected]` (ใช้ destructuring placeholder `[, setX]` หรือถอดทิ้งทั้งคู่ตามการใช้งานจริง)
+- ลบ unused PropTypes: `page`, `rowCount`, `numSelected`, `onSelectAllClick`
+- ลบ unused functions: `popKeys` (ที่ไม่มีคนเรียก), `loadEditData` (commented out body)
+- ลบ unused parameters ใน callbacks: `event` ใน `handleLogout`, `sec` ใน `handleCatchAxios`, `value` ใน `isOptionEqualToValue` (ที่ body ไม่ได้ใช้)
+- ลบโค้ด commented-out ที่อ้างถึง state ที่ลบทิ้งแล้ว (`isShowModal` block, MUI Select เดือน, etc.)
+
 ## [1.11.0] - 2026-04-28
 
 ### ความปลอดภัย (Security)

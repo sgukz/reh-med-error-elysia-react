@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import _, { filter } from 'lodash';
@@ -49,7 +49,6 @@ import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
 // Lib MedError
 import { getMedErrorPerson, personCreate, personDelete } from '../libs/MedError';
 
-import { useAuth } from '../contexts/AuthContext';
 
 const color = red[500];
 
@@ -105,13 +104,11 @@ function applySortFilter(array, comparator, query) {
 
 // import
 export default function OfficerPage() {
-  const auth = useAuth();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+  const [, setIsOpen] = useState(false);
   const [isOpenForm, setIsOpenForm] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [open, setOpen] = useState(null);
-  const [isShowModal, setIsShowModal] = useState(false);
   const [page, setPage] = useState(0);
   const [order, setOrder] = useState('asc');
   const [selectedID, setSelectedID] = useState(null);
@@ -318,7 +315,7 @@ export default function OfficerPage() {
     e.preventDefault();
   };
 
-  const handleCatchAxios = (errorCatch, sec) => {
+  const handleCatchAxios = (errorCatch) => {
     if (errorCatch.response) {
       const { status } = errorCatch.response;
       if (status === 404) {
@@ -380,7 +377,6 @@ export default function OfficerPage() {
     e.preventDefault();
   };
 
-  const descriptionElementRef = useRef(null);
   useEffect(() => {
     setIsOpen(true);
     async function checkVerifyToken() {
@@ -399,13 +395,8 @@ export default function OfficerPage() {
       }
     }
     checkVerifyToken();
-    if (isShowModal) {
-      const { current: descriptionElement } = descriptionElementRef;
-      if (descriptionElement !== null) {
-        descriptionElement.focus();
-      }
-    }
-  }, [isShowModal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - medErrorPerson.length) : 0;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import _, { filter } from 'lodash';
@@ -54,9 +54,6 @@ import { errorTypeListCreate, errorTypeListDelete, getErrorTypeByTypeList } from
 
 // Lib Auth
 import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
-
-// Context
-import { useAuth } from '../contexts/AuthContext';
 
 // Notify Toast Config
 const MySwal = withReactContent(Swal);
@@ -148,11 +145,10 @@ function applySortFilter(array, comparator, query) {
 // import
 export default function ErrorTypePage() {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+  const [, setIsOpen] = useState(false);
   const [isOpenForm, setIsOpenForm] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [open, setOpen] = useState(null);
-  const [isShowModal, setIsShowModal] = useState(false);
   const [page, setPage] = useState(0);
   const [order, setOrder] = useState('asc');
   const [selectedID, setSelectedID] = useState(null);
@@ -170,8 +166,6 @@ export default function ErrorTypePage() {
     control,
     handleSubmit,
     reset,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(errorTypeListSchema),
@@ -183,8 +177,6 @@ export default function ErrorTypePage() {
       type_id: 0,
     },
   });
-
-  const isActiveValue = watch('is_active') || 'Y'; // กำหนดค่าเริ่มต้นให้เป็น "Y"
 
   const [isNotify, setIsNotify] = useState(false);
   const [notifyMessage, setNotifyMessage] = useState({
@@ -317,7 +309,7 @@ export default function ErrorTypePage() {
     e.preventDefault();
   };
 
-  const handleCatchAxios = (errorCatch, sec) => {
+  const handleCatchAxios = (errorCatch) => {
     if (errorCatch.response) {
       const { status } = errorCatch.response;
       if (status === 404) {
@@ -376,7 +368,6 @@ export default function ErrorTypePage() {
     }
   };
 
-  const descriptionElementRef = useRef(null);
   useEffect(() => {
     const checkVerifyToken = async () => {
       const auth_token = getTokenFromLocalStorage('access_token');
@@ -393,16 +384,6 @@ export default function ErrorTypePage() {
 
     checkVerifyToken();
   }, [navigate]);
-
-  // จัดการ focus ตอนเปิด modal (ถ้าใช้จริง)
-  useEffect(() => {
-    if (isShowModal) {
-      const { current: descriptionElement } = descriptionElementRef;
-      if (descriptionElement) {
-        descriptionElement.focus();
-      }
-    }
-  }, [isShowModal]);
 
   const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - medErrorType.length) : 0;
 

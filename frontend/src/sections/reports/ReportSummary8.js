@@ -1,6 +1,6 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import React, { useEffect, useState } from 'react';
 import _ from 'lodash';
-import { json, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -24,8 +24,6 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Collapse from '@mui/material/Collapse';
 
 import * as XLSX from 'xlsx';
 
@@ -40,7 +38,7 @@ import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
 
 // Data
-import { MedErrorLevel, MedErrorType, MedErrorTypeAll } from '../../data/DataMedError';
+import { MedErrorLevel, MedErrorTypeAll } from '../../data/DataMedError';
 
 // Lib Auth
 import { verifyToken, getTokenFromLocalStorage } from '../../libs/Auth';
@@ -69,7 +67,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-const severityLevels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
 const HAD = {
   N: 'ไม่ใช่ High Alert Drugs',
   Y: 'High Alert Drugs',
@@ -98,7 +95,6 @@ const ReportSummary8 = () => {
   const [departments, setDepartments] = useState([]);
   const [selectedDeps, setSelectedDeps] = useState([]);
   const [selectedDepCode, setSelectedDepCode] = useState([]);
-  const [selectedDepName, setSelectedDepName] = useState([]);
   const [dataErrorLevel, setDataErrorLevel] = useState(MedErrorLevel);
   const [selectedErrorLevel, setSelectedErrorLevel] = useState([]);
   const [selectedErrorLevelCode, setSelectedErrorLevelCode] = useState([]);
@@ -109,7 +105,6 @@ const ReportSummary8 = () => {
   const [selectedErrorAlert, setSelectedErrorAlert] = useState('');
 
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
 
   const handleFirstDateChange = (newDate) => {
     setFirstDate(newDate);

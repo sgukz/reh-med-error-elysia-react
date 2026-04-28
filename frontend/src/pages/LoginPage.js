@@ -7,11 +7,6 @@ import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 
-// hooks
-// import useResponsive from '../hooks/useResponsive';
-// components
-// import Logo from '../components/logo';
-import Iconify from '../components/iconify';
 // sections
 import { LoginForm } from '../sections/auth/login';
 

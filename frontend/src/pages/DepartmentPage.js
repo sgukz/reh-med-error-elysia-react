@@ -55,9 +55,6 @@ import { getMedErrorDeptAll, deptCreate, deptDelete } from '../libs/MedError';
 // Lib Auth
 import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
 
-// Context
-import { useAuth } from '../contexts/AuthContext';
-
 // Schema form Error Type List
 const departmentSchema = z.object({
   med_error_depname: z
@@ -168,8 +165,6 @@ export default function DepartmentPage() {
     control,
     handleSubmit,
     reset,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(departmentSchema),
@@ -180,8 +175,6 @@ export default function DepartmentPage() {
       med_error_depcode: 0,
     },
   });
-
-  const isActiveValue = watch('med_error_is_active') || 'Y';
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -221,7 +214,7 @@ export default function DepartmentPage() {
     }
   };
 
-  const handleCatchAxios = (errorCatch, sec) => {
+  const handleCatchAxios = (errorCatch) => {
     if (errorCatch.response) {
       const { status } = errorCatch.response;
       if (status === 404) {

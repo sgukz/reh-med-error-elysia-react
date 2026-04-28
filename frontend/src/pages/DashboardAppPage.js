@@ -108,22 +108,6 @@ function formatDateTHString(dateInput) {
   return `${day} ${monthName} ${buddhistYear}`;
 }
 
-const months = [
-  'มกราคม',
-  'กุมภาพันธ์',
-  'มีนาคม',
-  'เมษายน',
-  'พฤษภาคม',
-  'มิถุนายน',
-  'กรกฎาคม',
-  'สิงหาคม',
-  'กันยายน',
-  'ตุลาคม',
-  'พฤศจิกายน',
-  'ธันวาคม',
-  'ทั้งหมด',
-];
-
 const monthObj = [
   { labelMonth: 'มกราคม', firstDate: '01-01' },
   { labelMonth: 'กุมภาพันธ์', firstDate: '02-01' },
@@ -172,16 +156,13 @@ export default function DashboardAppPage() {
   const currentMonth = today.getMonth(); // 0 - 11
   const currentYear = today.getFullYear();
 
-  const [monthSelected, setMonthSelected] = useState(monthObj[currentMonth]?.firstDate);
-  const [yearSelected, setYearSelected] = useState(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const monthSelected = monthObj[currentMonth]?.firstDate;
   const [selectedYear, setSelectedYear] = useState(currentYear + 543);
 
   // helper เดิมของคุณยังใช้ได้
   const [monthAndYearCurrent, setMonthAndYearCurrent] = useState(
     getFirstAndLastDateOfMonthShort(getCurrentDateShort())
   );
-  const [currentDate, setCurrentDate] = useState(getCurrentDateShort());
 
   const [fiscalYear, setFiscalYear] = useState([String(currentYear + 543)]);
   const [resultDashboard, setResultDashBoard] = useState([]);
@@ -248,30 +229,16 @@ export default function DashboardAppPage() {
     [firstDate, sendRange]
   );
 
-  const getCurrentFiscalYear = useCallback((curYear) => ({
-    firstDate: `${+curYear - 1}-10-01`,
-    lastDate: `${curYear}-09-30`,
-  }), []);
-
   const handleYearChange = useCallback(
     (event) => {
       const { value } = event.target;
-      if (selectedMonth !== 12) {
-        const currentDateChanged = `${Number(value) - 543}-${monthSelected}`;
-        setCurrentDate(currentDateChanged);
-        setSelectedYear(value);
-        setYearSelected(Number(value) - 543);
-        const monthAndYearCurrentResult = getFirstAndLastDateOfMonthShort(currentDateChanged);
-        setMonthAndYearCurrent(monthAndYearCurrentResult);
-        loadDashboardResult(token, monthAndYearCurrentResult);
-      } else {
-        setSelectedYear(value);
-        const monthAndYearCurrentResult = getCurrentFiscalYear(Number(value) - 543);
-        setMonthAndYearCurrent(monthAndYearCurrentResult);
-        loadDashboardResult(token, monthAndYearCurrentResult);
-      }
+      const currentDateChanged = `${Number(value) - 543}-${monthSelected}`;
+      setSelectedYear(value);
+      const monthAndYearCurrentResult = getFirstAndLastDateOfMonthShort(currentDateChanged);
+      setMonthAndYearCurrent(monthAndYearCurrentResult);
+      loadDashboardResult(token, monthAndYearCurrentResult);
     },
-    [selectedMonth, monthSelected, token, loadDashboardResult, getCurrentFiscalYear]
+    [monthSelected, token, loadDashboardResult]
   );
 
   const chartColors = useMemo(
@@ -350,23 +317,6 @@ export default function DashboardAppPage() {
             </Box>
           </LocalizationProvider>
           <Box display="flex" gap={2} alignItems="center">
-            {/* <FormControl size="small">
-              <InputLabel id="month-select-label">เดือน</InputLabel>
-              <Select
-                labelId="month-select-label"
-                value={selectedMonth}
-                label="เดือน"
-                onChange={handleMonthChange}
-                sx={{ minWidth: 120 }}
-              >
-                {months.map((month, index) => (
-                  <MenuItem key={month} value={index}>
-                    {month}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl> */}
-
             <FormControl size="small">
               <InputLabel id="year-select-label">ปีงบประมาณ</InputLabel>
               <Select
