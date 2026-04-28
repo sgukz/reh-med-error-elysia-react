@@ -13,103 +13,41 @@ export function removeTokenFromLocalStorage(tokenName) {
   return localStorage.removeItem(tokenName);
 }
 
-export async function getAuthenticatedUser(userData) {
-  try {
-    const header = {
-      'Content-Type': 'application/json',
-      'client-id': API_SECURITY.UUID,
-    };
-
-    const response = await axios({
-      method: API_METHOD.POST,
-      url: API_ROUTE.AUTH,
-      headers: header,
-      withCredentials: true,
-      data: userData,
-    });
-
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw error;
-    } else {
-      throw new Error('An unexpected error occurred');
-    }
-  }
+function jsonHeader(token) {
+  const header = {
+    'Content-Type': 'application/json',
+    'client-id': API_SECURITY.UUID,
+  };
+  if (token) header.Authorization = `Bearer ${token}`;
+  return header;
 }
 
-export async function getProfileUser(token) {
-  try {
-    const header = {
-      'Content-Type': 'application/json',
-      'client-id': API_SECURITY.UUID,
-      Authorization: `Bearer ${token}`,
-    };
-
-    const response = await axios({
-      method: API_METHOD.POST,
-      url: API_ROUTE.PERSON_ALL,
-      headers: header,
-    });
-
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw error;
-    } else {
-      throw new Error('An unexpected error occurred');
-    }
-  }
+export async function getAuthenticatedUser(userData) {
+  const response = await axios({
+    method: API_METHOD.POST,
+    url: API_ROUTE.AUTH,
+    headers: jsonHeader(),
+    withCredentials: true,
+    data: userData,
+  });
+  return response.data;
 }
 
 export async function refreshToken(token) {
-  try {
-    const header = {
-      'Content-Type': 'application/json',
-      'client-id': API_SECURITY.UUID,
-      Authorization: `Bearer ${token}`,
-    };
-
-    const response = await axios({
-      method: API_METHOD.POST,
-      url: API_ROUTE.REFRESH,
-      headers: header,
-    });
-
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw error;
-    } else {
-      throw new Error('An unexpected error occurred');
-    }
-  }
+  const response = await axios({
+    method: API_METHOD.POST,
+    url: API_ROUTE.REFRESH,
+    headers: jsonHeader(token),
+  });
+  return response.data;
 }
 
 export async function verifyToken(token) {
-  try {
-    const header = {
-      'Content-Type': 'application/json',
-      'client-id': API_SECURITY.UUID,
-      Authorization: `Bearer ${token}`,
-    };
-
-    const response = await axios({
-      method: API_METHOD.POST,
-      url: API_ROUTE.PROFILE,
-      headers: header,
-    });
-
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw error;
-    } else {
-      throw new Error('An unexpected error occurred');
-    }
-  }
-}
-
-export async function getAuthenticatedVerify(accessToken) {
-  return accessToken;
+  if (!token) return null;
+  const response = await axios({
+    method: API_METHOD.POST,
+    url: API_ROUTE.PROFILE,
+    headers: jsonHeader(token),
+  });
+  return response.data;
 }

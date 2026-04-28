@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-04-28
+
+### ความปลอดภัย (Security)
+- เพิ่ม **axios response interceptor** จัดการ 401/403 อัตโนมัติ (ล้าง token และพากลับไปหน้า login)
+- เพิ่ม **timeout 30s** ให้ทุก API request ป้องกัน request ค้าง
+- ลบ catch block ที่ swallow error เงียบ ๆ (`return JSON.stringify(error)`) ออกจากทุก API helper – throw ตามจริงให้ caller จัดการ
+
+### ปรับปรุงประสิทธิภาพ (Performance)
+- `AuthContext` ใช้ `useCallback`/`useMemo` ห่อ value ลด re-render ลูก ๆ ใน Provider
+- `axiosConfig.useAxios()` หยุดสร้าง axios instance ใหม่ทุกครั้งที่ token เปลี่ยน (ใช้ instance เดียว, อัปเดตเฉพาะ interceptor)
+- `DashboardAppPage` ห่อ handler ทั้งหมดด้วย `useCallback`, memoize `chartColors` และแก้ key ของ TableRow จาก index เป็น `error_level`
+- ปรับ `libs/MedError.js` เป็น functional แบบสั้นลง ลด helper ซ้ำ ๆ ของ report endpoints (`buildReportSummary` factory)
+
+### แก้บั๊ก (Fixed)
+- `LoginForm`: ใส่ cleanup ของ `setTimeout` chain และ flag `isMountedRef` ป้องกัน setState หลัง unmount
+- `LoginForm`: แก้ zod schema ที่บังคับ username **ตรงเป๊ะ 6 ตัวอักษร** (`max(6)`) ออกเป็น `max(64)` เพื่อรองรับชื่อผู้ใช้จริง
+- `LoginForm`: แสดงข้อความ error ตามสถานะจริงของ HTTP (network error vs auth error) แทนข้อความเดียวสำหรับทุกกรณี
+- `AuthContext`: ใช้ `cancelled` flag ใน `useEffect` กัน setState หลัง unmount
+
+### โครงสร้าง / UX
+- ลบ dead code:
+  - ไฟล์ `*copy.js` ทั้งหมด (`AuthContext copy`, `LoginForm copy`, `config copy`, `MedErrorPage copy`, `UserPage copy`)
+  - หน้าไม่ได้ใช้: `BlogPage`, `ProductsPage`, `FormMedErrorPage`
+  - sections ไม่ได้ใช้: `@dashboard/blog/`, `@dashboard/products/`, `med-error/MedErrorPharmForm`
+  - mock data: `_mock/` (account, blog, products, user)
+  - header components ที่ comment ทิ้งไว้: `AccountPopover`, `LanguagePopover`, `Searchbar`
+- ลบ `API_ROUTE` ที่ frontend ไม่ใช้ (`VERIFY`, `DEPARTMENT_AND_WARD_ALL`, `ERROR_TYPE_LIST_UPDATE`)
+- ปรับ `LoginForm`: เพิ่ม `autocomplete` attribute ที่ input + `aria-label` ที่ปุ่มแสดง/ซ่อนรหัสผ่าน
+
 ## [1.10.16] - 2026-02-03
 
 ### ปรับปรุง (Changed)

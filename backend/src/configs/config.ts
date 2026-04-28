@@ -24,22 +24,10 @@ const config = {
         charset: process.env.DB_CHARSET || "utf8mb4",
         multipleStatements: false,
     },
-    db_kphis: {
-        host: process.env.DB_KPHIS_HOST,
-        user: process.env.DB_KPHIS_USER,
-        password: process.env.DB_KPHIS_PASSWORD,
-        database: process.env.DB_KPHIS_NAME,
-        charset: "utf8mb4",
-        multipleStatements: false,
-    },
-    verion: process.env.APP_VERSION,
-    BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || "",
-    CHAT_ID: process.env.TELEGRAM_CHAT_ID || "",
-    CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN || "",
+    version: process.env.APP_VERSION,
     MOPH_APT_URL: process.env.MOPH_APT_URL ?? "",
     MOPH_CLIENT_ID: process.env.MOPH_CLIENT_ID ?? "",
     MOPH_SECRET_ID: process.env.MOPH_SECRET_ID ?? "",
-
 };
 
 export default config;

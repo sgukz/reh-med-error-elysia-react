@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-04-28
+
+### ความปลอดภัย (Security – OWASP Top 10)
+- **A03 Injection**: แก้ SQL Injection ใน `HISModel.login()` และ `HISModel.getPatientInfo()` โดยเปลี่ยนจาก template string ไปใช้ parameterized query
+- **A01 Broken Access Control**: แก้ logic บั๊ก `if (!origin && !ALLOWED_ORIGINS.has(origin))` (เดิมเป็น `&&` ทำให้ bypass ได้เมื่อไม่ส่ง origin) เป็น `||` ในทุก route
+- **A05 Security Misconfiguration**:
+  - ลบการส่ง `error.message` ออกใน response เพื่อไม่ให้ leak โครงสร้าง DB/internal stack
+  - แก้ HTTP Status Code ให้ตรงกับสถานการณ์ (เดิมตอบ 200 OK สำหรับเคส error)
+  - กำหนด CORS origin ตาม `ALLOWED_ORIGINS` (allowlist) ไม่ใช่ pass-through
+- **A07 Authentication Failures**:
+  - แก้บั๊กใน `/auth/login` ที่ sanitize username/password แล้วแต่ส่งค่าดั้งเดิมไป query
+  - แก้เงื่อนไข `if (!loginname && !loginpwd)` (ควรเป็น `||`)
+  - `/auth/refresh` ลบ `exp/iat` เก่าก่อน sign ใหม่ ป้องกัน timing เพี้ยน
+- **A09 Logging**: ลบ `console.log` ที่บันทึกข้อมูล payload (ผู้ป่วย/HN) ใน MedErrorRoute
+
+### โครงสร้าง (Refactor / Cleanup)
+- ลบ route และไฟล์ที่ frontend ไม่ใช้: `KphisRoute`, `KphisModel`, `KphisMentalModel`, `KphisInterface`, `NotifyTelegram`, `lineMessaging`, `MOPHAlert`, `HandleError`
+- ลบการเชื่อมต่อ DB Kphis และ env ที่ไม่ใช้ (`DB_KPHIS_*`, `TELEGRAM_*`, `LINE_CHANNEL_ACCESS_TOKEN`)
+- เพิ่ม `helpers/AuthGuard.ts` สำหรับการตรวจ origin/clientId/JWT แบบรวมศูนย์
+- ตั้งค่า Knex connection pool (`min:2 max:20`) และ `acquireConnectionTimeout: 30s`
+
+### แก้บั๊กอื่น (Fixed)
+- แก้ typo `verion` เป็น `version` ใน `config.ts` และ `index.ts`
+- เปลี่ยน `reply()` (MOPH alert) ให้ไม่ throw ออกไปทำลาย request หลัก, เพิ่ม `timeout: 5000ms`
+- เพิ่ม `.filter(Boolean)` ตอน parse `ALLOWED_CLIENTS`/`ALLOWED_ORIGINS` ป้องกัน Set มี string ว่างค้าง
+
 ## [1.3.7] - 2026-02-03
 ### Changed
 - **Docker Deployment Optimization**: ปรับปรุงไฟล์ `docker-compose.yml` (ทั้ง Development และ Production) ให้รองรับการโหลด Environment Variables ผ่านไฟล์ `.env` โดยตรง (`env_file`) ลดความซับซ้อนของการกำหนดค่า

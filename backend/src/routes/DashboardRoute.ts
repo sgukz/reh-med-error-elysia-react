@@ -55,8 +55,8 @@ DashboardRoute.get('/mederror', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
-            set.status = StatusCodes.OK;
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
 
@@ -101,12 +101,12 @@ DashboardRoute.get('/mederror', async ({
         }
 
     } catch (error) {
-        console.log(error);
-
-        if (error instanceof Error) {
-            set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
-        }
+        console.error("[Dashboard] /mederror error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
     }
 });
 

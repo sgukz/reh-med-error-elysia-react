@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   verifyToken,
   storeTokenInLocalStorage,
@@ -14,43 +14,57 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const getProfile = async () => {
-    try {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      if (auth_token) {
-        const CheckAuth = await verifyToken(auth_token);
-        const { statusCode, profile, access_token } = CheckAuth;
-
-        if (statusCode === 200 && profile) {
-          if (access_token) {
-            setAccessToken(access_token);
-            setUser(profile);
-          }
-        }
-      }
-    } catch (error) {
-      setError(error?.message || 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = (token) => {
-    setAccessToken(token);
-    storeTokenInLocalStorage('access_token', token);
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
     setAccessToken(null);
     setUser(null);
     removeTokenFromLocalStorage('access_token');
-  };
-
-  useEffect(() => {
-    getProfile();
   }, []);
 
-  return <AuthContext.Provider value={{ user, accessToken, login, logout }}>{children}</AuthContext.Provider>;
+  const login = useCallback((token) => {
+    setAccessToken(token);
+    storeTokenInLocalStorage('access_token', token);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function getProfile() {
+      try {
+        const auth_token = getTokenFromLocalStorage('access_token');
+        if (!auth_token) return;
+        const res = await verifyToken(auth_token);
+        if (cancelled || !res) return;
+        const { statusCode, profile, access_token } = res;
+        if (statusCode === 200 && profile && access_token) {
+          setAccessToken(access_token);
+          setUser(profile);
+        } else {
+          // token หมดอายุ / ไม่ถูกต้อง → ล้างทิ้ง
+          removeTokenFromLocalStorage('access_token');
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e?.message || 'Unknown error');
+          // 401/403 ไม่ควรเก็บ token เก่า
+          if (e?.response?.status === 401 || e?.response?.status === 403) {
+            removeTokenFromLocalStorage('access_token');
+          }
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    getProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, accessToken, login, logout, error, loading }),
+    [user, accessToken, login, logout, error, loading]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

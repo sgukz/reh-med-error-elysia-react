@@ -8,26 +8,32 @@ import config from "./configs/config";
 import AuthRoute from "./routes/AuthRoute";
 import MedErrorRoute from "./routes/MedErrorRoute";
 // Plugin
-import { DBMain, DBSec, DBKphis } from './plugins/db'
+import { DBMain, DBSec } from './plugins/db'
 // Helper
 import { checkDb } from "./helpers/CheckConnection";
 
+const ALLOWED_ORIGIN_LIST = (config.origin || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 const app = new Elysia()
+  .use(cors({
+    origin: ALLOWED_ORIGIN_LIST.length ? ALLOWED_ORIGIN_LIST : false, // อนุญาตเฉพาะ origin ที่กำหนดใน .env
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  }))
   .use(AuthRoute)
   .use(MedErrorRoute)
-  .use(cors({
-    origin: config.origin, // อนุญาตเฉพาะ Frontend ที่อยู่บน Port 5173 (Vite)
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // อนุญาตเฉพาะ Method ที่ต้องใช้
-    credentials: true, // ถ้ามี Cookies หรือ Authorization Header ต้องเปิดใช้งาน
-  }))
   .get('/alive', () => ({
     statusCode: StatusCodes.OK,
     status: 'alive',
     apiName: 'Med Error API',
-    version: config.verion,
+    version: config.version,
     buildDate: new Date().toLocaleDateString(),
     message: 'Welcome to Med Error API',
-  }))
+  }));
+
 // เริ่มเซิร์ฟเวอร์
 app.listen(config.port, async () => {
   console.log(
@@ -47,12 +53,4 @@ app.listen(config.port, async () => {
   } else {
     console.log(`✅ [${db_med_error.dbName ?? "-"}] ready in ${db_med_error.latencyMs}ms`);
   }
-
-  const db_kphis = await checkDb(DBKphis)
-  if (!db_kphis.ok) {
-    console.error(`❌ [${db_kphis.dbName ?? "-"}] not ready: ${db_kphis.error}`);
-  } else {
-    console.log(`✅ [${db_kphis.dbName ?? "-"}] ready in ${db_kphis.latencyMs}ms`);
-  }
 });
-

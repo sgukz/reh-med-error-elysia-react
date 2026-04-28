@@ -21,7 +21,7 @@ export default class HISModel {
             .leftJoin("doctor AS d", 'o.doctorcode', 'd.code')
             .where("o.loginname", uLogin)
             .andWhere(function () {
-                this.whereRaw(`o.passweb = LOWER(MD5('${uPwd}')) OR o.passweb = UPPER(MD5('${uPwd}'))`)
+                this.whereRaw("o.passweb = LOWER(MD5(?)) OR o.passweb = UPPER(MD5(?))", [uPwd, uPwd]);
             })
             .andWhere("o.account_disable", 'N')
             .limit(1)
@@ -32,7 +32,7 @@ export default class HISModel {
             SELECT
                 d.code doctor_code,
                 d.name AS doctor_name,
-                d.licenseno, 
+                d.licenseno,
                 o.groupname
             FROM doctor AS d
                 LEFT JOIN opduser AS o ON d.code = o.doctorcode
@@ -43,7 +43,7 @@ export default class HISModel {
             ORDER BY d.name ASC
             `)
     }
-    
+
     async getDrugItemAll() {
         return this.db("drugitems AS d")
             .select("d.icode",
@@ -56,17 +56,23 @@ export default class HISModel {
     }
 
     async getPatientInfo(hn: string) {
-        return this.db.raw(`
-            (SELECT 
-                p.hn, 
-                null AS an, 
+        const paddedHn = String(hn).padStart(9, "0");
+        return this.db.raw(
+            `(SELECT
+                p.hn,
+                NULL AS an,
                 CONCAT(p.pname, p.fname, ' ', p.lname) AS patient_name
-            FROM patient AS p
-            WHERE p.hn = LPAD('${hn}', 9, '0')LIMIT 1)
-            UNION
-            (SELECT p.hn, i.an, CONCAT(p.pname, p.fname, ' ', p.lname) AS patient_name
-            FROM ipt AS i
+              FROM patient AS p
+              WHERE p.hn = ?
+              LIMIT 1)
+             UNION
+             (SELECT p.hn, i.an, CONCAT(p.pname, p.fname, ' ', p.lname) AS patient_name
+              FROM ipt AS i
                 JOIN patient AS p ON p.hn = i.hn
-            WHERE i.an = '${hn}' LIMIT 1) LIMIT 1`)  
+              WHERE i.an = ?
+              LIMIT 1)
+             LIMIT 1`,
+            [paddedHn, hn]
+        );
     }
 }

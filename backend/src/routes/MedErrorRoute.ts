@@ -7,9 +7,6 @@ import { DBMain, DBSec } from '../plugins/db'
 import HISModel from "../models/HISModel";
 import MedErrorModel from "../models/MedErrorModel";
 
-// import { LineMessagingClient, LineTextMessage } from '../utils/lineMessaging';
-// import { sendReplyLineMessaging } from '../utils/MOPHAlert'
-
 import {
     DoctorData,
     DrugItemData,
@@ -34,15 +31,12 @@ import {
     PatientInfoQuery,
     MedErrorUpdateRCA
 } from '../Interfaces/MedErrorInterface'
-// Notify Telegram
-import { notifyTelegram } from "../utils/NotifyTelegram";
 
 import _ from "lodash";
 
 // Using Route
 import DashboardRoute from "./DashboardRoute";
 import ReportRoute from "./ReportRoute";
-import KphisRoute from "./KphisRoute";
 import 'moment/locale/th'; // นำเข้า locale ภาษาไทย
 import { formatDateTime } from "../libs/format-date";
 import axios from "axios";
@@ -50,7 +44,7 @@ import axios from "axios";
 // ตั้ง locale เป็นไทย
 moment.locale('th');
 
-const { prefix, jwtSecret, allowed, origin, BOT_TOKEN, CHAT_ID, MOPH_CLIENT_ID, MOPH_SECRET_ID } = config;
+const { prefix, jwtSecret, allowed, origin, MOPH_CLIENT_ID, MOPH_SECRET_ID } = config;
 
 const JWT_SECRET = jwtSecret || "";
 const ALLOWED_CLIENTS = new Set((allowed || "").split(",").map(c => c.trim()));
@@ -60,51 +54,21 @@ const ALLOWED_ORIGINS = new Set((origin || "").split(",").map(o => o.trim()));
 const hos = new HISModel(DBMain);
 const mederror = new MedErrorModel(DBSec);
 
-async function reply(formatMessage: any) {
+// ส่งข้อความผ่าน MOPH alert (ไม่ throw ออกไปทำ request หลักล้มเหลว)
+async function reply(formatMessage: any): Promise<void> {
     try {
-        let headers = {
+        const headers = {
             "Content-Type": "application/json",
             "client-key": MOPH_CLIENT_ID,
             "secret-key": MOPH_SECRET_ID,
         };
         const arrayMessages = Array.isArray(formatMessage) ? formatMessage : [formatMessage];
-        let body = JSON.stringify({
-            messages: arrayMessages,
-        });
-
         const BASE_URL = `https://morpromt2f.moph.go.th/api/notify/send`;
-
-        const response = await axios({
-            method: "POST",
-            url: BASE_URL,
-            headers: headers,
-            data: body,
-        });
-        const { status, message } = response.data;
-        console.log(`Status[${status}]`, `Message >> ${message}`);
+        await axios.post(BASE_URL, { messages: arrayMessages }, { headers, timeout: 5000 });
     } catch (error) {
-        console.log(error);
-
-        if (axios.isAxiosError(error)) {
-            throw error;
-        } else {
-            throw new Error("An unexpected error occurred");
-        }
+        console.error("MOPH notify failed");
     }
 }
-
-// const DataLog: SaveLog = {
-//     log_id: 0,
-//     service_channel: "Med Error",
-//     mode_env: "SIT",
-//     endpoint: "",
-//     req_body: "",
-//     res_data: "",
-//     res_status: 200,
-//     service_version: "1.0.0",
-//     client_ip: "",
-//     log_datetime: new Date().toISOString()
-// }
 
 const MedErrorRoute = new Elysia({ prefix: `${prefix}/med-error` });
 
@@ -119,7 +83,6 @@ MedErrorRoute.use(
 
 MedErrorRoute.use(DashboardRoute)
 MedErrorRoute.use(ReportRoute)
-MedErrorRoute.use(KphisRoute)
 
 // GET/doctor
 MedErrorRoute.get('/doctor', async ({
@@ -147,7 +110,7 @@ MedErrorRoute.get('/doctor', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -180,7 +143,7 @@ MedErrorRoute.get('/doctor', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -211,7 +174,7 @@ MedErrorRoute.get('/drugitems', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -244,7 +207,7 @@ MedErrorRoute.get('/drugitems', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -278,7 +241,7 @@ MedErrorRoute.get('/get-error-type', async ({
         }
         const { sec, id } = query as { sec: number, id: number };
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -330,7 +293,7 @@ MedErrorRoute.get('/get-error-type', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -364,7 +327,7 @@ MedErrorRoute.get('/get-error-type-list', async ({
         }
         const { id } = query as { id: number };
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -397,7 +360,7 @@ MedErrorRoute.get('/get-error-type-list', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -431,7 +394,7 @@ MedErrorRoute.post('/create-error-type-list', async ({
         }
         const ErrorTypeList = body as TypeErrorListCreate;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -479,7 +442,7 @@ MedErrorRoute.post('/create-error-type-list', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -513,7 +476,7 @@ MedErrorRoute.delete('/delete-error-type-list', async ({
         }
         const DeleteErrorType = query as TypeErrorListDelete;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -547,7 +510,7 @@ MedErrorRoute.delete('/delete-error-type-list', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -578,7 +541,7 @@ MedErrorRoute.get('/person', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -611,7 +574,7 @@ MedErrorRoute.get('/person', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -645,7 +608,7 @@ MedErrorRoute.post('/create-person', async ({
         }
         const personForm = body as PersonCreate;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -691,7 +654,7 @@ MedErrorRoute.post('/create-person', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -725,7 +688,7 @@ MedErrorRoute.delete('/delete-person', async ({
         }
         const DeletePerson = query as PersonDelete;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -759,7 +722,7 @@ MedErrorRoute.delete('/delete-person', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -793,7 +756,7 @@ MedErrorRoute.get('/get-dept', async ({
         }
         const DepartQuery = query as DepartmentQuery;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -826,7 +789,7 @@ MedErrorRoute.get('/get-dept', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -870,7 +833,7 @@ MedErrorRoute.post('/create-dept', async ({
         }
         const departForm = body as DepartmentCreate;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -923,7 +886,7 @@ MedErrorRoute.post('/create-dept', async ({
         if (error instanceof Error) {
 
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -957,7 +920,7 @@ MedErrorRoute.delete('/delete-dept', async ({
         }
         const DeleteDepartment = query as DepartmentDelete;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -990,7 +953,7 @@ MedErrorRoute.delete('/delete-dept', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1024,7 +987,7 @@ MedErrorRoute.get('/get-analysis', async ({
             }
         }
         const { is_active } = query as AnalysisQuery
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1057,7 +1020,7 @@ MedErrorRoute.get('/get-analysis', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1091,7 +1054,7 @@ MedErrorRoute.post('/create-analysis', async ({
         }
         const analysisForm = body as AnalysisData;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1143,7 +1106,7 @@ MedErrorRoute.post('/create-analysis', async ({
         if (error instanceof Error) {
 
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1177,7 +1140,7 @@ MedErrorRoute.delete('/delete-analysis', async ({
         }
         const AnalysisDelete = query as AnalysisDelete;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1210,7 +1173,7 @@ MedErrorRoute.delete('/delete-analysis', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1243,7 +1206,7 @@ MedErrorRoute.get('/med-error', async ({
             }
         }
         const { error_user, error_id, dateStart, dateEnd } = query as MedErrerQuery;
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.OK;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1296,7 +1259,7 @@ MedErrorRoute.get('/med-error', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1330,7 +1293,7 @@ MedErrorRoute.post('/med-error', async ({
         }
         const MedErrorForm = body as MedErrorCreate;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.OK;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1369,7 +1332,6 @@ MedErrorRoute.post('/med-error', async ({
                 text: message
             }
             if (MedErrorForm.error_id === 0) {
-                console.log("POST /med-error >> create >> ", MedErrorForm);
                 popKeys(MedErrorForm, ['error_analysis_id'])
                 MedErrorForm.error_datetime = DBSec.raw('CURRENT_TIMESTAMP') as unknown as Date;
                 if (MedErrorForm.error_section !== 0 && MedErrorForm.error_user !== "") {
@@ -1428,7 +1390,7 @@ MedErrorRoute.post('/med-error', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1462,7 +1424,7 @@ MedErrorRoute.delete('/med-error', async ({
         }
         const MedErrorDelete = query as MedErrorDelete;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.OK;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1503,7 +1465,7 @@ MedErrorRoute.delete('/med-error', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1537,7 +1499,7 @@ MedErrorRoute.put('/med-error', async ({
         }
         const MedErrorUpdateRCA = query;
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.OK;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1582,7 +1544,7 @@ MedErrorRoute.put('/med-error', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });
@@ -1615,7 +1577,7 @@ MedErrorRoute.get('/get-patient-info', async ({
             }
         }
         const { hn } = query as PatientInfoQuery
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
             set.status = StatusCodes.OK;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
@@ -1651,7 +1613,7 @@ MedErrorRoute.get('/get-patient-info', async ({
     } catch (error) {
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
+            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
         }
     }
 });

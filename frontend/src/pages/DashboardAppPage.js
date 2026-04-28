@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import _ from 'lodash';
@@ -193,87 +193,14 @@ export default function DashboardAppPage() {
   );
   const [lastDate, setLastDate] = useState(today);
 
-  const handleFirstDateChange = (newDate) => {
-    if (!newDate) return;
-    setFirstDate(newDate);
-    sendRange(newDate, lastDate);
-  };
-
-  const handleLastDateChange = (newDate) => {
-    if (!newDate) return;
-    setLastDate(newDate);
-    sendRange(firstDate, newDate);
-  };
-
-  const sendRange = (start, end) => {
-    if (!start || !end) return;
-    if (!token) {
-      console.warn('No token yet, skip loadDashboardResult');
-      return;
-    }
-
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    // กันเคส start > end
-    const safeStart = startDate > endDate ? endDate : startDate;
-    const safeEnd = endDate;
-
-    const formatted = {
-      firstDate: formatDate(safeStart), // YYYY-MM-DD
-      lastDate: formatDate(safeEnd),
-    };
-
-    console.log('sendRange formatted:', formatted);
-
-    setMonthAndYearCurrent(formatted);
-    loadDashboardResult(token, formatted);
-  };
-
-  const handleYearChange = (event) => {
-    const { value } = event.target;
-    if (selectedMonth !== 12) {
-      const currentDateChanged = `${Number(value) - 543}-${monthSelected}`;
-      setCurrentDate(currentDateChanged);
-      setSelectedYear(value);
-      setYearSelected(Number(value) - 543);
-      const monthAndYearCurrentResult = getFirstAndLastDateOfMonthShort(currentDateChanged);
-      setMonthAndYearCurrent(monthAndYearCurrentResult);
-      loadDashboardResult(token, getFirstAndLastDateOfMonthShort(currentDateChanged));
-    } else {
-      setSelectedYear(value);
-      const monthAndYearCurrentResult = getCurrentFiscalYear(Number(value) - 543);
-      setMonthAndYearCurrent(monthAndYearCurrentResult);
-      loadDashboardResult(token, getCurrentFiscalYear(Number(value) - 543));
-    }
-  };
-
-  const getCurrentFiscalYear = (curYear) => {
-    return {
-      firstDate: `${+curYear - 1}-10-01`,
-      lastDate: `${curYear}-09-30`,
-    };
-  };
-
-  const loadDashboardResult = async (auth_token, monthAndYear) => {
+  const loadDashboardResult = useCallback(async (auth_token, monthAndYear) => {
     try {
       const GetSummaryFromMedError = await getSummaryFromMedError(auth_token, monthAndYear);
-
-      const { statusCode, fiscalYearList, summaryList, summaryErrorTypeList } = GetSummaryFromMedError.data;
-      console.log(statusCode, fiscalYearList, summaryList, summaryErrorTypeList);
+      const { statusCode, fiscalYearList, summaryList, summaryErrorTypeList } = GetSummaryFromMedError.data || {};
 
       if (statusCode === 200) {
-        // fiscal year
-        if (Array.isArray(fiscalYearList) && fiscalYearList.length > 0) {
-          setFiscalYear(fiscalYearList);
-        } else {
-          setFiscalYear([]);
-        }
-
-        // summary dashboard
+        setFiscalYear(Array.isArray(fiscalYearList) && fiscalYearList.length > 0 ? fiscalYearList : []);
         setResultDashBoard(Array.isArray(summaryList) ? summaryList : []);
-
-        // ✅ สำคัญตรงนี้
         setRowLabels(Array.isArray(summaryErrorTypeList) ? summaryErrorTypeList : []);
       } else {
         setFiscalYear([]);
@@ -281,28 +208,110 @@ export default function DashboardAppPage() {
         setRowLabels([]);
       }
     } catch (error) {
-      console.error('loadDashboardResult error:', error);
       setFiscalYear([]);
       setResultDashBoard([]);
       setRowLabels([]);
     }
-  };
+  }, []);
+
+  const sendRange = useCallback(
+    (start, end) => {
+      if (!start || !end || !token) return;
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      const safeStart = startDate > endDate ? endDate : startDate;
+      const formatted = {
+        firstDate: formatDate(safeStart),
+        lastDate: formatDate(endDate),
+      };
+      setMonthAndYearCurrent(formatted);
+      loadDashboardResult(token, formatted);
+    },
+    [token, loadDashboardResult]
+  );
+
+  const handleFirstDateChange = useCallback(
+    (newDate) => {
+      if (!newDate) return;
+      setFirstDate(newDate);
+      sendRange(newDate, lastDate);
+    },
+    [lastDate, sendRange]
+  );
+
+  const handleLastDateChange = useCallback(
+    (newDate) => {
+      if (!newDate) return;
+      setLastDate(newDate);
+      sendRange(firstDate, newDate);
+    },
+    [firstDate, sendRange]
+  );
+
+  const getCurrentFiscalYear = useCallback((curYear) => ({
+    firstDate: `${+curYear - 1}-10-01`,
+    lastDate: `${curYear}-09-30`,
+  }), []);
+
+  const handleYearChange = useCallback(
+    (event) => {
+      const { value } = event.target;
+      if (selectedMonth !== 12) {
+        const currentDateChanged = `${Number(value) - 543}-${monthSelected}`;
+        setCurrentDate(currentDateChanged);
+        setSelectedYear(value);
+        setYearSelected(Number(value) - 543);
+        const monthAndYearCurrentResult = getFirstAndLastDateOfMonthShort(currentDateChanged);
+        setMonthAndYearCurrent(monthAndYearCurrentResult);
+        loadDashboardResult(token, monthAndYearCurrentResult);
+      } else {
+        setSelectedYear(value);
+        const monthAndYearCurrentResult = getCurrentFiscalYear(Number(value) - 543);
+        setMonthAndYearCurrent(monthAndYearCurrentResult);
+        loadDashboardResult(token, monthAndYearCurrentResult);
+      }
+    },
+    [selectedMonth, monthSelected, token, loadDashboardResult, getCurrentFiscalYear]
+  );
+
+  const chartColors = useMemo(
+    () => [
+      theme.palette.error.main,
+      theme.palette.warning.main,
+      theme.palette.primary.main,
+      theme.palette.info.main,
+      theme.palette.success.main,
+    ],
+    [theme]
+  );
 
   useEffect(() => {
+    let cancelled = false;
     async function checkVerifyToken() {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, access_token } = verify;
-      if (statusCode === 200 && access_token) {
-        if (access_token) {
+      try {
+        const auth_token = getTokenFromLocalStorage('access_token');
+        if (!auth_token) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        const verify = await verifyToken(auth_token);
+        if (cancelled || !verify) return;
+        const { statusCode, access_token } = verify;
+        if (statusCode === 200 && access_token) {
           setToken(access_token);
           loadDashboardResult(access_token, monthAndYearCurrent);
+        } else {
+          navigate('/login', { replace: true });
         }
-      } else {
+      } catch {
         navigate('/login', { replace: true });
       }
     }
     checkVerifyToken();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -367,8 +376,8 @@ export default function DashboardAppPage() {
                 onChange={handleYearChange}
                 sx={{ minWidth: 120 }}
               >
-                {fiscalYear.map((_year, idx) => (
-                  <MenuItem key={idx} value={_year}>
+                {fiscalYear.map((_year) => (
+                  <MenuItem key={_year} value={_year}>
                     {_year}
                   </MenuItem>
                 ))}
@@ -400,13 +409,7 @@ export default function DashboardAppPage() {
                       )}`
                 }`}
                 chartData={_.isEmpty(resultDashboard) ? [] : resultDashboard[0].data}
-                chartColors={[
-                  theme.palette.error.main,
-                  theme.palette.warning.main,
-                  theme.palette.primary.main,
-                  theme.palette.info.main,
-                  theme.palette.success.main,
-                ]}
+                chartColors={chartColors}
               />
             </Grid>
           </Grid>
@@ -458,7 +461,7 @@ export default function DashboardAppPage() {
                     {(rowLabels || []).map((row, rowIndex) => {
                       const label = row;
                       return (
-                        <TableRow key={rowIndex} sx={{ border: '1px solid #000' }}>
+                        <TableRow key={label?.error_level ?? rowIndex} sx={{ border: '1px solid #000' }}>
                           <TableCell
                             align="center"
                             style={{

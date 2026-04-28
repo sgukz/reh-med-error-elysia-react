@@ -57,24 +57,24 @@ ReportRoute.get('/summary1', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
-            set.status = StatusCodes.OK;
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!token) {
-            set.status = StatusCodes.OK;
-            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Request missing Authorization Data❌` };
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
         }
 
         const payload = await jwt.verify(token);
         if (!payload) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.UNAUTHORIZED;
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
 
@@ -89,10 +89,12 @@ ReportRoute.get('/summary1', async ({
         }
 
     } catch (error) {
-        if (error instanceof Error) {
-            set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
-        }
+        console.error("[Report] error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
     }
 });
 
@@ -126,24 +128,24 @@ ReportRoute.get('/summary2', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
-            set.status = StatusCodes.OK;
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!token) {
-            set.status = StatusCodes.OK;
-            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Request missing Authorization Data❌` };
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
         }
 
         const payload = await jwt.verify(token);
         if (!payload) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.UNAUTHORIZED;
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
             const wordsDepCode = typeof depCode === "string"
@@ -163,10 +165,12 @@ ReportRoute.get('/summary2', async ({
         }
 
     } catch (error) {
-        if (error instanceof Error) {
-            set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
-        }
+        console.error("[Report] error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
     }
 });
 
@@ -199,24 +203,24 @@ ReportRoute.get('/summary3', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
-            set.status = StatusCodes.OK;
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!token) {
-            set.status = StatusCodes.OK;
-            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Request missing Authorization Data❌` };
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
         }
 
         const payload = await jwt.verify(token);
         if (!payload) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.UNAUTHORIZED;
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
             const wordsDepCode = typeof depCode === "string"
@@ -236,11 +240,12 @@ ReportRoute.get('/summary3', async ({
         }
 
     } catch (error) {
-
-        if (error instanceof Error) {
-            set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
-        }
+        console.error("[Report] error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
     }
 });
 
@@ -273,24 +278,24 @@ ReportRoute.get('/summary5', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
-            set.status = StatusCodes.OK;
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!token) {
-            set.status = StatusCodes.OK;
-            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Request missing Authorization Data❌` };
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
         }
 
         const payload = await jwt.verify(token);
         if (!payload) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.UNAUTHORIZED;
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
             const wordsDepCode = typeof depCode === "string"
@@ -310,10 +315,12 @@ ReportRoute.get('/summary5', async ({
         }
 
     } catch (error) {
-        if (error instanceof Error) {
-            set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
-        }
+        console.error("[Report] error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
     }
 });
 
@@ -347,24 +354,24 @@ ReportRoute.get('/summary7', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
-            set.status = StatusCodes.OK;
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!token) {
-            set.status = StatusCodes.OK;
-            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Request missing Authorization Data❌` };
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
         }
 
         const payload = await jwt.verify(token);
         if (!payload) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.UNAUTHORIZED;
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
             const GetMedErrorReportSummaryByDept = await reports.getReportSummary7({ firstDate, lastDate })
@@ -379,10 +386,12 @@ ReportRoute.get('/summary7', async ({
         }
 
     } catch (error) {
-        if (error instanceof Error) {
-            set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
-        }
+        console.error("[Report] error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
     }
 });
 
@@ -415,24 +424,24 @@ ReportRoute.get('/summary8', async ({
             }
         }
 
-        if (!originAllow && !ALLOWED_ORIGINS.has(originAllow || "")) {
-            set.status = StatusCodes.OK;
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.FORBIDDEN;
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
         }
 
         if (!token) {
-            set.status = StatusCodes.OK;
-            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Request missing Authorization Data❌` };
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
         }
 
         const payload = await jwt.verify(token);
         if (!payload) {
-            set.status = StatusCodes.OK;
+            set.status = StatusCodes.UNAUTHORIZED;
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
             const wordsDepCode = typeof depCode === "string"
@@ -465,11 +474,12 @@ ReportRoute.get('/summary8', async ({
         }
 
     } catch (error) {
-
-        if (error instanceof Error) {
-            set.status = StatusCodes.INTERNAL_SERVER_ERROR;
-            return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR), message: error.message };
-        }
+        console.error("[Report] error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
     }
 });
 

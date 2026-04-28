@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useForm } from 'react-hook-form';
@@ -16,8 +16,6 @@ import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
 import LoadingButton from '@mui/lab/LoadingButton';
 
-// import _ from 'lodash';
-
 // Lib Auth
 import { verifyToken, getTokenFromLocalStorage, removeTokenFromLocalStorage } from '../../../libs/Auth';
 
@@ -33,7 +31,10 @@ import Iconify from '../../../components/iconify';
 
 // Schema สำหรับตรวจสอบข้อมูล
 const loginSchema = z.object({
-  userName: z.string().min(6, 'กรุณาระบุชื่อผู้ใช้').max(6, 'ระบุชื่อผู้ใช้งานให้ถูกต้อง'),
+  userName: z
+    .string()
+    .min(1, 'กรุณาระบุชื่อผู้ใช้')
+    .max(64, 'ชื่อผู้ใช้ยาวเกินกำหนด'),
   userPass: z.string().min(1, 'กรุณากรอกรหัสผ่าน'),
 });
 
@@ -51,6 +52,22 @@ export default function LoginForm() {
   });
   const [open, setOpen] = useState(false);
 
+  const timersRef = useRef([]);
+  const isMountedRef = useRef(true);
+
+  const safeSetState = (setter, value) => {
+    if (isMountedRef.current) setter(value);
+  };
+
+  const scheduleTimer = (fn, delay) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      if (isMountedRef.current) fn();
+    }, delay);
+    timersRef.current.push(id);
+    return id;
+  };
+
   const {
     register,
     handleSubmit,
@@ -64,49 +81,45 @@ export default function LoginForm() {
       setIsLoading(true);
       setOpen(true);
       setLoadingMessage('กำลังเข้าสู่ระบบ...');
-      const userData = dataForm;
 
-      const CheckLogin = await API.post(API_ROUTE.AUTH, userData);
+      const CheckLogin = await API.post(API_ROUTE.AUTH, dataForm);
+      const { statusCode, access_token } = CheckLogin.data || {};
 
-      const { statusCode, access_token } = CheckLogin.data;
       if (access_token) {
-        setTimeout(() => {
+        scheduleTimer(() => {
           login(access_token);
-          setOpen(false);
-          setMessageAlert({
-            msg: 'เข้าสู่ระบบสำเร็จ...',
-            type: 'success',
-          });
-        }, 1000);
-        setTimeout(() => {
-          setOpen(true);
-          setLoadingMessage('กำลังไปยังหน้าหลัก....');
-        }, 1800);
-
-        setTimeout(() => {
+          safeSetState(setOpen, false);
+          safeSetState(setMessageAlert, { msg: 'เข้าสู่ระบบสำเร็จ...', type: 'success' });
+        }, 600);
+        scheduleTimer(() => {
+          safeSetState(setOpen, true);
+          safeSetState(setLoadingMessage, 'กำลังไปยังหน้าหลัก...');
+        }, 900);
+        scheduleTimer(() => {
           navigate('/lists/med', { replace: true });
-        }, 2400);
+        }, 1300);
+        return;
       }
 
-      if (statusCode && statusCode === 400) {
-        setTimeout(() => {
-          setOpen(false);
-          setIsLoading(false);
-          setMessageAlert({
-            msg: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง',
-            type: 'error',
-          });
-        }, 500);
-      }
+      // กรณี response ไม่มี access_token (statusCode != 200)
+      safeSetState(setOpen, false);
+      safeSetState(setIsLoading, false);
+      const errMsg =
+        statusCode === 401 || statusCode === 400 || statusCode === 404
+          ? 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
+          : 'ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่';
+      safeSetState(setMessageAlert, { msg: errMsg, type: 'error' });
     } catch (error) {
-      if (error instanceof Error) {
-        setOpen(false);
-        setIsLoading(false);
-        setMessageAlert({
-          msg: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง',
-          type: 'error',
-        });
+      safeSetState(setOpen, false);
+      safeSetState(setIsLoading, false);
+      const status = error?.response?.status;
+      let msg = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+      if (status === 401 || status === 400 || status === 403) {
+        msg = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
+      } else if (!error?.response) {
+        msg = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
       }
+      safeSetState(setMessageAlert, { msg, type: 'error' });
     }
   };
 
@@ -115,39 +128,46 @@ export default function LoginForm() {
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
+    let cancelled = false;
+
     async function checkVerifyToken() {
+      const auth_token = getTokenFromLocalStorage('access_token');
+      if (!auth_token) return;
       try {
         setIsLoading(true);
-        const auth_token = getTokenFromLocalStorage('access_token');
         const verify = await verifyToken(auth_token);
+        if (cancelled || !verify) {
+          safeSetState(setIsLoading, false);
+          return;
+        }
         const { statusCode, profile, access_token } = verify;
-        if (statusCode === 200 && profile) {
-          if (access_token) {
-            setOpen(true);
-            setLoadingMessage('กำลังไปยังหน้าหลัก....');
-            setIsLoading(false);
-            setTimeout(() => {
-              navigate('/lists/med', { replace: true });
-            }, 1500);
-          }
+        if (statusCode === 200 && profile && access_token) {
+          safeSetState(setOpen, true);
+          safeSetState(setLoadingMessage, 'กำลังไปยังหน้าหลัก...');
+          safeSetState(setIsLoading, false);
+          scheduleTimer(() => navigate('/lists/med', { replace: true }), 800);
         } else {
-          setOpen(false);
-          setIsLoading(false);
+          safeSetState(setOpen, false);
+          safeSetState(setIsLoading, false);
           removeTokenFromLocalStorage('access_token');
         }
       } catch (error) {
-        setIsLoading(false);
-        if (error instanceof Error) {
-          const { response } = error;
-          setMessageAlert({
-            msg: response.statusText,
-            type: 'error',
-          });
-          setOpen(false);
-        }
+        safeSetState(setIsLoading, false);
+        safeSetState(setOpen, false);
+        // token ไม่ valid → ล้างทิ้ง ไม่ต้องแจ้ง user
+        removeTokenFromLocalStorage('access_token');
       }
     }
     checkVerifyToken();
+
+    return () => {
+      cancelled = true;
+      isMountedRef.current = false;
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -169,15 +189,14 @@ export default function LoginForm() {
       <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={3}>
           {messageAlert.msg !== '' && (
-            <>
-              <Alert variant="outlined" severity={messageAlert.type}>
-                {messageAlert.msg}
-              </Alert>
-            </>
+            <Alert variant="outlined" severity={messageAlert.type}>
+              {messageAlert.msg}
+            </Alert>
           )}
           <TextField
             type="text"
             label="ชื่อผู้ใช้งาน"
+            inputProps={{ maxLength: 64, autoComplete: 'username' }}
             {...register('userName')}
             error={!!errors.userName}
             helperText={errors.userName?.message}
@@ -187,13 +206,18 @@ export default function LoginForm() {
           <TextField
             label="รหัสผ่าน"
             type={showPassword ? 'text' : 'password'}
+            inputProps={{ autoComplete: 'current-password' }}
             {...register('userPass')}
             error={!!errors.userPass}
             helperText={errors.userPass?.message}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                    aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                  >
                     <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
                   </IconButton>
                 </InputAdornment>
