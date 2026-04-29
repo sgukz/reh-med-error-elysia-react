@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1] - 2026-04-29
+
+### ปรับโทนสี + Animate UI Layout
+- เปลี่ยนโทนสีหลักจาก blue/violet/cyan → **teal/mint/emerald** (อิงสีเดิมโรงพยาบาล `#8fd2c7`) ให้ต่างจากเทมเพลตอ้างอิง
+  - เพิ่ม `guk-bg-mesh-teal` / `guk-bg-mesh-teal-soft`
+  - เพิ่ม `guk-blob-teal-1/2/3`, `guk-glass-teal`, `guk-gradient-text-teal`
+- **LoginPage**: เพิ่มหัวข้อ `Medication error` (gradient text เคลื่อนไหว) + `Login with your account` ด้านบน pill badge "ระบบรายงานความคลาดเคลื่อนทางยา" ตามที่ขอ
+- **Layout (Header + Nav)**: เพิ่ม Animate UI ทั้งโซน
+  - **Header**: glass background (blur 20px), ปุ่ม menu มี hover rotate + scale, แถบหัวเรื่อง "ระบบรายงานความคลาดเคลื่อนทางยา" + จุดสถานะลอย (float animation)
+  - **Nav drawer**: panel โทน teal glass, โลโก้ลอย (float) + glow pulse, การ์ดผู้ใช้ (StyledAccount) เป็น gradient mint + hover lift
+  - **NavSection items**: hover translate-x + gradient teal, active state เป็น gradient teal เข้ม + shadow glow แทน `#103996` เดิม
+  - เพิ่ม stagger animation (delay 0.05/0.15/0.25s) ให้โลโก้ → ผู้ใช้ → เมนู ค่อย ๆ fade-up
+
+### ไม่เปลี่ยน Layout
+- โครงสร้าง `StyledRoot` / `Container` / `Drawer` / Element ทั้งหมดยังเหมือนเดิม
+- ไม่เพิ่ม dependency
+
 ## [1.12.0] - 2026-04-29
 
 ### ปรับธีมใหม่ (Style refresh — โทนเดียวกับ vite-opd-schedule)

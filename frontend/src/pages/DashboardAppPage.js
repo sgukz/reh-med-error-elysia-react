@@ -283,7 +283,7 @@ export default function DashboardAppPage() {
 
   return (
     <Box
-      className="guk-bg-mesh-soft"
+      className="guk-bg-mesh-teal-soft"
       sx={{
         position: 'relative',
         minHeight: '100%',
@@ -298,10 +298,10 @@ export default function DashboardAppPage() {
         <title> Dashboard | Medication error </title>
       </Helmet>
 
-      {/* Decorative blobs */}
+      {/* Decorative blobs (โทน teal) */}
       <Box aria-hidden="true" sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-        <Box className="guk-blob guk-blob-1 guk-anim-blob" sx={{ opacity: 0.6 }} />
-        <Box className="guk-blob guk-blob-2 guk-anim-blob" sx={{ opacity: 0.5 }} />
+        <Box className="guk-blob guk-blob-teal-1 guk-anim-blob" sx={{ opacity: 0.55 }} />
+        <Box className="guk-blob guk-blob-teal-2 guk-anim-blob" sx={{ opacity: 0.5 }} />
       </Box>
 
       <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
@@ -324,8 +324,8 @@ export default function DashboardAppPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'linear-gradient(135deg, rgba(96,165,250,0.25), rgba(99,102,241,0.25))',
-                  border: '1px solid rgba(191, 219, 254, 0.6)',
+                  background: 'linear-gradient(135deg, rgba(94,234,212,0.3), rgba(110,231,183,0.3))',
+                  border: '1px solid rgba(153, 246, 228, 0.7)',
                 }}
               >
                 <Box component="span" sx={{ fontSize: 22 }}>📊</Box>
@@ -333,7 +333,7 @@ export default function DashboardAppPage() {
               <Box>
                 <Typography
                   variant="h4"
-                  className="guk-gradient-text"
+                  className="guk-gradient-text-teal"
                   sx={{
                     fontFamily: '"Prompt", sans-serif',
                     fontWeight: 700,
@@ -347,7 +347,7 @@ export default function DashboardAppPage() {
                   sx={{
                     fontFamily: '"Prompt", sans-serif',
                     fontSize: 12,
-                    color: '#64748b',
+                    color: '#475569',
                     mt: 0.25,
                   }}
                 >

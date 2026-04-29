@@ -38,10 +38,27 @@ function NavItem({ item }) {
       component={RouterLink}
       to={`${path}`}
       sx={{
+        fontFamily: '"Prompt", sans-serif',
+        fontWeight: 500,
+        mx: 0.5,
+        my: 0.25,
+        px: 1.5,
+        transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease',
+        '&:hover': {
+          transform: 'translateX(4px)',
+          background: 'linear-gradient(135deg, rgba(94,234,212,0.18), rgba(110,231,183,0.14))',
+          color: '#0d9488',
+        },
         '&.active': {
-          color: "#fff",
-          bgcolor: "#103996",
-          fontWeight: 'fontWeightBold',
+          color: '#fff',
+          background: 'linear-gradient(135deg, #14b8a6, #10b981)',
+          fontWeight: 700,
+          boxShadow: '0 8px 20px -8px rgba(20, 184, 166, 0.55)',
+          '&:hover': {
+            transform: 'translateX(4px)',
+            background: 'linear-gradient(135deg, #0d9488, #059669)',
+            color: '#fff',
+          },
         },
       }}
     >

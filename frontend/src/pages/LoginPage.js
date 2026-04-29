@@ -1,7 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 // @mui
 import { styled } from '@mui/material/styles';
-import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
@@ -47,12 +46,12 @@ export default function LoginPage() {
         <title> Login | Medication error </title>
       </Helmet>
 
-      <StyledRoot className="guk-bg-mesh">
-        {/* Animated decorative blobs */}
+      <StyledRoot className="guk-bg-mesh-teal">
+        {/* Animated decorative blobs (โทน teal) */}
         <Box aria-hidden="true" sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-          <Box className="guk-blob guk-blob-1 guk-anim-blob" />
-          <Box className="guk-blob guk-blob-2 guk-anim-blob" />
-          <Box className="guk-blob guk-blob-3 guk-anim-blob" />
+          <Box className="guk-blob guk-blob-teal-1 guk-anim-blob" />
+          <Box className="guk-blob guk-blob-teal-2 guk-anim-blob" />
+          <Box className="guk-blob guk-blob-teal-3 guk-anim-blob" />
         </Box>
         {/* Subtle grid overlay */}
         <Box aria-hidden="true" className="guk-grid-overlay" />
@@ -84,46 +83,60 @@ export default function LoginPage() {
 
               {/* Brand row */}
               <Stack alignItems="center" textAlign="center">
-                {/* Pill badge */}
-                <Box
-                  sx={{
-                    mt: 3,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.75,
-                    borderRadius: 999,
-                    backgroundColor: 'rgba(239, 246, 255, 0.7)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(191, 219, 254, 0.8)',
-                    px: 1.5,
-                    py: 0.5,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: '#1d4ed8',
-                  }}
-                >
-                  <Iconify icon="lucide:sparkles" width={14} sx={{ color: '#3b82f6' }} />
-                  ระบบรายงานความคลาดเคลื่อนทางยา
-                </Box>
-
-                {/* Heading */}
+                {/* Top heading */}
                 <Typography
                   component="h1"
-                  className="guk-gradient-text"
+                  className="guk-gradient-text-teal"
                   sx={{
-                    mt: 2,
                     fontFamily: '"Prompt", sans-serif',
-                    fontWeight: 700,
-                    letterSpacing: '-0.02em',
-                    fontSize: { xs: '1.6rem', sm: '2rem' },
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                    lineHeight: 1.1,
+                    fontSize: { xs: '1.9rem', sm: '2.4rem' },
+                    textShadow: '0 6px 18px rgba(20, 184, 166, 0.18)',
                   }}
                 >
-                  เข้าสู่ระบบ
+                  Medication error
                 </Typography>
 
                 <Typography
                   sx={{
                     mt: 0.5,
+                    fontFamily: '"Prompt", sans-serif',
+                    fontWeight: 600,
+                    fontSize: { xs: '1rem', sm: '1.05rem' },
+                    color: '#0f766e',
+                  }}
+                >
+                  Login with your account
+                </Typography>
+
+                {/* Pill badge */}
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    borderRadius: 999,
+                    backgroundColor: 'rgba(204, 251, 241, 0.7)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(153, 246, 228, 0.8)',
+                    px: 1.5,
+                    py: 0.5,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: '#0f766e',
+                  }}
+                >
+                  <Iconify icon="lucide:sparkles" width={14} sx={{ color: '#14b8a6' }} />
+                  ระบบรายงานความคลาดเคลื่อนทางยา
+                </Box>
+
+                {/* Subheading */}
+                <Typography
+                  sx={{
+                    mt: 1.5,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 0.75,
@@ -132,7 +145,7 @@ export default function LoginPage() {
                     color: '#475569',
                   }}
                 >
-                  <Iconify icon="lucide:pill" width={14} sx={{ color: '#94a3b8' }} />
+                  <Iconify icon="lucide:pill" width={14} sx={{ color: '#0d9488' }} />
                   โรงพยาบาลร้อยเอ็ด · Medication Error
                 </Typography>
               </Stack>
@@ -149,10 +162,6 @@ export default function LoginPage() {
                 justifyContent="space-between"
                 sx={{ mt: 4, fontFamily: '"Prompt", sans-serif' }}
               >
-                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ fontSize: 12, color: '#64748b' }}>
-                  <Iconify icon="lucide:shield-check" width={14} sx={{ color: '#10b981' }} />
-                  <Box component="span" sx={{ fontWeight: 500 }}>เชื่อมต่อปลอดภัย</Box>
-                </Stack>
                 <Box
                   component="code"
                   sx={{
@@ -181,34 +190,6 @@ export default function LoginPage() {
             >
               สำหรับเจ้าหน้าที่ผู้มีสิทธิ์เข้าใช้งานระบบเท่านั้น
             </Typography>
-
-            {/* Hospital link */}
-            <Box className="guk-anim-fade-in" sx={{ mt: 0.5, textAlign: 'center', animationDelay: '0.4s' }}>
-              <Link
-                href="https://reh.moph.go.th/"
-                target="_blank"
-                rel="noopener noreferrer"
-                underline="none"
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.75,
-                  fontFamily: '"Prompt", sans-serif',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: '#1d4ed8',
-                  px: 0.5,
-                  py: 0.25,
-                  borderRadius: 1,
-                  transition: 'color 0.2s',
-                  '&:hover': { color: '#1e3a8a' },
-                }}
-              >
-                เว็บไซต์โรงพยาบาลร้อยเอ็ด
-                <Iconify icon="lucide:external-link" width={11} />
-              </Link>
-            </Box>
-
             {/* Powered by footer */}
             <Typography
               sx={{

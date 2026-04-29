@@ -29,7 +29,16 @@
   box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.12);
 }
 
+.guk-glass-teal {
+  background: linear-gradient(135deg, rgba(204, 251, 241, 0.55) 0%, rgba(236, 253, 245, 0.45) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(153, 246, 228, 0.6);
+  box-shadow: 0 8px 32px 0 rgba(20, 184, 166, 0.12);
+}
+
 /* ---------- Mesh background ---------- */
+/* โทนเดิม (blue/violet/cyan) เก็บไว้ใช้ที่อื่น */
 .guk-bg-mesh {
   background-color: #eef2ff;
   background-image:
@@ -45,6 +54,25 @@
     radial-gradient(at 10% 0%, rgba(147, 197, 253, 0.28) 0px, transparent 50%),
     radial-gradient(at 90% 10%, rgba(196, 181, 253, 0.22) 0px, transparent 50%),
     radial-gradient(at 90% 100%, rgba(165, 243, 252, 0.25) 0px, transparent 50%);
+}
+
+/* โทนใหม่ teal/mint/emerald + amber accent (อิงสีเดิม #8fd2c7 ของ ER) */
+.guk-bg-mesh-teal {
+  background-color: #ecfdf5;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(110, 231, 183, 0.55) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(94, 234, 212, 0.5) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(153, 246, 228, 0.55) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(254, 240, 138, 0.4) 0px, transparent 50%);
+}
+
+.guk-bg-mesh-teal-soft {
+  background-color: #f0fdfa;
+  background-image:
+    radial-gradient(at 10% 0%, rgba(110, 231, 183, 0.28) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(94, 234, 212, 0.25) 0px, transparent 50%),
+    radial-gradient(at 90% 100%, rgba(167, 243, 208, 0.28) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(254, 240, 138, 0.18) 0px, transparent 50%);
 }
 
 /* ---------- Decorative blobs (ใส่ใน absolute container) ---------- */
@@ -75,6 +103,31 @@
   width: 26rem;
   height: 26rem;
   background-image: linear-gradient(135deg, rgba(167, 243, 208, 0.45), rgba(125, 211, 252, 0.45));
+  animation-delay: -12s;
+}
+
+/* Blob โทน teal สำหรับธีมใหม่ */
+.guk-blob-teal-1 {
+  top: -8rem;
+  left: -6rem;
+  width: 24rem;
+  height: 24rem;
+  background-image: linear-gradient(135deg, rgba(94, 234, 212, 0.55), rgba(110, 231, 183, 0.45));
+}
+.guk-blob-teal-2 {
+  top: 33%;
+  right: -8rem;
+  width: 28rem;
+  height: 28rem;
+  background-image: linear-gradient(135deg, rgba(45, 212, 191, 0.45), rgba(34, 197, 94, 0.35));
+  animation-delay: -6s;
+}
+.guk-blob-teal-3 {
+  bottom: -10rem;
+  left: 25%;
+  width: 26rem;
+  height: 26rem;
+  background-image: linear-gradient(135deg, rgba(254, 240, 138, 0.45), rgba(110, 231, 183, 0.45));
   animation-delay: -12s;
 }
 
@@ -143,6 +196,59 @@
   animation: guk-gradient-shift 6s ease-in-out infinite;
 }
 
+/* Gradient text โทน teal (ใช้คู่กับ guk-bg-mesh-teal) */
+.guk-gradient-text-teal {
+  background: linear-gradient(90deg, #0d9488, #14b8a6, #10b981, #06b6d4, #0d9488);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: guk-gradient-shift 6s ease-in-out infinite;
+}
+
+/* ---------- Hover lift (ใช้กับ nav item / card) ---------- */
+.guk-hover-lift {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.25s ease;
+  will-change: transform;
+}
+.guk-hover-lift:hover {
+  transform: translateX(4px);
+  box-shadow: 0 8px 20px -8px rgba(20, 184, 166, 0.35);
+}
+
+/* ---------- Stagger fade-up (ใส่ animation-delay เป็น inline style) ---------- */
+.guk-stagger {
+  opacity: 0;
+  animation: guk-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---------- Header glass (sticky + glass) ---------- */
+.guk-header-glass {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(153, 246, 228, 0.4) !important;
+}
+
+/* ---------- Nav drawer panel ---------- */
+.guk-nav-panel {
+  background:
+    linear-gradient(180deg, rgba(240, 253, 250, 0.95) 0%, rgba(255, 255, 255, 0.92) 100%) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-right: 1px solid rgba(153, 246, 228, 0.4) !important;
+}
+
+/* ---------- Active nav item ---------- */
+.guk-nav-active {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(34, 197, 94, 0.10)) !important;
+  color: #0d9488 !important;
+  box-shadow: 0 4px 14px -6px rgba(20, 184, 166, 0.4);
+}
+
 /* respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .guk-anim-blob,
@@ -151,7 +257,8 @@
   .guk-anim-scale-in,
   .guk-anim-fade-in,
   .guk-anim-fade-up,
-  .guk-gradient-text {
+  .guk-gradient-text,
+  .guk-gradient-text-teal {
     animation: none !important;
   }
 }
