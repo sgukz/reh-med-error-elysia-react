@@ -423,8 +423,7 @@ export default function ErrorTypePage() {
                     const { type_id, error_type_name, error_type_list, error_type_list_detail, is_active } = row;
 
                     return (
-                      <Tooltip title="" key={type_id}>
-                        <TableRow hover style={{ cursor: 'pointer' }} tabIndex={-1}>
+                        <TableRow key={type_id} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
                           <TableCell align="left">{error_type_name}</TableCell>
                           <TableCell align="left">{`${error_type_list}. ${error_type_list_detail}`}</TableCell>
                           <TableCell align="center">
@@ -456,7 +455,6 @@ export default function ErrorTypePage() {
                             </Tooltip>
                           </TableCell>
                         </TableRow>
-                      </Tooltip>
                     );
                   })}
                   {emptyRowsMedError > 0 && (

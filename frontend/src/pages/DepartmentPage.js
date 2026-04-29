@@ -434,8 +434,7 @@ export default function DepartmentPage() {
                       med_error_is_active,
                     } = row;
                     return (
-                      <Tooltip title="" key={med_error_depcode}>
-                        <TableRow hover style={{ cursor: 'pointer' }} tabIndex={-1}>
+                        <TableRow key={med_error_depcode} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
                           <TableCell align="left">{med_error_depname}</TableCell>
                           <TableCell align="center">
                             <Chip sx={getChipColor(+med_error_dep_group_id)} label={med_error_dep_group_detail} />
@@ -468,7 +467,6 @@ export default function DepartmentPage() {
                             </Tooltip>
                           </TableCell>
                         </TableRow>
-                      </Tooltip>
                     );
                   })}
                   {emptyRowsMedError > 0 && (

@@ -7,11 +7,12 @@ import { styled } from '@mui/material/styles';
 
 const StyledTableCell = styled(TableCell)(() => ({
   [`&.${tableCellClasses.head}`]: {
-    background: 'linear-gradient(135deg, #14b8a6, #10b981)', // Active Nav Item Gradient
+    background: 'transparent',
     color: '#ffffff',
     fontFamily: '"Prompt", sans-serif',
     fontWeight: 600,
     fontSize: '15px',
+    borderBottom: 'none',
   },
   [`&.${tableCellClasses.body}`]: {
     fontFamily: '"Prompt", sans-serif',
@@ -51,7 +52,7 @@ export default function UserListHead({
 
   return (
     <TableHead>
-      <TableRow>
+      <TableRow sx={{ background: 'linear-gradient(90deg, #14b8a6, #0d9488)' }}>
         {headLabel.map((headCell) => (
           <StyledTableCell
             key={headCell.id}

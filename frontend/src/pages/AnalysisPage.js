@@ -397,8 +397,7 @@ export default function AnalysisPage() {
                   {filteredAnalysis.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                     const { error_analysis_id, error_analysis_name, is_active } = row;
                     return (
-                      <Tooltip title="" key={error_analysis_id}>
-                        <TableRow hover style={{ cursor: 'pointer' }} tabIndex={-1}>
+                        <TableRow key={error_analysis_id} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
                           <TableCell align="left">{error_analysis_name}</TableCell>
                           <TableCell align="center">
                             <Chip
@@ -428,7 +427,6 @@ export default function AnalysisPage() {
                             </Tooltip>
                           </TableCell>
                         </TableRow>
-                      </Tooltip>
                     );
                   })}
                   {emptyRowsAnalysis > 0 && (

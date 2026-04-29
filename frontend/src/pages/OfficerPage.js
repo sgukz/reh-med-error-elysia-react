@@ -448,8 +448,7 @@ export default function OfficerPage() {
                   {filteredOfficer.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                     const { error_key_person_id, error_key_person_name, error_key_sec, error_key_sec_name } = row;
                     return (
-                      <Tooltip title="" key={error_key_person_id}>
-                        <TableRow hover style={{ cursor: 'pointer' }} tabIndex={-1}>
+                        <TableRow key={error_key_person_id} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
                           <TableCell align="left">{error_key_person_name}</TableCell>
                           <TableCell align="center">
                             <Chip label={error_key_sec_name} sx={getSecChipStyle(error_key_sec)} />
@@ -471,7 +470,6 @@ export default function OfficerPage() {
                             </Tooltip>
                           </TableCell>
                         </TableRow>
-                      </Tooltip>
                     );
                   })}
                   {emptyRowsMedError > 0 && (

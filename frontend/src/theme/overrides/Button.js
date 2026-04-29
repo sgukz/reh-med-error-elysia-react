@@ -22,7 +22,16 @@ export default function Button(theme) {
           },
         },
         containedPrimary: {
-          boxShadow: theme.customShadows.primary,
+          background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
+          boxShadow: '0 8px 16px -4px rgba(20, 184, 166, 0.3)',
+          transition: 'transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease',
+          fontFamily: '"Prompt", sans-serif',
+          fontWeight: 600,
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            background: 'linear-gradient(135deg, #0d9488, #115e59)',
+            boxShadow: '0 12px 20px -4px rgba(20, 184, 166, 0.45)',
+          },
         },
         containedSecondary: {
           boxShadow: theme.customShadows.secondary,
