@@ -7,11 +7,15 @@ import { styled } from '@mui/material/styles';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.dark,
-    color: theme.palette.common.white,
+    background: 'linear-gradient(135deg, #14b8a6, #10b981)', // Active Nav Item Gradient
+    color: '#ffffff',
+    fontFamily: '"Prompt", sans-serif',
+    fontWeight: 600,
+    fontSize: '15px',
   },
   [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
+    fontFamily: '"Prompt", sans-serif',
+    fontSize: '14px',
   },
 }));
 
@@ -62,7 +66,7 @@ export default function UserListHead({
               onClick={createSortHandler(headCell.id)}
 
             >
-              <span style={{ color: 'white' }}>{headCell.label}</span>
+              <span style={{ color: '#ffffff' }}>{headCell.label}</span>
               {orderBy === headCell.id ? (
                 <Box sx={{ ...visuallyHidden }}>{order === 'desc' ? 'sorted descending' : 'sorted ascending'}</Box>
               ) : null}

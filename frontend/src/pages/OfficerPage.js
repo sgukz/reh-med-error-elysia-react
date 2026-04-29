@@ -102,6 +102,21 @@ function applySortFilter(array, comparator, query) {
   return stabilizedThis.map((el) => el[0]);
 }
 
+const getSecChipStyle = (secId) => {
+  switch (secId) {
+    case 1: // เภสัชกร
+      return { backgroundColor: 'rgba(20, 184, 166, 0.15)', color: '#0d9488', border: '1px solid rgba(20, 184, 166, 0.4)', fontWeight: 600 };
+    case 2: // พนักงานประจำห้องยา
+      return { backgroundColor: 'rgba(79, 70, 229, 0.15)', color: '#4f46e5', border: '1px solid rgba(79, 70, 229, 0.4)', fontWeight: 600 };
+    case 3: // เจ้าพนักงานเภสัชกรรม
+      return { backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.4)', fontWeight: 600 };
+    case 4: // อื่นๆ
+      return { backgroundColor: 'rgba(148, 163, 184, 0.15)', color: '#64748b', border: '1px solid rgba(148, 163, 184, 0.4)', fontWeight: 600 };
+    default:
+      return { backgroundColor: 'rgba(148, 163, 184, 0.15)', color: '#64748b', border: '1px solid rgba(148, 163, 184, 0.4)', fontWeight: 600 };
+  }
+};
+
 // import
 export default function OfficerPage() {
   const navigate = useNavigate();
@@ -432,34 +447,12 @@ export default function OfficerPage() {
                 <TableBody>
                   {filteredOfficer.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                     const { error_key_person_id, error_key_person_name, error_key_sec, error_key_sec_name } = row;
-                    let error_key_sec_color = '';
-                    let error_key_sec_label = '';
-                    switch (error_key_sec) {
-                      case 1:
-                        error_key_sec_label = error_key_sec_name;
-                        error_key_sec_color = 'primary';
-                        break;
-                      case 2:
-                        error_key_sec_label = error_key_sec_name;
-                        error_key_sec_color = 'success';
-                        break;
-                      case 3:
-                        error_key_sec_label = error_key_sec_name;
-                        error_key_sec_color = 'warning';
-                        break;
-                      case 4:
-                        error_key_sec_label = error_key_sec_name;
-                        error_key_sec_color = 'warning';
-                        break;
-                      default:
-                        break;
-                    }
                     return (
                       <Tooltip title="" key={error_key_person_id}>
                         <TableRow hover style={{ cursor: 'pointer' }} tabIndex={-1}>
                           <TableCell align="left">{error_key_person_name}</TableCell>
                           <TableCell align="center">
-                            <Chip label={error_key_sec_label} color={error_key_sec_color} sx={{ color: '#FFFFFF' }} />
+                            <Chip label={error_key_sec_name} sx={getSecChipStyle(error_key_sec)} />
                           </TableCell>
                           <TableCell align="center">
                             <Tooltip title="จัดการ">

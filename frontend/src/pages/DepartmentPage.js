@@ -126,16 +126,26 @@ function applySortFilter(array, comparator, query) {
 
 const getChipColor = (groupId) => {
   switch (groupId) {
-    case 1:
-      return { backgroundColor: '#1976d2', color: '#fff' }; // น้ำเงิน
-    case 2:
-      return { backgroundColor: '#388e3c', color: '#fff' }; // เขียว
-    case 3:
-      return { backgroundColor: '#f57c00', color: '#fff' }; // ส้ม
-    case 4:
-      return { backgroundColor: '#d32f2f', color: '#fff' }; // แดง
+    case 1: // OPD
+      return { backgroundColor: 'rgba(20, 184, 166, 0.15)', color: '#0d9488', border: '1px solid rgba(20, 184, 166, 0.4)', fontWeight: 600 };
+    case 2: // IPD
+      return { backgroundColor: 'rgba(79, 70, 229, 0.15)', color: '#4f46e5', border: '1px solid rgba(79, 70, 229, 0.4)', fontWeight: 600 };
+    case 3: // งานคลัง
+      return { backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.4)', fontWeight: 600 };
+    case 4: // งานผลิต
+      return { backgroundColor: 'rgba(244, 63, 94, 0.15)', color: '#e11d48', border: '1px solid rgba(244, 63, 94, 0.4)', fontWeight: 600 };
+    case 5: // OPD2
+      return { backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#0891b2', border: '1px solid rgba(6, 182, 212, 0.4)', fontWeight: 600 };
+    case 6: // OPD-Primary
+      return { backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.4)', fontWeight: 600 };
+    case 7: // กลับบ้าน
+      return { backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#7c3aed', border: '1px solid rgba(139, 92, 246, 0.4)', fontWeight: 600 };
+    case 8: // TPN
+      return { backgroundColor: 'rgba(236, 72, 153, 0.15)', color: '#db2777', border: '1px solid rgba(236, 72, 153, 0.4)', fontWeight: 600 };
+    case 9: // เคมีบำบัด
+      return { backgroundColor: 'rgba(217, 70, 239, 0.15)', color: '#c026d3', border: '1px solid rgba(217, 70, 239, 0.4)', fontWeight: 600 };
     default:
-      return { backgroundColor: '#9e9e9e', color: '#fff' }; // เทา สำหรับค่าอื่น
+      return { backgroundColor: 'rgba(148, 163, 184, 0.15)', color: '#64748b', border: '1px solid rgba(148, 163, 184, 0.4)', fontWeight: 600 };
   }
 };
 
@@ -432,9 +442,13 @@ export default function DepartmentPage() {
                           </TableCell>
                           <TableCell align="center">
                             <Chip
-                              sx={{ color: '#FFFFFF' }}
+                              sx={{
+                                backgroundColor: med_error_is_active === 'Y' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: med_error_is_active === 'Y' ? '#16a34a' : '#dc2626',
+                                border: med_error_is_active === 'Y' ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+                                fontWeight: 600,
+                              }}
                               label={`${med_error_is_active === 'Y' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}`}
-                              color={`${med_error_is_active === 'Y' ? 'success' : 'error'}`}
                             />
                           </TableCell>
                           <TableCell align="center">

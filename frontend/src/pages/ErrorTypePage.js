@@ -429,9 +429,13 @@ export default function ErrorTypePage() {
                           <TableCell align="left">{`${error_type_list}. ${error_type_list_detail}`}</TableCell>
                           <TableCell align="center">
                             <Chip
-                              sx={{ color: '#FFFFFF' }}
+                              sx={{
+                                backgroundColor: is_active === 'Y' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: is_active === 'Y' ? '#16a34a' : '#dc2626',
+                                border: is_active === 'Y' ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+                                fontWeight: 600,
+                              }}
                               label={`${is_active === 'Y' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}`}
-                              color={`${is_active === 'Y' ? 'success' : 'error'}`}
                             />
                           </TableCell>
                           <TableCell align="center">

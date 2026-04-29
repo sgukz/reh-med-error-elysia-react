@@ -77,7 +77,6 @@ export default function Nav({ openNav, onCloseNav, user }) {
               position: 'absolute',
               inset: -6,
               borderRadius: '20px',
-              background: 'linear-gradient(135deg, rgba(94,234,212,0.35), rgba(110,231,183,0.35))',
               filter: 'blur(12px)',
             }}
           />
