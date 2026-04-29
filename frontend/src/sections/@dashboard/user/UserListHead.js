@@ -5,7 +5,7 @@ import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import { styled } from '@mui/material/styles';
 // ----------------------------------------------------------------------
 
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
+const StyledTableCell = styled(TableCell)(() => ({
   [`&.${tableCellClasses.head}`]: {
     background: 'linear-gradient(135deg, #14b8a6, #10b981)', // Active Nav Item Gradient
     color: '#ffffff',
