@@ -282,59 +282,123 @@ export default function DashboardAppPage() {
   }, []);
 
   return (
-    <>
+    <Box
+      className="guk-bg-mesh-soft"
+      sx={{
+        position: 'relative',
+        minHeight: '100%',
+        mx: { xs: -2, lg: -2 },
+        px: { xs: 2, lg: 2 },
+        pt: 3,
+        pb: 6,
+        fontFamily: '"Prompt", sans-serif',
+      }}
+    >
       <Helmet>
         <title> Dashboard | Medication error </title>
       </Helmet>
 
-      <Container maxWidth="xl">
-        <Stack spacing={2} direction={'row'} sx={{ mb: 2 }}>
-          <Box display="flex" alignItems="center">
-            <Typography variant="h4">Executive Summary</Typography>
-          </Box>
-          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <DatePicker
-                  label="เริ่มต้น"
-                  value={firstDate}
-                  onChange={handleFirstDateChange}
-                  inputFormat="d MMMM yyyy" // หรือ format="..." ถ้าใช้ MUI X v5
-                  renderInput={(params) => (
-                    <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
-                  )}
-                />
-                <DatePicker
-                  label="สิ้นสุด"
-                  value={lastDate}
-                  onChange={handleLastDateChange}
-                  inputFormat="d MMMM yyyy"
-                  renderInput={(params) => (
-                    <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
-                  )}
-                />
+      {/* Decorative blobs */}
+      <Box aria-hidden="true" sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <Box className="guk-blob guk-blob-1 guk-anim-blob" sx={{ opacity: 0.6 }} />
+        <Box className="guk-blob guk-blob-2 guk-anim-blob" sx={{ opacity: 0.5 }} />
+      </Box>
+
+      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Header card (glass) */}
+        <Box
+          className="guk-glass guk-anim-fade-up"
+          sx={{
+            mb: 3,
+            borderRadius: '20px',
+            p: { xs: 2, sm: 2.5 },
+          }}
+        >
+          <Stack spacing={2} direction={'row'} alignItems="center" flexWrap="wrap">
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(96,165,250,0.25), rgba(99,102,241,0.25))',
+                  border: '1px solid rgba(191, 219, 254, 0.6)',
+                }}
+              >
+                <Box component="span" sx={{ fontSize: 22 }}>📊</Box>
+              </Box>
+              <Box>
+                <Typography
+                  variant="h4"
+                  className="guk-gradient-text"
+                  sx={{
+                    fontFamily: '"Prompt", sans-serif',
+                    fontWeight: 700,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  Executive Summary
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: '"Prompt", sans-serif',
+                    fontSize: 12,
+                    color: '#64748b',
+                    mt: 0.25,
+                  }}
+                >
+                  ภาพรวมรายงานความคลาดเคลื่อนทางยา · โรงพยาบาลร้อยเอ็ด
+                </Typography>
               </Box>
             </Box>
-          </LocalizationProvider>
-          <Box display="flex" gap={2} alignItems="center">
-            <FormControl size="small">
-              <InputLabel id="year-select-label">ปีงบประมาณ</InputLabel>
-              <Select
-                labelId="year-select-label"
-                value={selectedYear}
-                label="ปีงบประมาณ"
-                onChange={handleYearChange}
-                sx={{ minWidth: 120 }}
-              >
-                {fiscalYear.map((_year) => (
-                  <MenuItem key={_year} value={_year}>
-                    {_year}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </Stack>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <DatePicker
+                    label="เริ่มต้น"
+                    value={firstDate}
+                    onChange={handleFirstDateChange}
+                    inputFormat="d MMMM yyyy"
+                    renderInput={(params) => (
+                      <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
+                    )}
+                  />
+                  <DatePicker
+                    label="สิ้นสุด"
+                    value={lastDate}
+                    onChange={handleLastDateChange}
+                    inputFormat="d MMMM yyyy"
+                    renderInput={(params) => (
+                      <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
+                    )}
+                  />
+                </Box>
+              </Box>
+            </LocalizationProvider>
+            <Box display="flex" gap={2} alignItems="center">
+              <FormControl size="small">
+                <InputLabel id="year-select-label">ปีงบประมาณ</InputLabel>
+                <Select
+                  labelId="year-select-label"
+                  value={selectedYear}
+                  label="ปีงบประมาณ"
+                  onChange={handleYearChange}
+                  sx={{ minWidth: 120 }}
+                >
+                  {fiscalYear.map((_year) => (
+                    <MenuItem key={_year} value={_year}>
+                      {_year}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Stack>
+        </Box>
         <Grid container spacing={3}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={12} md={12}>
@@ -623,6 +687,6 @@ export default function DashboardAppPage() {
           </Grid>
         </Grid>
       </Container>
-    </>
+    </Box>
   );
 }

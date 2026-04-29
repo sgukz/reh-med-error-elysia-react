@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-04-29
+
+### ปรับธีมใหม่ (Style refresh — โทนเดียวกับ vite-opd-schedule)
+- เพิ่มไฟล์ `src/theme/effects.css` รวม utility classes (glass / mesh background / blob animations / gradient text) ที่ import ครั้งเดียวใน `index.js` ไม่กระทบ MUI theme เดิม
+- **LoginPage**: เปลี่ยนพื้นหลังเป็น mesh gradient + animated blobs, ห่อ form ด้วยการ์ดโทน glass-strong (backdrop-filter blur), หัวข้อ "เข้าสู่ระบบ" ใช้ gradient text เคลื่อนไหว, ใช้ฟอนต์ Prompt, badge ระบุชื่อระบบ + ไอคอน lucide (sparkles, shield-check, external-link, pill), เพิ่มลิงก์ "เว็บไซต์โรงพยาบาลร้อยเอ็ด" และข้อความ "เชื่อมต่อปลอดภัย" + เลขเวอร์ชัน — **คงโครงสร้าง layout `StyledRoot` / `Container` / `StyledContent` / `<LoginForm />` เดิมไว้ทุกตัว**
+- **DashboardAppPage**: เพิ่มพื้นหลัง mesh แบบ soft + blob animations, ห่อแถบหัว (Executive Summary + DatePicker + Select ปีงบประมาณ) ด้วยการ์ด glass มี gradient text + คำบรรยาย — ส่วน Grid / Card / Table ของกราฟและตารางคงเดิมไม่เปลี่ยน
+
+### ไม่เปลี่ยน
+- ไม่เพิ่ม dependency ใหม่ (ใช้ pure CSS + class names)
+- ไม่ปรับ MUI theme palette / overrides
+- ไม่ย้าย element / ไม่ลบ feature ใด ๆ
+
 ## [1.11.2] - 2026-04-28
 
 ### ปรับปรุง (Cleanup)

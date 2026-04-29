@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 
 //
+import './theme/effects.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import reportWebVitals from './reportWebVitals';
