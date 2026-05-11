@@ -97,13 +97,27 @@ const errorTypeListSchema = z.object({
     errorMap: () => ({ message: 'โปรดเลือกสถานะการใช้งาน' }),
   }), // ตรวจสอบให้เลือกเฉพาะ 'Y' หรือ 'N'
   type_id: z.number(),
+  impact_score: z
+    .union([z.number().int().min(1).max(5), z.null()])
+    .optional()
+    .nullable(),
 });
+
+// สี Chip ของ Impact: 1-2 เขียว, 3 เหลือง, 4 ส้ม, 5 แดง
+const impactChipColor = (score) => {
+  if (score === 1 || score === 2) return 'success';
+  if (score === 3) return 'warning';
+  if (score === 4) return 'warning';
+  if (score === 5) return 'error';
+  return 'default';
+};
 
 const color = red[500];
 
 const TABLE_HEAD_ERROR_TYPE = [
   { id: 'error_type_name', label: 'ประเภท', alignRight: false, alignHead: 'left' },
   { id: 'error_type_list_detail', label: 'รายละเอียด Error', alignRight: false, alignHead: 'left' },
+  { id: 'impact_score', label: 'Impact', alignRight: false, alignHead: 'center' },
   { id: 'is_active', label: 'สถานะ', alignRight: false, alignHead: 'center' },
   { id: '', label: 'จัดการ', alignHead: 'center' },
 ];
@@ -175,6 +189,7 @@ export default function ErrorTypePage() {
       error_type_list_detail: '',
       is_active: 'Y',
       type_id: 0,
+      impact_score: null,
     },
   });
 
@@ -271,6 +286,10 @@ export default function ErrorTypePage() {
         error_type_list_detail: itemErrorType.error_type_list_detail,
         is_active: itemErrorType.is_active,
         type_id: itemErrorType.type_id,
+        impact_score:
+          itemErrorType.impact_score === null || itemErrorType.impact_score === undefined
+            ? null
+            : Number(itemErrorType.impact_score),
       };
       reset(formEditData);
     }
@@ -420,12 +439,26 @@ export default function ErrorTypePage() {
                 />
                 <TableBody>
                   {filteredErrorType.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { type_id, error_type_name, error_type_list, error_type_list_detail, is_active } = row;
+                    const { type_id, error_type_name, error_type_list, error_type_list_detail, is_active, impact_score } = row;
 
                     return (
                         <TableRow key={type_id} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
                           <TableCell align="left">{error_type_name}</TableCell>
                           <TableCell align="left">{`${error_type_list}. ${error_type_list_detail}`}</TableCell>
+                          <TableCell align="center">
+                            {impact_score === null || impact_score === undefined ? (
+                              <Typography variant="body2" color="text.disabled">
+                                —
+                              </Typography>
+                            ) : (
+                              <Chip
+                                sx={{ color: '#FFFFFF', fontWeight: 600 }}
+                                size="small"
+                                label={impact_score}
+                                color={impactChipColor(Number(impact_score))}
+                              />
+                            )}
+                          </TableCell>
                           <TableCell align="center">
                             <Chip
                               sx={{
@@ -459,14 +492,14 @@ export default function ErrorTypePage() {
                   })}
                   {emptyRowsMedError > 0 && (
                     <TableRow style={{ height: 53 * emptyRowsMedError }}>
-                      <TableCell colSpan={3} />
+                      <TableCell colSpan={5} />
                     </TableRow>
                   )}
                 </TableBody>
                 {isNotFound && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={3} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -489,7 +522,7 @@ export default function ErrorTypePage() {
                 {medErrorType.length === 0 && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={3} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -637,6 +670,36 @@ export default function ErrorTypePage() {
                     />
                   )}
                 />
+              </FormControl>
+
+              <FormControl fullWidth error={!!errors.impact_score}>
+                <FormLabel id="impact_score_label">คะแนน Impact (1-5)</FormLabel>
+                <Controller
+                  name="impact_score"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      labelId="impact_score_label"
+                      label="คะแนน Impact"
+                      value={field.value ?? ''}
+                      onChange={(event) => {
+                        const v = event.target.value;
+                        field.onChange(v === '' ? null : Number(v));
+                      }}
+                    >
+                      <MenuItem value="">
+                        <em>— ไม่ระบุ —</em>
+                      </MenuItem>
+                      <MenuItem value={1}>1 — ต่ำมาก</MenuItem>
+                      <MenuItem value={2}>2 — ต่ำ</MenuItem>
+                      <MenuItem value={3}>3 — ปานกลาง</MenuItem>
+                      <MenuItem value={4}>4 — สูง</MenuItem>
+                      <MenuItem value={5}>5 — สูงมาก</MenuItem>
+                    </Select>
+                  )}
+                />
+                <FormHelperText>ใช้ในการประเมินความเสี่ยง (Impact + Likelihood) ในรายงานรายละเอียด Error</FormHelperText>
               </FormControl>
 
               <FormControl fullWidth error={!!errors.is_active}>

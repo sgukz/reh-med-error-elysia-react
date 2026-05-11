@@ -37,7 +37,8 @@ export interface TypeErrorListCreate {
     error_type_list: string
     error_type_list_detail: string
     is_active: "Y" | "N",
-    type_id: number | undefined | null
+    type_id: number | undefined | null,
+    impact_score: number | null
 }
 
 //Type Create Error

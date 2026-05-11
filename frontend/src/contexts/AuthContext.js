@@ -1,11 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  verifyToken,
-  storeTokenInLocalStorage,
-  getTokenFromLocalStorage,
-  removeTokenFromLocalStorage,
-} from '../libs/Auth';
+import { verifyToken, logout as apiLogout, removeTokenFromLocalStorage } from '../libs/Auth';
 
 const AuthContext = createContext(null);
 
@@ -14,45 +9,44 @@ AuthProvider.propTypes = {
 };
 
 export function AuthProvider({ children }) {
+  // accessToken ยังคงเก็บใน memory state ระหว่าง transition เผื่อ component เก่ายังอ้างอิงผ่าน useAuth()
+  // แต่ source of truth จริงคือ HTTP-only cookie ฝั่ง backend
   const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setAccessToken(null);
     setUser(null);
+    // เคลียร์ค่าเก่าใน localStorage (กรณีมีตกค้างจากเวอร์ชันก่อน) + เรียก backend ล้าง cookie
     removeTokenFromLocalStorage('access_token');
+    await apiLogout();
   }, []);
 
   const login = useCallback((token) => {
+    // backend set cookie ให้แล้ว — ฝั่ง client เก็บ access_token ใน memory เผื่อใช้ระหว่าง transition
     setAccessToken(token);
-    storeTokenInLocalStorage('access_token', token);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     async function getProfile() {
       try {
-        const auth_token = getTokenFromLocalStorage('access_token');
-        if (!auth_token) return;
-        const res = await verifyToken(auth_token);
-        if (cancelled || !res) return;
+        // cookie จะถูกส่งให้ backend อัตโนมัติ ไม่ต้องอ่านจาก localStorage
+        const res = await verifyToken(null);
+        if (cancelled || !res) {
+          setLoading(false);
+          return;
+        }
         const { statusCode, profile, access_token } = res;
-        if (statusCode === 200 && profile && access_token) {
-          setAccessToken(access_token);
+        if (statusCode === 200 && profile) {
+          if (access_token) setAccessToken(access_token);
           setUser(profile);
-        } else {
-          // token หมดอายุ / ไม่ถูกต้อง → ล้างทิ้ง
-          removeTokenFromLocalStorage('access_token');
         }
       } catch (e) {
         if (!cancelled) {
           setError(e?.message || 'Unknown error');
-          // 401/403 ไม่ควรเก็บ token เก่า
-          if (e?.response?.status === 401 || e?.response?.status === 403) {
-            removeTokenFromLocalStorage('access_token');
-          }
         }
       } finally {
         if (!cancelled) setLoading(false);

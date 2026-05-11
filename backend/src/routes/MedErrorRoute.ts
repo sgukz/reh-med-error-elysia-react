@@ -37,6 +37,7 @@ import _ from "lodash";
 // Using Route
 import DashboardRoute from "./DashboardRoute";
 import ReportRoute from "./ReportRoute";
+import { readAuthTokenFromHeaders } from '../plugins/auth';
 import 'moment/locale/th'; // นำเข้า locale ภาษาไทย
 import { formatDateTime } from "../libs/format-date";
 import axios from "axios";
@@ -96,7 +97,7 @@ MedErrorRoute.get('/doctor', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -160,7 +161,7 @@ MedErrorRoute.get('/drugitems', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -226,7 +227,7 @@ MedErrorRoute.get('/get-error-type', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -312,7 +313,7 @@ MedErrorRoute.get('/get-error-type-list', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -379,7 +380,7 @@ MedErrorRoute.post('/create-error-type-list', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -415,12 +416,26 @@ MedErrorRoute.post('/create-error-type-list', async ({
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
             const tableName = "med_error_type_list";
-            const { error_type, error_type_list, error_type_list_detail, is_active, type_id } = ErrorTypeList
+            const { error_type, error_type_list, error_type_list_detail, is_active, type_id, impact_score } = ErrorTypeList
+
+            // Validate impact_score: ต้องเป็น null หรือ integer 1-5
+            const normalizedImpact: number | null =
+                impact_score === null || impact_score === undefined
+                    ? null
+                    : Number.isInteger(Number(impact_score)) && Number(impact_score) >= 1 && Number(impact_score) <= 5
+                        ? Number(impact_score)
+                        : NaN;
+            if (Number.isNaN(normalizedImpact)) {
+                set.status = StatusCodes.BAD_REQUEST;
+                return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Invalid impact_score (ต้องเป็น null หรือ 1-5)` };
+            }
+
             const formSaveData = {
                 error_type: error_type,
                 error_type_list: error_type_list,
                 error_type_list_detail: error_type_list_detail,
-                is_active: is_active
+                is_active: is_active,
+                impact_score: normalizedImpact
             }
             if (type_id === 0) {
                 const savedErrorTypeList = await mederror.saveData(tableName, formSaveData)
@@ -461,7 +476,7 @@ MedErrorRoute.delete('/delete-error-type-list', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -527,7 +542,7 @@ MedErrorRoute.get('/person', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -593,7 +608,7 @@ MedErrorRoute.post('/create-person', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -673,7 +688,7 @@ MedErrorRoute.delete('/delete-person', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -741,7 +756,7 @@ MedErrorRoute.get('/get-dept', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -808,7 +823,7 @@ MedErrorRoute.post('/create-dept', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -905,7 +920,7 @@ MedErrorRoute.delete('/delete-dept', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -972,7 +987,7 @@ MedErrorRoute.get('/get-analysis', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         // const originAllow = headers.get("origin")
         let originAllow = headers.get("origin");
@@ -1039,7 +1054,7 @@ MedErrorRoute.post('/create-analysis', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -1125,7 +1140,7 @@ MedErrorRoute.delete('/delete-analysis', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -1192,7 +1207,7 @@ MedErrorRoute.get('/med-error', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -1278,7 +1293,7 @@ MedErrorRoute.post('/med-error', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -1409,7 +1424,7 @@ MedErrorRoute.delete('/med-error', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -1484,7 +1499,7 @@ MedErrorRoute.put('/med-error', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 
@@ -1563,7 +1578,7 @@ MedErrorRoute.get('/get-patient-info', async ({
 }) => {
     try {
         const headers = request.headers
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 

@@ -4,6 +4,7 @@ export const API_ROUTE = {
   AUTH: `${API_BASE}/auth/login`,
   REFRESH: `${API_BASE}/auth/refresh`,
   PROFILE: `${API_BASE}/auth/profile`,
+  LOGOUT: `${API_BASE}/auth/logout`,
   DOCTOR_ALL: `${API_BASE}/med-error/doctor`,
   PERSON_ALL: `${API_BASE}/med-error/person`,
   DRUGITEM_ALL: `${API_BASE}/med-error/drugitems`,

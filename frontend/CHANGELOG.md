@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-05-11
+
+### เปลี่ยนกลไก Authentication เป็น HTTP-only Cookie
+- `libs/Auth.js`:
+  - `storeTokenInLocalStorage` / `getTokenFromLocalStorage` / `removeTokenFromLocalStorage` กลายเป็น **no-op** (token อยู่ใน HTTP-only cookie ฝั่ง browser อ่านไม่ได้)
+  - `verifyToken(token)` ไม่ bail เมื่อ token=null อีกต่อไป — เรียก `/auth/profile` พร้อม cookie (browser ส่งให้อัตโนมัติ)
+  - เพิ่ม `logout()` เรียก `POST /auth/logout` ให้ backend เคลียร์ cookie
+  - ทุก request ใส่ `withCredentials: true` ให้ axios ส่ง cookie อัตโนมัติ
+- `AuthContext`:
+  - เลิกเก็บ token ใน `localStorage` ตอน login (cookie เป็น source of truth)
+  - `logout()` เรียก backend แล้วล้าง state ฝั่ง client
+  - `useEffect` initial profile call ใช้ cookie ไม่ต้องอ่าน localStorage
+- `LoginForm`: auto-verify session ตอน mount โดยใช้ cookie โดยตรง — ถ้ามี session valid → redirect; ถ้าไม่มี → แสดงฟอร์ม
+- เพิ่ม `API_ROUTE.LOGOUT` ใน `utils/constants.js`
+- 17 ไฟล์ pages/sections ที่เรียก `getTokenFromLocalStorage` ทำงานต่อได้โดยไม่ต้องแก้ — ฟังก์ชันคืน `null` ทำให้ component path ที่ส่ง token ไป API ก็ใช้ได้, cookie auth ทำหน้าที่จริง
+
+### เพิ่มรายงานคู่ยาคลาดเคลื่อน (ReportSummary4)
+- เปิดใช้งานแท็บ "คู่ยาคลาดเคลื่อน" ในหน้ารายงาน (เดิม comment ทิ้งไว้)
+- เขียน `sections/reports/ReportSummary4.js` ใหม่ทั้งไฟล์:
+  - 2 sub-tabs: **คู่ยาที่จัดคลาดเคลื่อน** (Dispensing) / **คู่ยาที่คีย์คลาดเคลื่อน** (Processing)
+  - 3 คอลัมน์: ชื่อยาที่ถูก / ชื่อยาที่คลาดเคลื่อน / จำนวนอุบัติการณ์
+  - เรียงจากจำนวนมาก → น้อย, รองรับช่วงวันที่ + ค้นหาชื่อยา + pagination
+  - สถานะ loading / empty state ครบ
+- เพิ่ม `getDrugPairSummary(token, { firstDate, lastDate, pairType })` ใน `libs/MedError.js`
+
+### Impact Score ในหน้า "ข้อมูลรายละเอียดประเภท Error"
+- `pages/ErrorTypePage.js`:
+  - เพิ่มคอลัมน์ **Impact** ในตาราง แสดง Chip สีตามระดับ (1-2 เขียว, 3 เหลือง, 4 ส้ม, 5 แดง) — `null` แสดง "—"
+  - เพิ่ม `<Select>` "คะแนน Impact (1-5)" ในฟอร์ม พร้อม MenuItem ระบุระดับ (ต่ำมาก/ต่ำ/ปานกลาง/สูง/สูงมาก) + ตัวเลือก "ไม่ระบุ"
+  - Zod schema ตรวจค่าให้เป็น integer 1-5 หรือ null
+  - `handleEdit` รวม `impact_score` ใน formEditData
+
 ## [1.12.1] - 2026-04-29
 
 ### ปรับโทนสี + Animate UI Layout

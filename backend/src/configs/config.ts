@@ -28,6 +28,12 @@ const config = {
     MOPH_APT_URL: process.env.MOPH_APT_URL ?? "",
     MOPH_CLIENT_ID: process.env.MOPH_CLIENT_ID ?? "",
     MOPH_SECRET_ID: process.env.MOPH_SECRET_ID ?? "",
+
+    // Cookie auth settings — intranet HTTP ใช้ secure=false, online HTTPS ใช้ true
+    cookieSecure: process.env.COOKIE_SECURE === 'true',
+    cookieSameSite: (process.env.COOKIE_SAMESITE || 'lax') as 'lax' | 'strict' | 'none',
+    cookieMaxAgeSec: Number(process.env.COOKIE_MAX_AGE_SEC || 86400),
+    cookieName: process.env.COOKIE_NAME || 'access_token',
 };
 
 export default config;

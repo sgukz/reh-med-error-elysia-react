@@ -18,6 +18,7 @@ import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
 // Section Report
 import ReportSummary1 from '../sections/reports/ReportSummary1';
 import ReportSummary3 from '../sections/reports/ReportSummary3';
+import ReportSummary4 from '../sections/reports/ReportSummary4';
 import ReportSummary7 from '../sections/reports/ReportSummary7';
 import ReportSummary8 from '../sections/reports/ReportSummary8';
 
@@ -67,7 +68,7 @@ export default function ReportPage() {
                   <Tab label="แยกตามสถานที่เกิดเหตุ" value="1" />
                   {/* <Tab label="สรุปอุบัติการณ์ความคลาดเคลื่อนหน่วยงานที่พบ" value="2" /> */}
                   <Tab label="หน่วยงานที่เกิดอุบัติการณ์" value="3" />
-                  {/* <Tab label="คู่ยาที่มีความคลาดเคลื่อน (Pending)" value="4" /> */}
+                  <Tab label="คู่ยาคลาดเคลื่อน" value="4" />
                   {/* <Tab label="สรุปอุบัติการณ์ความคลาดเคลื่อนแยก OPD - IPD - ผลิต - คลัง" value="5" /> */}
                   {/* <Tab label="สรุปอุบัติการณ์ที่ได้ RCA แล้ว (Pending)" value="6" /> */}
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />
@@ -83,9 +84,9 @@ export default function ReportPage() {
               <TabPanel value="3">
                 <ReportSummary3 />
               </TabPanel>
-              {/* <TabPanel value="4">
+              <TabPanel value="4">
                 <ReportSummary4 />
-              </TabPanel> */}
+              </TabPanel>
               {/* <TabPanel value="5">
                 <ReportSummary5 />
               </TabPanel> */}

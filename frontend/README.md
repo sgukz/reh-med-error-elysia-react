@@ -6,8 +6,9 @@
 
 - **Medication Error Reporting**: บันทึกข้อมูลความคลาดเคลื่อนทางยาอย่างละเอียด (วันที่, เวลา, สถานที่, ประเภท Error, ระดับความรุนแรง)
 - **Dashboard & Analytics**: แสดงผลข้อมูลสรุปสำหรับผู้บริหาร (Executive Summary) และกราฟแสดงแนวโน้ม
-- **Master Data Management**: จัดการข้อมูลพื้นฐาน เช่น หอผู้ป่วย (Ward), ประเภท Error, และการวิเคราะห์สาเหตุ (RCA)
-- **Authentication & Authorization**: ระบบจัดการสิทธิ์ผู้ใช้งาน (User & Admin roles)
+- **Drug Pair Reports (v1.13.0+)**: รายงานคู่ยาคลาดเคลื่อนแยก "จัดคลาดเคลื่อน" และ "คีย์คลาดเคลื่อน" พร้อมจำนวนอุบัติการณ์เรียงจากมาก → น้อย
+- **Master Data Management**: จัดการข้อมูลพื้นฐาน เช่น หอผู้ป่วย (Ward), ประเภท Error พร้อม **คะแนน Impact (1-5)** สำหรับประเมินความเสี่ยง, และการวิเคราะห์สาเหตุ (RCA)
+- **Authentication & Authorization**: ระบบจัดการสิทธิ์ผู้ใช้งาน (User & Admin roles) — **HTTP-only cookie (v1.13.0+)** ลดความเสี่ยง XSS
 - **LINE OA Integration**: รองรับการแจ้งเตือนและการตอบกลับผ่าน LINE Official Account
 - **Export Data**: รองรับการส่งออกข้อมูลเพื่อนำไปวิเคราะห์ต่อ
 

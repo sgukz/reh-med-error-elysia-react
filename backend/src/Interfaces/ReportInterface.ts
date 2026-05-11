@@ -30,3 +30,16 @@ export interface GetMedErrorSummary8Options {
     errorAlert?: string;
 
 }
+
+// คู่ยาที่คลาดเคลื่อน — ใช้กับ /reports/drug-pair-summary
+export interface GetDrugPairReportOptions {
+    firstDate: string; // YYYY-MM-DD
+    lastDate: string;   // YYYY-MM-DD
+    pairType: 'dispensing' | 'processing'; // dispensing=type 2 (จัด), processing=type 5 (คีย์)
+}
+
+export interface DrugPairRow {
+    drug_right: string;
+    drug_wrong: string;
+    count: number;
+}

@@ -228,6 +228,19 @@ export const getReportSummary3 = buildReportSummary('summary3');
 export const getReportSummary5 = buildReportSummary('summary5');
 export const getReportSummary7 = buildReportSummary('summary7');
 
+// คู่ยาที่คลาดเคลื่อน — pairType: 'dispensing' (จัด) | 'processing' (คีย์)
+export function getDrugPairSummary(token, { firstDate, lastDate, pairType }) {
+  const params = new URLSearchParams();
+  if (firstDate) params.append('firstDate', firstDate);
+  if (lastDate) params.append('lastDate', lastDate);
+  if (pairType) params.append('pairType', pairType);
+  return axios({
+    method: API_METHOD.GET,
+    url: `${API_ROUTE.REPORT_MEDERROR}/drug-pair-summary?${params.toString()}`,
+    headers: authHeader(token),
+  });
+}
+
 // summary8 มีพารามิเตอร์ extra ที่ต้องส่งแม้ค่าว่างเพื่อ backend
 export function getReportSummary8(token, conditional) {
   const { firstDate, lastDate, depCode, errorType, errorLevel, errorAlert } = conditional ?? {};

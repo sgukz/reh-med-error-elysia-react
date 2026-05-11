@@ -17,7 +17,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import LoadingButton from '@mui/lab/LoadingButton';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage, removeTokenFromLocalStorage } from '../../../libs/Auth';
+import { verifyToken, removeTokenFromLocalStorage } from '../../../libs/Auth';
 
 // Route API
 import { API_ROUTE } from '../../../utils/constants';
@@ -132,30 +132,21 @@ export default function LoginForm() {
     let cancelled = false;
 
     async function checkVerifyToken() {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      if (!auth_token) return;
       try {
-        setIsLoading(true);
-        const verify = await verifyToken(auth_token);
-        if (cancelled || !verify) {
-          safeSetState(setIsLoading, false);
-          return;
-        }
-        const { statusCode, profile, access_token } = verify;
-        if (statusCode === 200 && profile && access_token) {
+        // cookie จะถูกส่งให้ backend อัตโนมัติ ไม่ต้องอ่านจาก localStorage
+        const verify = await verifyToken(null);
+        if (cancelled || !verify) return;
+        const { statusCode, profile } = verify;
+        if (statusCode === 200 && profile) {
           safeSetState(setOpen, true);
           safeSetState(setLoadingMessage, 'กำลังไปยังหน้าหลัก...');
-          safeSetState(setIsLoading, false);
           scheduleTimer(() => navigate('/lists/med', { replace: true }), 800);
         } else {
-          safeSetState(setOpen, false);
-          safeSetState(setIsLoading, false);
+          // ยังไม่ได้ login — เคลียร์ค่าเก่าใน localStorage เผื่อมีตกค้าง
           removeTokenFromLocalStorage('access_token');
         }
       } catch (error) {
-        safeSetState(setIsLoading, false);
-        safeSetState(setOpen, false);
-        // token ไม่ valid → ล้างทิ้ง ไม่ต้องแจ้ง user
+        // token ไม่ valid / ยังไม่ได้ login → ล้างทิ้ง ไม่ต้องแจ้ง user
         removeTokenFromLocalStorage('access_token');
       }
     }

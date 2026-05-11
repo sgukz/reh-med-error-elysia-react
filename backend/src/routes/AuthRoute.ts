@@ -4,6 +4,7 @@ import { StatusCodes, getReasonPhrase } from "http-status-codes";
 
 import config from "../configs/config";
 import { DBMain, DBSec } from '../plugins/db'
+import { readAuthTokenFromHeaders, setAuthCookie, clearAuthCookie } from '../plugins/auth';
 import AuthModel from "../models/AuthModel";
 import HISModel from "../models/HISModel";
 import MedErrorModel from "../models/MedErrorModel";
@@ -51,7 +52,7 @@ function resolveOrigin(headers: Headers): string | null {
 }
 
 // เข้าสู่ระบบ (Login)
-AuthRoute.post("/login", async ({ jwt, request, body, set }: any) => {
+AuthRoute.post("/login", async ({ jwt, request, body, set, cookie }: any) => {
     try {
         const headers = request.headers;
         const { userName, userPass } = body as { userName: string, userPass: string };
@@ -111,6 +112,9 @@ AuthRoute.post("/login", async ({ jwt, request, body, set }: any) => {
             rule: rule ?? null,
         };
         const token = await jwt.sign(opduserObj);
+        setAuthCookie(cookie, token);
+        // ระหว่างเปลี่ยนผ่าน ส่ง access_token กลับใน body ด้วยเพื่อให้ frontend เวอร์ชันเก่ายังใช้ได้
+        // หลัง migrate frontend เสร็จ สามารถลบ access_token ใน body ได้
         return { statusCode: StatusCodes.OK, access_token: token };
     } catch (error) {
         console.error("[Auth] /login error");
@@ -120,10 +124,10 @@ AuthRoute.post("/login", async ({ jwt, request, body, set }: any) => {
 });
 
 // Refresh Token
-AuthRoute.post("/refresh", async ({ jwt, request, set }: any) => {
+AuthRoute.post("/refresh", async ({ jwt, request, set, cookie }: any) => {
     try {
         const headers = request.headers;
-        const refreshToken = headers.get('authorization')?.split(" ")[1] || '';
+        const refreshToken = readAuthTokenFromHeaders(headers) || '';
         const client_id = headers.get('client-id') || '';
         const origin = resolveOrigin(headers);
 
@@ -151,6 +155,7 @@ AuthRoute.post("/refresh", async ({ jwt, request, set }: any) => {
             // ลบ exp/iat ก่อน sign ใหม่ ป้องกันค่าค้างจาก token เดิม
             const { exp, iat, ...payload } = decoded as any;
             const newAccessToken = await jwt.sign(payload);
+            setAuthCookie(cookie, newAccessToken);
             return { statusCode: StatusCodes.OK, access_token: newAccessToken };
         } catch {
             set.status = StatusCodes.UNAUTHORIZED;
@@ -167,7 +172,7 @@ AuthRoute.post("/refresh", async ({ jwt, request, set }: any) => {
 AuthRoute.post('/profile', async ({ jwt, set, request }: any) => {
     try {
         const headers = request.headers;
-        const token = headers.get('authorization')?.split(" ")[1] || '';
+        const token = readAuthTokenFromHeaders(headers) || '';
         const clientId = headers.get("client-id");
         const originAllow = resolveOrigin(headers);
 
@@ -195,6 +200,19 @@ AuthRoute.post('/profile', async ({ jwt, set, request }: any) => {
         return { statusCode: StatusCodes.OK, profile: payload, access_token: token };
     } catch (error) {
         console.error("[Auth] /profile error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
+    }
+});
+
+// Logout — เคลียร์ cookie ฝั่ง browser
+AuthRoute.post("/logout", async ({ set, cookie }: any) => {
+    try {
+        clearAuthCookie(cookie);
+        set.status = StatusCodes.OK;
+        return { statusCode: StatusCodes.OK };
+    } catch (error) {
+        console.error("[Auth] /logout error");
         set.status = StatusCodes.INTERNAL_SERVER_ERROR;
         return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };
     }

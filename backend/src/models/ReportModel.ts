@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 
-import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options } from '../Interfaces/ReportInterface'
+import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions } from '../Interfaces/ReportInterface'
 
 export default class ReportModel {
     private db: Knex;
@@ -285,6 +285,33 @@ export default class ReportModel {
         }
 
         return await query
+    }
+
+    // คู่ยาที่คลาดเคลื่อน — group by (ยาที่ถูก, ยาที่คลาดเคลื่อน), เรียง count desc
+    async getDrugPairSummary(options: GetDrugPairReportOptions) {
+        const { firstDate, lastDate, pairType } = options;
+
+        // map pairType → (error_type, ฟิลด์คู่)
+        // dispensing (จัด)  = error_type 2 → ใช้ error_prescription_right/wrong
+        // processing (คีย์) = error_type 5 → ใช้ error_processing_right/wrong
+        const config = pairType === 'processing'
+            ? { errorType: 5, fieldRight: 'error_processing_right', fieldWrong: 'error_processing_wrong' }
+            : { errorType: 2, fieldRight: 'error_prescription_right', fieldWrong: 'error_prescription_wrong' };
+
+        const { errorType, fieldRight, fieldWrong } = config;
+
+        return await this.db('med_error as m')
+            .select(
+                this.db.raw(`TRIM(m.${fieldRight}) as drug_right`),
+                this.db.raw(`TRIM(m.${fieldWrong}) as drug_wrong`),
+                this.db.raw('COUNT(*) as count')
+            )
+            .where('m.error_type', errorType)
+            .andWhereBetween('m.error_date', [firstDate, lastDate])
+            .andWhereRaw(`m.${fieldRight} IS NOT NULL AND TRIM(m.${fieldRight}) <> ''`)
+            .andWhereRaw(`m.${fieldWrong} IS NOT NULL AND TRIM(m.${fieldWrong}) <> ''`)
+            .groupByRaw(`TRIM(m.${fieldRight}), TRIM(m.${fieldWrong})`)
+            .orderBy('count', 'desc');
     }
 
 }

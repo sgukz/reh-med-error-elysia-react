@@ -1,248 +1,244 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import _ from 'lodash';
 import { useNavigate } from 'react-router-dom';
+
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { th } from 'date-fns/locale';
 import dayjs from 'dayjs';
 
-import { getReportSummary1 } from '../../libs/MedError';
-
-// Lib Auth
+import Scrollbar from '../../components/scrollbar';
+import { getDrugPairSummary } from '../../libs/MedError';
 import { verifyToken, getTokenFromLocalStorage } from '../../libs/Auth';
-
-// Utils
 import { formatDateTime, formatDateEN } from '../../utils/formatTime';
+
+const PAIR_TABS = [
+  { value: 'dispensing', label: 'คู่ยาที่จัดคลาดเคลื่อน' },
+  { value: 'processing', label: 'คู่ยาที่คีย์คลาดเคลื่อน' },
+];
 
 const ReportSummary4 = () => {
   const navigate = useNavigate();
 
-  const todayDate = dayjs();
-  const startOfMonth = todayDate.startOf('month');
+  const today = dayjs();
+  const startOfMonth = today.startOf('month');
+
   const [firstDate, setFirstDate] = useState(startOfMonth);
-  const [lastDate, setLastDate] = useState(todayDate);
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [lastDate, setLastDate] = useState(today);
   const [dateFilter, setDateFilter] = useState({
-    firstDate: formatDateEN(dayjs().startOf('month')),
-    lastDate: formatDateEN(dayjs()), // วันนี้
+    firstDate: formatDateEN(startOfMonth),
+    lastDate: formatDateEN(today),
   });
+
+  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [pairType, setPairType] = useState('dispensing');
+  const [searchText, setSearchText] = useState('');
+  const [rows, setRows] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const loadRows = useCallback(async (authToken, range, type) => {
+    if (!authToken || !range?.firstDate || !range?.lastDate) return;
+    setIsLoading(true);
+    try {
+      const res = await getDrugPairSummary(authToken, {
+        firstDate: range.firstDate,
+        lastDate: range.lastDate,
+        pairType: type,
+      });
+      const { statusCode, reportList } = res.data ?? {};
+      setRows(statusCode === 200 && Array.isArray(reportList) ? reportList : []);
+    } catch (err) {
+      setRows([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleFirstDateChange = (newDate) => {
     setFirstDate(newDate);
-    sendRange(newDate, lastDate);
+    if (newDate && lastDate) {
+      const next = { firstDate: formatDateEN(newDate), lastDate: formatDateEN(lastDate) };
+      setDateFilter(next);
+      setPage(0);
+      loadRows(token, next, pairType);
+    }
   };
 
   const handleLastDateChange = (newDate) => {
     setLastDate(newDate);
-    sendRange(firstDate, newDate);
-  };
-
-  const sendRange = (start, end) => {
-    if (start && end) {
-      const formatted = {
-        firstDate: formatDateEN(start),
-        lastDate: formatDateEN(end),
-      };
-
-      setDateFilter(formatted);
-      loadReportResult(token, formatted);
+    if (firstDate && newDate) {
+      const next = { firstDate: formatDateEN(firstDate), lastDate: formatDateEN(newDate) };
+      setDateFilter(next);
+      setPage(0);
+      loadRows(token, next, pairType);
     }
   };
 
-  const loadReportResult = async (auth_token, startAndEndDateOrDepcode) => {
-    const GetReportSummary1 = await getReportSummary1(auth_token || token, startAndEndDateOrDepcode);
-    const { statusCode, reportList } = GetReportSummary1.data;
-    if (statusCode === 200 && !_.isEmpty(reportList)) {
-      // (ตารางถูก comment ออกในเทมเพลตนี้ – คงโครงไว้สำหรับเปิดใช้ในอนาคต)
-    }
+  const handlePairChange = (_event, newValue) => {
+    setPairType(newValue);
+    setPage(0);
+    loadRows(token, dateFilter, newValue);
   };
 
   useEffect(() => {
     async function checkVerifyToken() {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, access_token } = verify;
-      if (statusCode === 200 && access_token) {
-        if (access_token) {
-          setToken(access_token);
-          // loadReportResult(access_token, dateFilter);
-        }
+      const authToken = getTokenFromLocalStorage('access_token');
+      const verify = await verifyToken(authToken);
+      const { statusCode, access_token: newToken } = verify ?? {};
+      if (statusCode === 200 && newToken) {
+        setToken(newToken);
+        loadRows(newToken, dateFilter, pairType);
       } else {
         navigate('/login', { replace: true });
       }
     }
     checkVerifyToken();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const normalizedSearch = searchText.trim().toLowerCase();
+  const filteredRows = normalizedSearch
+    ? rows.filter(
+        (r) =>
+          (r.drug_right || '').toLowerCase().includes(normalizedSearch) ||
+          (r.drug_wrong || '').toLowerCase().includes(normalizedSearch)
+      )
+    : rows;
+
+  const visibleRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const dateLabel =
+    dateFilter.firstDate === dateFilter.lastDate
+      ? formatDateTime(dateFilter.firstDate)
+      : `${formatDateTime(dateFilter.firstDate)} - ${formatDateTime(dateFilter.lastDate)}`;
+
   return (
     <Box>
-      <Stack direction={'column'}>
+      <Stack direction="column">
         <Typography variant="h6">คู่ยาที่มีความคลาดเคลื่อน</Typography>
       </Stack>
-      <Stack spacing={2} direction={'row'} sx={{ mb: 2, py: 3 }}>
+
+      <Stack spacing={2} direction="row" sx={{ mb: 2, py: 3 }}>
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <DatePicker
-                label="วันที่"
-                value={firstDate}
-                onChange={handleFirstDateChange}
-                inputFormat="d MMMM yyyy"
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    value={firstDate}
-                    size="small"
-                    fullWidth
-                    onClick={params.inputProps.onClick}
-                    readOnly
-                  />
-                )}
-              />
-              <DatePicker
-                label="ถึงวันที่"
-                value={lastDate}
-                onChange={handleLastDateChange}
-                inputFormat="d MMMM yyyy"
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    value={lastDate}
-                    size="small"
-                    fullWidth
-                    onClick={params.inputProps.onClick}
-                    readOnly
-                  />
-                )}
-              />
-            </Box>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <DatePicker
+              label="วันที่"
+              value={firstDate}
+              onChange={handleFirstDateChange}
+              inputFormat="d MMMM yyyy"
+              renderInput={(params) => <TextField {...params} size="small" fullWidth readOnly />}
+            />
+            <DatePicker
+              label="ถึงวันที่"
+              value={lastDate}
+              onChange={handleLastDateChange}
+              inputFormat="d MMMM yyyy"
+              renderInput={(params) => <TextField {...params} size="small" fullWidth readOnly />}
+            />
           </Box>
         </LocalizationProvider>
+
+        <TextField
+          size="small"
+          placeholder="ค้นหาชื่อยา..."
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            setPage(0);
+          }}
+          sx={{ minWidth: 240 }}
+        />
       </Stack>
-      <Box>
-        <Stack direction={'column'} sx={{ mb: 2 }}>
-          <Typography variant="h6">ตารางสรุปคู่ยาที่มีความคลาดเคลื่อน</Typography>
-          <Typography variant="body1" style={{ fontSize: 14 }}>
-            {`ข้อมูลวันที่ ${
-              dateFilter?.firstDate === dateFilter?.lastDate
-                ? formatDateTime(dateFilter?.firstDate)
-                : `${formatDateTime(dateFilter?.firstDate)} - ${formatDateTime(dateFilter?.lastDate)}`
-            }`}
-          </Typography>
-        </Stack>
-        {/* <Scrollbar>
-          <TableContainer component={Paper}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell rowSpan={4} align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      หน่วยงาน
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell colSpan={3} align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      จำนวน
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell colSpan={18} align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      ระดับความรุนแรง
-                    </Typography>
-                  </StyledTableCell>
-                </TableRow>
-                <TableRow>
-                  <StyledTableCell rowSpan={3} align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: 12 }}>
-                      HAD
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell rowSpan={3} align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: 12 }}>
-                      ทั่วไป
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell rowSpan={3} align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: 12 }}>
-                      รวม
-                    </Typography>
-                  </StyledTableCell>
-                </TableRow>
-                <TableRow>
-                  {severityLevels.map((level) => (
-                    <Fragment key={level}>
-                      <StyledTableCell align="center" colSpan={2}>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: 14 }}>
-                          {level}
-                        </Typography>
-                      </StyledTableCell>
-                    </Fragment>
-                  ))}
-                </TableRow>
-                <TableRow>
-                  {severityLevels.map((level) => (
-                    <Fragment key={level}>
-                      <StyledTableCell align="center">
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: 12 }}>
-                          HAD
-                        </Typography>
-                      </StyledTableCell>
-                      <StyledTableCell align="center">
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: 12 }}>
-                          ทั่วไป
-                        </Typography>
-                      </StyledTableCell>
-                    </Fragment>
-                  ))}
-                </TableRow>
-              </TableHead>
+
+      <Tabs value={pairType} onChange={handlePairChange} sx={{ mb: 2 }}>
+        {PAIR_TABS.map((tab) => (
+          <Tab key={tab.value} value={tab.value} label={tab.label} />
+        ))}
+      </Tabs>
+
+      <Stack direction="column" sx={{ mb: 2 }}>
+        <Typography variant="h6">
+          {PAIR_TABS.find((t) => t.value === pairType)?.label}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {`ข้อมูลวันที่ ${dateLabel}`}
+        </Typography>
+      </Stack>
+
+      <Scrollbar>
+        <TableContainer component={Paper}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold' }}>ชื่อยาที่ถูก</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>ชื่อยาที่คลาดเคลื่อน</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold', width: 160 }}>
+                  จำนวนอุบัติการณ์
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {isLoading ? (
-                <TableBody>
-                  <TableRow>
-                    <TableCell align="center" colSpan={22}>
-                      <CircularProgress color="inherit" sx={{ mr: 1 }} />
-                      <Typography variant="body1">{'กำลังโหลดข้อมูล...'}</Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
+                <TableRow>
+                  <TableCell align="center" colSpan={3}>
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    <Typography variant="body2" component="span">
+                      กำลังโหลดข้อมูล...
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : _.isEmpty(filteredRows) ? (
+                <TableRow>
+                  <TableCell align="center" colSpan={3} sx={{ py: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      ไม่มีข้อมูลในช่วงเวลาที่เลือก
+                    </Typography>
+                  </TableCell>
+                </TableRow>
               ) : (
-                <TableBody>
-                  {dataReport.map((_report, index) => (
-                    <StyledTableRow key={index}>
-                      <TableCell>{_report.med_error_depname}</TableCell>
-                      <TableCell align="center">{_report.had_total}</TableCell>
-                      <TableCell align="center">{_report.non_had_total}</TableCell>
-                      <TableCell align="center">{_report.total}</TableCell>
-                      <TableCell align="center">{_report.had_a}</TableCell>
-                      <TableCell align="center">{_report.non_had_a}</TableCell>
-                      <TableCell align="center">{_report.had_b}</TableCell>
-                      <TableCell align="center">{_report.non_had_b}</TableCell>
-                      <TableCell align="center">{_report.had_c}</TableCell>
-                      <TableCell align="center">{_report.non_had_c}</TableCell>
-                      <TableCell align="center">{_report.had_d}</TableCell>
-                      <TableCell align="center">{_report.non_had_d}</TableCell>
-                      <TableCell align="center">{_report.had_e}</TableCell>
-                      <TableCell align="center">{_report.non_had_e}</TableCell>
-                      <TableCell align="center">{_report.had_f}</TableCell>
-                      <TableCell align="center">{_report.non_had_f}</TableCell>
-                      <TableCell align="center">{_report.had_g}</TableCell>
-                      <TableCell align="center">{_report.non_had_g}</TableCell>
-                      <TableCell align="center">{_report.had_h}</TableCell>
-                      <TableCell align="center">{_report.non_had_h}</TableCell>
-                      <TableCell align="center">{_report.had_i}</TableCell>
-                      <TableCell align="center">{_report.non_had_i}</TableCell>
-                    </StyledTableRow>
-                  ))}
-                </TableBody>
+                visibleRows.map((row, idx) => (
+                  <TableRow key={`${row.drug_right}__${row.drug_wrong}__${idx}`} hover>
+                    <TableCell>{row.drug_right}</TableCell>
+                    <TableCell>{row.drug_wrong}</TableCell>
+                    <TableCell align="center">{row.count}</TableCell>
+                  </TableRow>
+                ))
               )}
-            </Table>
-          </TableContainer>
-        </Scrollbar> */}
-      </Box>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Scrollbar>
+
+      <TablePagination
+        rowsPerPageOptions={[10, 25, 50, 100]}
+        component="div"
+        count={filteredRows.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={(_e, newPage) => setPage(newPage)}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+      />
     </Box>
   );
 };

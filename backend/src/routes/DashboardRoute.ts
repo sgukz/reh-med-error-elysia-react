@@ -14,6 +14,7 @@ import DashboardModel from "../models/DashboardModel";
 import { SummaryFromMedError } from '../Interfaces/DashboardInterface'
 import _ from "lodash";
 import 'moment/locale/th'; // นำเข้า locale ภาษาไทย
+import { readAuthTokenFromHeaders } from '../plugins/auth';
 
 // ตั้ง locale เป็นไทย
 moment.locale('th');
@@ -41,7 +42,7 @@ DashboardRoute.get('/mederror', async ({
     try {
         const headers = request.headers
         const { firstDate, lastDate } = query as SummaryFromMedError
-        const token = headers.get('authorization')?.split(" ")[1]
+        const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
 

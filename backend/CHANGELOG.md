@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-05-11
+
+### Added — Cookie-based Authentication (เปลี่ยนกลไก auth ไปใช้ HTTP-only cookie)
+- เพิ่ม `src/plugins/auth.ts` รวม helper:
+  - `readAuthTokenFromHeaders(headers)` — อ่าน token จาก Authorization header → fallback Cookie header
+  - `setAuthCookie(cookie, token)` — set cookie พร้อม options ครบ (HttpOnly + Secure + SameSite + Path + MaxAge)
+  - `clearAuthCookie(cookie)` — เคลียร์ cookie ตอน logout
+- `/auth/login`: หลัง sign JWT สำเร็จ set HTTP-only cookie ชื่อ `access_token` ให้ browser อัตโนมัติ (ยัง return `access_token` ใน body ระหว่าง transition)
+- `/auth/refresh`: อ่าน token จาก cookie/header → sign ใหม่ → set cookie ใหม่
+- `/auth/profile`: อ่าน token จาก cookie/header (สอดคล้องกับ login flow)
+- **เพิ่ม `/auth/logout`** — POST endpoint สำหรับเคลียร์ HTTP-only cookie
+- ทุก protected route (`MedErrorRoute`, `ReportRoute`, `DashboardRoute`) เปลี่ยนจาก `headers.get('authorization')?.split(" ")[1]` เป็น `readAuthTokenFromHeaders(headers)` รองรับทั้ง cookie + header
+
+### Added — รายงานคู่ยาคลาดเคลื่อน (Drug Pair Reports)
+- เพิ่ม `GetDrugPairReportOptions` + `DrugPairRow` ใน `ReportInterface.ts`
+- เพิ่ม `ReportModel.getDrugPairSummary({ firstDate, lastDate, pairType })` — group by (ยาที่ถูก, ยาที่คลาดเคลื่อน) → COUNT(*) → ORDER BY count DESC
+- เพิ่ม endpoint `GET /reports/drug-pair-summary` รับ `pairType=dispensing` (error_type=2, ใช้ field `error_prescription_right/wrong`) หรือ `pairType=processing` (error_type=5, ใช้ `error_processing_right/wrong`)
+
+### Added — Impact Score ในประเภท Error
+- เพิ่ม column `impact_score TINYINT NULL` ใน `med_error_type_list` (migration: `migrations/2026-05-11_add_impact_score_to_med_error_type_list.sql`)
+- `TypeErrorListCreate` interface เพิ่ม `impact_score: number | null`
+- `MedErrorModel.getErrorTypeByTypeList` (branch จัดการข้อมูล) SELECT `impact_score` ด้วย
+- `POST /med-error/create-error-type-list` validate `impact_score` ต้องเป็น `null` หรือ integer 1-5 (คืน 400 ถ้าผิดรูปแบบ)
+- เพิ่ม `scripts/run-impact-score-migration.ts` — Bun script รัน ALTER TABLE แบบ idempotent (เช็ค column ก่อน), พิมพ์ schema verify หลัง migrate
+
+### Configuration
+- เพิ่ม env flags สำหรับ cookie ใน `config.ts`:
+  - `COOKIE_SECURE` (default `false` สำหรับ intranet HTTP, ตั้ง `true` เมื่อขึ้น HTTPS)
+  - `COOKIE_SAMESITE` (default `lax`, เปลี่ยนเป็น `none` สำหรับ cross-origin)
+  - `COOKIE_MAX_AGE_SEC` (default `86400` ตรงกับ JWT exp)
+  - `COOKIE_NAME` (default `access_token`)
+- อัปเดต `.env.development` เพิ่มตัวอย่างค่า cookie (ค่าทั้งหมดอยู่ใน `.env*` ไม่ commit)
+
 ## [1.4.0] - 2026-04-28
 
 ### ความปลอดภัย (Security – OWASP Top 10)
