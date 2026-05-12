@@ -11,6 +11,7 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import Chip from '@mui/material/Chip';
 
 // Lib Auth
 import { verifyToken } from '../libs/Auth';
@@ -67,7 +68,15 @@ export default function ReportPage() {
                   <Tab label="แยกตามสถานที่เกิดเหตุ" value="1" />
                   {/* <Tab label="สรุปอุบัติการณ์ความคลาดเคลื่อนหน่วยงานที่พบ" value="2" /> */}
                   <Tab label="หน่วยงานที่เกิดอุบัติการณ์" value="3" />
-                  <Tab label="คู่ยาคลาดเคลื่อน" value="4" />
+                  <Tab 
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <span>คู่ยาคลาดเคลื่อน</span>
+                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
+                      </Stack>
+                    } 
+                    value="4" 
+                  />
                   {/* <Tab label="สรุปอุบัติการณ์ความคลาดเคลื่อนแยก OPD - IPD - ผลิต - คลัง" value="5" /> */}
                   {/* <Tab label="สรุปอุบัติการณ์ที่ได้ RCA แล้ว (Pending)" value="6" /> */}
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />

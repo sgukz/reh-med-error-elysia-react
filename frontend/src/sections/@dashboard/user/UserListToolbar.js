@@ -68,7 +68,7 @@ export default function UserListToolbar({ dateStart, dateEnd, filterName, onFilt
             <DesktopDatePicker
               label="เลือกวันที่เริ่มต้น"
               sx={{ paddingLeft: '8px' }}
-              inputFormat="d MMMM yyyy"
+              inputFormat="d MMMM yyyy" disableMaskedInput
               value={dateStart}
               onChange={(e) => onFilterDate(e, 'dateStart')}
               renderInput={(params) => <TextField {...params} />}
@@ -78,7 +78,7 @@ export default function UserListToolbar({ dateStart, dateEnd, filterName, onFilt
             <DesktopDatePicker
               label="เลือกวันที่สิ้นสุด"
               sx={{ paddingLeft: '8px' }}
-              inputFormat="d MMMM yyyy"
+              inputFormat="d MMMM yyyy" disableMaskedInput
               value={dateEnd}
               onChange={(e) => onFilterDate(e, 'dateEnd')}
               renderInput={(params) => <TextField {...params} />}

@@ -357,7 +357,7 @@ export default function DashboardAppPage() {
                     label="เริ่มต้น"
                     value={firstDate}
                     onChange={handleFirstDateChange}
-                    inputFormat="d MMMM yyyy"
+                    inputFormat="d MMMM yyyy" disableMaskedInput
                     renderInput={(params) => (
                       <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
                     )}
@@ -366,7 +366,7 @@ export default function DashboardAppPage() {
                     label="สิ้นสุด"
                     value={lastDate}
                     onChange={handleLastDateChange}
-                    inputFormat="d MMMM yyyy"
+                    inputFormat="d MMMM yyyy" disableMaskedInput
                     renderInput={(params) => (
                       <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
                     )}

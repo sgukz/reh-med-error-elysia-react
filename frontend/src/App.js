@@ -14,7 +14,10 @@ export default function App() {
   return (
     <AuthProvider>
       <HelmetProvider>
-        <BrowserRouter basename={`${process.env.REACT_APP_BASE_URL}`}>
+        <BrowserRouter 
+          basename={`${process.env.REACT_APP_BASE_URL}`}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <ThemeProvider>
             <ScrollToTop />
             <Router />

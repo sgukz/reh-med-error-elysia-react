@@ -334,7 +334,7 @@ const ReportSummary8 = () => {
                   label="วันที่เริ่มต้น"
                   value={firstDate}
                   onChange={handleFirstDateChange}
-                  inputFormat="d MMMM yyyy"
+                  inputFormat="d MMMM yyyy" disableMaskedInput
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -354,7 +354,7 @@ const ReportSummary8 = () => {
                   label="ถึงวันที่"
                   value={lastDate}
                   onChange={handleLastDateChange}
-                  inputFormat="d MMMM yyyy"
+                  inputFormat="d MMMM yyyy" disableMaskedInput
                   renderInput={(params) => (
                     <TextField
                       {...params}

@@ -1324,7 +1324,7 @@ export default function MedErrorPage() {
                   </InputLabel>
                   <DesktopDatePicker
                     label="วัน/เดือน/ปี ที่พบเหตุการณ์"
-                    inputFormat="d MMMM yyyy"
+                    inputFormat="d MMMM yyyy" disableMaskedInput
                     value={formRegister.error_date}
                     name="error_date"
                     onChange={handleChangeDate}

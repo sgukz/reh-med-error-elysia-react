@@ -117,7 +117,7 @@ const color = red[500];
 const TABLE_HEAD_ERROR_TYPE = [
   { id: 'error_type_name', label: 'ประเภท', alignRight: false, alignHead: 'left' },
   { id: 'error_type_list_detail', label: 'รายละเอียด Error', alignRight: false, alignHead: 'left' },
-  { id: 'impact_score', label: 'Impact', alignRight: false, alignHead: 'center' },
+  { id: 'impact_score', label: (<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>Impact <Chip label="New" color="error" size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 'bold' }} /></span>), alignRight: false, alignHead: 'center' },
   { id: 'is_active', label: 'สถานะ', alignRight: false, alignHead: 'center' },
   { id: '', label: 'จัดการ', alignHead: 'center' },
 ];

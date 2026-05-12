@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -22,8 +23,10 @@ import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { th } from 'date-fns/locale';
 import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
 
 import Scrollbar from '../../components/scrollbar';
+import Iconify from '../../components/iconify';
 import { getDrugPairSummary } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
 import { formatDateTime, formatDateEN } from '../../utils/formatTime';
@@ -124,6 +127,23 @@ const ReportSummary4 = () => {
 
   const visibleRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+  const handleExportExcel = () => {
+    if (_.isEmpty(filteredRows)) return;
+    
+    const dataForExcel = filteredRows.map((row) => ({
+      'ชื่อยาที่ถูก': row.drug_right,
+      'ชื่อยาที่คลาดเคลื่อน': row.drug_wrong,
+      'จำนวนอุบัติการณ์ (ครั้ง)': row.count,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'คู่ยาคลาดเคลื่อน');
+    const pairName = pairType === 'dispensing' ? 'จัดคลาดเคลื่อน' : 'คีย์คลาดเคลื่อน';
+    const fileName = `รายงานคู่ยา${pairName}_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   const dateLabel =
     dateFilter.firstDate === dateFilter.lastDate
       ? formatDateTime(dateFilter.firstDate)
@@ -142,14 +162,14 @@ const ReportSummary4 = () => {
               label="วันที่"
               value={firstDate}
               onChange={handleFirstDateChange}
-              inputFormat="d MMMM yyyy"
+              inputFormat="d MMMM yyyy" disableMaskedInput
               renderInput={(params) => <TextField {...params} size="small" fullWidth readOnly />}
             />
             <DatePicker
               label="ถึงวันที่"
               value={lastDate}
               onChange={handleLastDateChange}
-              inputFormat="d MMMM yyyy"
+              inputFormat="d MMMM yyyy" disableMaskedInput
               renderInput={(params) => <TextField {...params} size="small" fullWidth readOnly />}
             />
           </Box>
@@ -173,13 +193,24 @@ const ReportSummary4 = () => {
         ))}
       </Tabs>
 
-      <Stack direction="column" sx={{ mb: 2 }}>
-        <Typography variant="h6">
-          {PAIR_TABS.find((t) => t.value === pairType)?.label}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {`ข้อมูลวันที่ ${dateLabel}`}
-        </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+        <Stack direction="column">
+          <Typography variant="h6">
+            {PAIR_TABS.find((t) => t.value === pairType)?.label}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {`ข้อมูลวันที่ ${dateLabel}`}
+          </Typography>
+        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<Iconify icon="eva:file-text-fill" />}
+          onClick={handleExportExcel}
+          disabled={_.isEmpty(filteredRows)}
+          color={_.isEmpty(filteredRows) ? 'inherit' : 'primary'}
+        >
+          Export Excel
+        </Button>
       </Stack>
 
       <Scrollbar>
