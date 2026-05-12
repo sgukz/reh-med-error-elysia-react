@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-05-12
+
+### Inline Impact Score Editor
+- เพิ่ม Popover สำหรับแก้ไขคะแนน Impact (Impact Score) โดยตรงในตารางหน้า "ข้อมูลรายละเอียดประเภท Error" โดยไม่ต้องเปิดฟอร์มแก้ไข
+- รองรับการแก้ไขค่า 1-5 และล้างค่า (null) พร้อมบันทึกทันที
+
+### ปรับปรุงระบบ Authentication และแก้บั๊ก
+- แก้ไขปัญหาหน้า Login วนลูป (Infinite Redirect Loop) โดยปรับโครงสร้าง Route
+- เปลี่ยนทุกจุดที่มีการเรียก `getTokenFromLocalStorage` เป็นการใช้ Cookie (`verifyToken(null)`)
+- เพิ่ม Safe Destructuring (`|| {}`) ตอนเรียก `verifyToken` ป้องกันแอปพังกรณีคืนค่า null
+- เพิ่ม `axios.defaults.withCredentials = true` ใน `libs/MedError.js` ให้ทุก API ขอ Cookie อัตโนมัติ ป้องกัน backend error 500
+- ลบ Import `getTokenFromLocalStorage` ที่ไม่ใช้ออกทั้งหมด 15 ไฟล์
+
 ## [1.13.0] - 2026-05-11
 
 ### เปลี่ยนกลไก Authentication เป็น HTTP-only Cookie

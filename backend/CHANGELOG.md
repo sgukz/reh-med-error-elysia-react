@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-05-12
+
+### Backend Database Migration & Fixes
+- เพิ่ม Column `impact_score` ลงในตาราง `med_error_type_list` และรัน Knex migration script
+- แก้ปัญหา 500 Internal Server Error ตอนเรียก API `GET /med-error/get-error-type-list?id=0` จากการไม่ได้ส่ง cookie
+
 ## [1.5.0] - 2026-05-11
 
 ### Added — Cookie-based Authentication (เปลี่ยนกลไก auth ไปใช้ HTTP-only cookie)
