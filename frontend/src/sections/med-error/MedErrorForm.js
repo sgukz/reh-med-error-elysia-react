@@ -579,7 +579,7 @@ export default function MedErrorForm({ userLogin }) {
     async function checkVerifyToken() {
       const auth_token = localStorage.getItem('access_token');
       const verify = await verifyToken(auth_token);
-      const { statusCode, profile, access_token } = verify;
+      const { statusCode, profile, access_token } = verify || {};
       if (statusCode === 200 && profile) {
         if (access_token) {
           const loginname = profile.loginname.substring(0, 3);

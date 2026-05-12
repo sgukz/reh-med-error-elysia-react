@@ -26,7 +26,7 @@ import { getReportSummary7 } from '../../libs/MedError';
 import Scrollbar from '../../components/scrollbar';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../../libs/Auth';
+import { verifyToken } from '../../libs/Auth';
 
 // Utils
 import { formatDateTime, formatDateEN } from '../../utils/formatTime';
@@ -60,7 +60,7 @@ const ReportSummary7 = () => {
   const startOfMonth = todayDate.startOf('month');
   const [firstDate, setFirstDate] = useState(startOfMonth);
   const [lastDate, setLastDate] = useState(todayDate);
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [token, setToken] = useState(null);
   const [dateFilter, setDateFilter] = useState({
     firstDate: formatDateEN(dayjs().startOf('month')),
     lastDate: formatDateEN(dayjs()), // วันนี้
@@ -106,9 +106,8 @@ const ReportSummary7 = () => {
 
   useEffect(() => {
     async function checkVerifyToken() {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, access_token } = verify;
+      const verify = await verifyToken(null);
+      const { statusCode, access_token } = verify || {};
       if (statusCode === 200 && access_token) {
         if (access_token) {
           setToken(access_token);

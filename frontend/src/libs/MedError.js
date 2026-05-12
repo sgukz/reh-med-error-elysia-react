@@ -2,12 +2,19 @@ import axios from 'axios';
 import { API_ROUTE, API_SECURITY, API_METHOD } from '../utils/constants';
 
 function authHeader(token) {
-  return {
+  const headers = {
     'Content-Type': 'application/json',
     'client-id': API_SECURITY.UUID,
-    Authorization: `Bearer ${token}`,
   };
+  // ถ้ามี token ให้ส่ง Bearer header ด้วย (fallback สำหรับ cookie-based auth)
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
 }
+
+// axios defaults: ส่ง cookie ไปกับทุก request
+axios.defaults.withCredentials = true;
 
 export function getMedErrorDeptBySectionMain(token, active) {
   return axios({

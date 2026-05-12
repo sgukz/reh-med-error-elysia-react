@@ -359,6 +359,7 @@ MedErrorRoute.get('/get-error-type-list', async ({
         }
 
     } catch (error) {
+        console.error('[get-error-type-list] Error:', error);
         if (error instanceof Error) {
             set.status = StatusCodes.INTERNAL_SERVER_ERROR;
             return { statusCode: StatusCodes.INTERNAL_SERVER_ERROR, statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR) };

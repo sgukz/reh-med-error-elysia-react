@@ -45,7 +45,7 @@ import Scrollbar from '../components/scrollbar';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
+import { verifyToken } from '../libs/Auth';
 // Lib MedError
 import { getMedErrorPerson, personCreate, personDelete } from '../libs/MedError';
 
@@ -127,7 +127,7 @@ export default function OfficerPage() {
   const [page, setPage] = useState(0);
   const [order, setOrder] = useState('asc');
   const [selectedID, setSelectedID] = useState(null);
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [token, setToken] = useState(null);
 
   const [orderBy, setOrderBy] = useState('error_key_sec');
 
@@ -395,9 +395,8 @@ export default function OfficerPage() {
   useEffect(() => {
     setIsOpen(true);
     async function checkVerifyToken() {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, profile, access_token } = verify;
+      const verify = await verifyToken(null);
+      const { statusCode, profile, access_token } = verify || {};
       if (statusCode === 200 && profile) {
         if (access_token) {
           setToken(access_token);

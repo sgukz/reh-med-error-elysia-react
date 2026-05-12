@@ -53,7 +53,7 @@ import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 import { getAnalysisData, analysisCreate, analysisDelete } from '../libs/MedError';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
+import { verifyToken } from '../libs/Auth';
 
 // Context
 import { useAuth } from '../contexts/AuthContext';
@@ -345,9 +345,8 @@ export default function AnalysisPage() {
 
   useEffect(() => {
     async function checkVerifyToken() {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, profile, access_token } = verify;
+      const verify = await verifyToken(null);
+      const { statusCode, profile, access_token } = verify || {};
       if (statusCode === 200 && profile) {
         if (access_token) {
           setToken(access_token);

@@ -35,9 +35,6 @@ export default function Router() {
     {
       path: 'login',
       element: <LoginPage />,
-      children: [
-        { element: <Navigate to="/login" />, index: true },
-      ]
     },
     {
       path: 'department',

@@ -53,7 +53,7 @@ import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 import { getMedErrorDeptAll, deptCreate, deptDelete } from '../libs/MedError';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
+import { verifyToken } from '../libs/Auth';
 
 // Schema form Error Type List
 const departmentSchema = z.object({
@@ -153,7 +153,7 @@ export default function DepartmentPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [order, setOrder] = useState('asc');
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [token, setToken] = useState(null);
   const [orderBy, setOrderBy] = useState('med_error_depname');
   const [selectedID, setSelectedID] = useState(null);
   const [isOpenForm, setIsOpenForm] = useState(false);
@@ -377,9 +377,8 @@ export default function DepartmentPage() {
 
   useEffect(() => {
     const checkVerifyToken = async () => {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, profile, access_token } = verify;
+      const verify = await verifyToken(null);
+      const { statusCode, profile, access_token } = verify || {};
 
       if (statusCode === 200 && profile && access_token) {
         setToken(access_token);

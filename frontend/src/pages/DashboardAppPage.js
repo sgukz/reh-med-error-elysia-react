@@ -34,7 +34,7 @@ import dayjs from 'dayjs';
 import { AppCurrentVisits, AppWidgetSummary } from '../sections/@dashboard/app';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
+import { verifyToken } from '../libs/Auth';
 // Lib MedError
 import { getSummaryFromMedError } from '../libs/MedError';
 
@@ -148,7 +148,7 @@ const columns = [
 
 export default function DashboardAppPage() {
   const navigate = useNavigate();
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [token, setToken] = useState(null);
   const theme = useTheme();
   const today = new Date();
 
@@ -256,14 +256,9 @@ export default function DashboardAppPage() {
     let cancelled = false;
     async function checkVerifyToken() {
       try {
-        const auth_token = getTokenFromLocalStorage('access_token');
-        if (!auth_token) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        const verify = await verifyToken(auth_token);
+        const verify = await verifyToken(null);
         if (cancelled || !verify) return;
-        const { statusCode, access_token } = verify;
+        const { statusCode, access_token } = verify || {};
         if (statusCode === 200 && access_token) {
           setToken(access_token);
           loadDashboardResult(access_token, monthAndYearCurrent);

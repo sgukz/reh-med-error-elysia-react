@@ -68,7 +68,7 @@ import Scrollbar from '../components/scrollbar';
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
+import { verifyToken } from '../libs/Auth';
 // Lib MedError
 import {
   medError,
@@ -254,7 +254,7 @@ export default function MedErrorPage() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState([]);
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [token, setToken] = useState(null);
 
   const [valueErrorDate] = useState(dayjs(new Date()));
   const [isOpenForm, setIsOpenForm] = useState(false);
@@ -1225,9 +1225,8 @@ export default function MedErrorPage() {
   useEffect(() => {
     async function checkVerifyToken() {
       setIsLoading(true);
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, profile, access_token } = verify;
+      const verify = await verifyToken(null);
+      const { statusCode, profile, access_token } = verify || {};
       if (statusCode === 200 && profile) {
         if (access_token) {
           let userLoginName = profile.rule && profile.rule === 9 ? '' : profile.loginname;

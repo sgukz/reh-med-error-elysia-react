@@ -13,7 +13,7 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
+import { verifyToken } from '../libs/Auth';
 
 // Section Report
 import ReportSummary1 from '../sections/reports/ReportSummary1';
@@ -32,8 +32,7 @@ export default function ReportPage() {
 
   useEffect(() => {
     async function checkVerifyToken() {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
+      const verify = await verifyToken(null);
       const { statusCode, profile, access_token } = verify || {};
       if (!(statusCode === 200 && profile && access_token)) {
         navigate('/login', { replace: true });

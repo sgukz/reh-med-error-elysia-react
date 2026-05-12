@@ -146,7 +146,7 @@ export default function LoginPage() {
                   }}
                 >
                   <Iconify icon="lucide:pill" width={14} sx={{ color: '#0d9488' }} />
-                  โรงพยาบาลร้อยเอ็ด · Medication Error
+                  โรงพยาบาลร้อยเอ็ด · Roiet Hospital
                 </Typography>
               </Stack>
 

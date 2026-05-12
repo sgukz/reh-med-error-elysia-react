@@ -25,7 +25,7 @@ import dayjs from 'dayjs';
 
 import Scrollbar from '../../components/scrollbar';
 import { getDrugPairSummary } from '../../libs/MedError';
-import { verifyToken, getTokenFromLocalStorage } from '../../libs/Auth';
+import { verifyToken } from '../../libs/Auth';
 import { formatDateTime, formatDateEN } from '../../utils/formatTime';
 
 const PAIR_TABS = [
@@ -46,7 +46,7 @@ const ReportSummary4 = () => {
     lastDate: formatDateEN(today),
   });
 
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [token, setToken] = useState(null);
   const [pairType, setPairType] = useState('dispensing');
   const [searchText, setSearchText] = useState('');
   const [rows, setRows] = useState([]);
@@ -100,8 +100,7 @@ const ReportSummary4 = () => {
 
   useEffect(() => {
     async function checkVerifyToken() {
-      const authToken = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(authToken);
+      const verify = await verifyToken(null);
       const { statusCode, access_token: newToken } = verify ?? {};
       if (statusCode === 200 && newToken) {
         setToken(newToken);

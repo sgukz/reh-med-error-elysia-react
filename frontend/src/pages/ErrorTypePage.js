@@ -53,7 +53,7 @@ import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 import { errorTypeListCreate, errorTypeListDelete, getErrorTypeByTypeList } from '../libs/MedError';
 
 // Lib Auth
-import { verifyToken, getTokenFromLocalStorage } from '../libs/Auth';
+import { verifyToken } from '../libs/Auth';
 
 // Notify Toast Config
 const MySwal = withReactContent(Swal);
@@ -166,7 +166,7 @@ export default function ErrorTypePage() {
   const [page, setPage] = useState(0);
   const [order, setOrder] = useState('asc');
   const [selectedID, setSelectedID] = useState(null);
-  const [token, setToken] = useState(getTokenFromLocalStorage('access_token'));
+  const [token, setToken] = useState(null);
 
   const [orderBy, setOrderBy] = useState('error_type_name');
 
@@ -200,6 +200,45 @@ export default function ErrorTypePage() {
     text: '',
     sec: '',
   });
+
+  // Inline Impact Editor
+  const [impactAnchor, setImpactAnchor] = useState(null);
+  const [impactEditRow, setImpactEditRow] = useState(null);
+
+  const handleOpenImpact = (event, row) => {
+    setImpactAnchor(event.currentTarget);
+    setImpactEditRow(row);
+  };
+
+  const handleCloseImpact = () => {
+    setImpactAnchor(null);
+    setImpactEditRow(null);
+  };
+
+  const handleSaveImpact = async (score) => {
+    if (!impactEditRow) return;
+    try {
+      const payload = {
+        error_type: impactEditRow.error_type,
+        error_type_list: impactEditRow.error_type_list,
+        error_type_list_detail: impactEditRow.error_type_list_detail,
+        is_active: impactEditRow.is_active,
+        type_id: impactEditRow.type_id,
+        impact_score: score,
+      };
+      const res = await errorTypeListCreate(payload, token);
+      const { statusCode } = res.data;
+      if (statusCode === 200) {
+        Toast.fire({ icon: 'success', title: 'อัปเดต Impact เรียบร้อย' });
+        await loadMedErrorType(token);
+      } else {
+        Toast.fire({ icon: 'error', title: 'ไม่สามารถอัปเดต Impact ได้' });
+      }
+    } catch (error) {
+      handleCatchAxios(error, 'impact');
+    }
+    handleCloseImpact();
+  };
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
@@ -389,9 +428,9 @@ export default function ErrorTypePage() {
 
   useEffect(() => {
     const checkVerifyToken = async () => {
-      const auth_token = getTokenFromLocalStorage('access_token');
-      const verify = await verifyToken(auth_token);
-      const { statusCode, profile, access_token } = verify;
+      // cookie จะถูกส่งให้ backend อัตโนมัติ ไม่ต้องอ่านจาก localStorage
+      const verify = await verifyToken(null);
+      const { statusCode, profile, access_token } = verify || {};
 
       if (statusCode === 200 && profile && access_token) {
         setToken(access_token);
@@ -446,18 +485,28 @@ export default function ErrorTypePage() {
                           <TableCell align="left">{error_type_name}</TableCell>
                           <TableCell align="left">{`${error_type_list}. ${error_type_list_detail}`}</TableCell>
                           <TableCell align="center">
-                            {impact_score === null || impact_score === undefined ? (
-                              <Typography variant="body2" color="text.disabled">
-                                —
-                              </Typography>
-                            ) : (
-                              <Chip
-                                sx={{ color: '#FFFFFF', fontWeight: 600 }}
-                                size="small"
-                                label={impact_score}
-                                color={impactChipColor(Number(impact_score))}
-                              />
-                            )}
+                            <Tooltip title="คลิกเพื่อแก้ไข Impact" arrow>
+                              <Box
+                                onClick={(e) => handleOpenImpact(e, row)}
+                                sx={{ cursor: 'pointer', display: 'inline-flex', '&:hover': { opacity: 0.7 } }}
+                              >
+                                {impact_score === null || impact_score === undefined ? (
+                                  <Chip
+                                    sx={{ fontWeight: 600, cursor: 'pointer' }}
+                                    size="small"
+                                    label="—"
+                                    variant="outlined"
+                                  />
+                                ) : (
+                                  <Chip
+                                    sx={{ color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
+                                    size="small"
+                                    label={impact_score}
+                                    color={impactChipColor(Number(impact_score))}
+                                  />
+                                )}
+                              </Box>
+                            </Tooltip>
                           </TableCell>
                           <TableCell align="center">
                             <Chip
@@ -575,6 +624,57 @@ export default function ErrorTypePage() {
           <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
           ลบ
         </MenuItem>
+      </Popover>
+
+      {/* Inline Impact Score Editor */}
+      <Popover
+        open={Boolean(impactAnchor)}
+        anchorEl={impactAnchor}
+        onClose={handleCloseImpact}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        PaperProps={{
+          sx: { p: 1.5, borderRadius: 2, minWidth: 220 },
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 1, textAlign: 'center', color: 'text.secondary' }}>
+          เลือก Impact Score
+        </Typography>
+        <Stack direction="row" spacing={0.5} justifyContent="center">
+          {[1, 2, 3, 4, 5].map((score) => (
+            <Chip
+              key={score}
+              label={score}
+              size="medium"
+              color={impactChipColor(score)}
+              onClick={() => handleSaveImpact(score)}
+              sx={{
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                minWidth: 36,
+                '&:hover': { transform: 'scale(1.15)', boxShadow: 2 },
+                transition: 'transform 0.15s',
+                ...(impactEditRow?.impact_score === score && {
+                  outline: '2px solid',
+                  outlineOffset: 1,
+                }),
+              }}
+            />
+          ))}
+        </Stack>
+        <Divider sx={{ my: 1 }} />
+        <Button
+          fullWidth
+          size="small"
+          color="inherit"
+          onClick={() => handleSaveImpact(null)}
+          startIcon={<Iconify icon="eva:close-circle-outline" />}
+          sx={{ color: 'text.secondary' }}
+        >
+          ล้างค่า
+        </Button>
       </Popover>
       <Dialog
         open={Boolean(isOpenForm)}

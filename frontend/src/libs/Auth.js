@@ -66,7 +66,7 @@ export async function verifyToken(token) {
     });
     return response.data;
   } catch (_e) {
-    return null;
+    return { statusCode: 401, profile: null };
   }
 }
 

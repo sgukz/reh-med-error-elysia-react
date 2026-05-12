@@ -136,7 +136,7 @@ export default function LoginForm() {
         // cookie จะถูกส่งให้ backend อัตโนมัติ ไม่ต้องอ่านจาก localStorage
         const verify = await verifyToken(null);
         if (cancelled || !verify) return;
-        const { statusCode, profile } = verify;
+        const { statusCode, profile } = verify || {};
         if (statusCode === 200 && profile) {
           safeSetState(setOpen, true);
           safeSetState(setLoadingMessage, 'กำลังไปยังหน้าหลัก...');

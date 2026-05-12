@@ -48,12 +48,13 @@ export default function DashboardLayout() {
   const [openNav, setOpenNav] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     async function checkVerifyToken() {
-      const auth_token = localStorage.getItem('access_token');
+      // cookie จะถูกส่งให้ backend อัตโนมัติ ไม่ต้องอ่านจาก localStorage
+      const verify = await verifyToken(null);
+      if (cancelled) return;
+      const { statusCode, profile, access_token } = verify || {};
 
-      const verify = await verifyToken(auth_token);
-      const { statusCode, profile, access_token } = verify;
-      
       if (statusCode === 200 && profile) {
         if (access_token) {
           setUserProfile([profile]);
@@ -64,10 +65,8 @@ export default function DashboardLayout() {
     }
 
     checkVerifyToken();
-    // if (!auth.user) {
-    // } else {
-    //   setUserProfile([auth.user]);
-    // }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleNavToggle = () => {
