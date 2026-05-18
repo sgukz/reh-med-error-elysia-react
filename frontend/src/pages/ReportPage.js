@@ -22,6 +22,7 @@ import ReportSummary3 from '../sections/reports/ReportSummary3';
 import ReportSummary4 from '../sections/reports/ReportSummary4';
 import ReportSummary7 from '../sections/reports/ReportSummary7';
 import ReportSummary8 from '../sections/reports/ReportSummary8';
+import ReportSummary9 from '../sections/reports/ReportSummary9';
 
 export default function ReportPage() {
   const navigate = useNavigate();
@@ -81,6 +82,7 @@ export default function ReportPage() {
                   {/* <Tab label="สรุปอุบัติการณ์ที่ได้ RCA แล้ว (Pending)" value="6" /> */}
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />
                   <Tab label="รายงานความคลาดเคลื่อน" value="8" />
+                  <Tab label="รายงานแยกรายละเอียด Error" value="9" />
                 </TabList>
               </Box>
               <TabPanel value="1">
@@ -107,6 +109,9 @@ export default function ReportPage() {
               </TabPanel>
               <TabPanel value="8">
                 <ReportSummary8 />
+              </TabPanel>
+              <TabPanel value="9">
+                <ReportSummary9 />
               </TabPanel>
             </TabContext>
           </Box>

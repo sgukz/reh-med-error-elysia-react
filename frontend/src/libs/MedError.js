@@ -234,6 +234,7 @@ export const getReportSummary2 = buildReportSummary('summary2');
 export const getReportSummary3 = buildReportSummary('summary3');
 export const getReportSummary5 = buildReportSummary('summary5');
 export const getReportSummary7 = buildReportSummary('summary7');
+export const getReportSummary9 = buildReportSummary('summary9');
 
 // คู่ยาที่คลาดเคลื่อน — pairType: 'dispensing' (จัด) | 'processing' (คีย์)
 export function getDrugPairSummary(token, { firstDate, lastDate, pairType }) {

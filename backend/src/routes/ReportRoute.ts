@@ -10,7 +10,7 @@ import { DBSec } from '../plugins/db'
 import ReportModel from "../models/ReportModel";
 
 //Interface
-import { GetMedErrorSummary1Options, GetMedErrorSummary2Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions } from '../Interfaces/ReportInterface'
+import { GetMedErrorSummary1Options, GetMedErrorSummary2Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options } from '../Interfaces/ReportInterface'
 import _ from "lodash";
 import 'moment/locale/th'; // นำเข้า locale ภาษาไทย
 
@@ -464,6 +464,76 @@ ReportRoute.get('/summary8', async ({
             const dataCondition = { firstDate, lastDate, depCode: depCodeArr, errorType, errorLevel: errorLevelCodeArr, errorAlert: errorAlertHAD }
 
             const GetMedErrorReportSummaryByDept = await reports.getReportSummary8(dataCondition)
+
+            if (!_.isEmpty(GetMedErrorReportSummaryByDept)) {
+                set.status = StatusCodes.OK;
+                return { statusCode: StatusCodes.OK, reportList: GetMedErrorReportSummaryByDept };
+            } else {
+                set.status = StatusCodes.OK;
+                return { statusCode: StatusCodes.NOT_FOUND, reportList: [] };
+            }
+        }
+
+    } catch (error) {
+        console.error("[Report] error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
+    }
+});
+
+// Using by ReportSummary9
+ReportRoute.get('/summary9', async ({
+    jwt,
+    set,
+    request,
+    query
+}: {
+    jwt: { verify: (token: string) => Promise<string> };
+    set: { status: number };
+    request: Request
+    query: GetMedErrorSummary9Options
+}) => {
+    try {
+        const headers = request.headers
+        const { firstDate, lastDate, errorType } = query as GetMedErrorSummary9Options
+        const token = readAuthTokenFromHeaders(headers)
+        const clientId = headers.get("client-id")
+        let originAllow = headers.get("origin");
+
+        if (!originAllow) {
+            const referer = headers.get("referer");
+            if (referer) {
+                try {
+                    originAllow = new URL(referer).origin;
+                } catch (e) {
+                }
+            }
+        }
+
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
+            return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
+        }
+
+        if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
+            set.status = StatusCodes.FORBIDDEN;
+            return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
+        }
+
+        if (!token) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
+        }
+
+        const payload = await jwt.verify(token);
+        if (!payload) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
+        } else {
+            const GetMedErrorReportSummaryByDept = await reports.getReportSummary9({ firstDate, lastDate, errorType })
 
             if (!_.isEmpty(GetMedErrorReportSummaryByDept)) {
                 set.status = StatusCodes.OK;

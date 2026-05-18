@@ -21,6 +21,12 @@ export interface GetMedErrorSummary7Options {
     lastDate: string;   // YYYY-MM-DD
 }
 
+export interface GetMedErrorSummary9Options {
+    firstDate: string; // YYYY-MM-DD
+    lastDate: string;   // YYYY-MM-DD
+    errorType?: string; // 1-6
+}
+
 export interface GetMedErrorSummary8Options {
     firstDate: string; // YYYY-MM-DD
     lastDate: string;   // YYYY-MM-DD

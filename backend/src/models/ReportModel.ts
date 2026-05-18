@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 
-import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions } from '../Interfaces/ReportInterface'
+import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options } from '../Interfaces/ReportInterface'
 
 export default class ReportModel {
     private db: Knex;
@@ -216,6 +216,31 @@ export default class ReportModel {
             .whereBetween('m.error_date', [firstDate, lastDate])
             .groupBy('m.error_user')
             .orderBy('total', 'desc');
+
+        return await query;
+    }
+
+    async getReportSummary9(options: GetMedErrorSummary9Options) {
+        const { firstDate, lastDate, errorType } = options;
+
+        const query = this.db('med_error as m')
+            .select(
+                'm.error_ward_name',
+                this.db.raw("COUNT(CASE WHEN m.error_type = 1 THEN 1 END) AS error_prescription"),
+                this.db.raw("COUNT(CASE WHEN m.error_type = 2 THEN 2 END) AS error_dispensing"),
+                this.db.raw("COUNT(CASE WHEN m.error_type = 3 THEN 3 END) AS error_pre_administration"),
+                this.db.raw("COUNT(CASE WHEN m.error_type = 4 THEN 4 END) AS error_adminstration"),
+                this.db.raw("COUNT(CASE WHEN m.error_type = 5 THEN 5 END) AS error_processing"),
+                this.db.raw("COUNT(CASE WHEN m.error_type = 6 THEN 6 END) AS error_transcribing"),
+                this.db.raw("COUNT(m.error_id) AS total")
+            )
+            .whereBetween('m.error_date', [firstDate, lastDate])
+            .groupBy('m.error_ward', 'm.error_ward_name')
+            .orderBy('total', 'desc');
+
+        if (errorType) {
+            query.andWhere('m.error_type', errorType);
+        }
 
         return await query;
     }
