@@ -1,16 +1,7 @@
 import axios from 'axios';
 import { API_ROUTE, API_METHOD, API_SECURITY } from '../utils/constants';
 
-// localStorage helpers — ยังคงไว้เป็น no-op เพื่อ backward-compat กับหน้าเก่า
-// หลังเปลี่ยนเป็น HTTP-only cookie แล้ว token ไม่ถูกเก็บที่ฝั่ง client อีก
-export function storeTokenInLocalStorage() {
-  // no-op: token อยู่ใน HTTP-only cookie (ฝั่ง browser อ่านไม่ได้)
-}
 
-export function getTokenFromLocalStorage() {
-  // no-op: คืน null เสมอ — หน้าเก่าจะส่งค่าว่างไป backend ก็ยังตรวจ auth ผ่าน cookie ได้
-  return null;
-}
 
 export function removeTokenFromLocalStorage() {
   // เผื่อกรณีมีค่าเก่าตกค้างจากเวอร์ชันก่อน ก็ลบทิ้งให้สะอาด
