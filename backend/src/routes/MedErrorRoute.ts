@@ -417,18 +417,23 @@ MedErrorRoute.post('/create-error-type-list', async ({
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
         } else {
             const tableName = "med_error_type_list";
-            const { error_type, error_type_list, error_type_list_detail, is_active, type_id, impact_score } = ErrorTypeList
+            const { error_type, error_type_list, error_type_list_detail, is_active, type_id, impact_score, likelihood_score } = ErrorTypeList
 
-            // Validate impact_score: ต้องเป็น null หรือ integer 1-5
-            const normalizedImpact: number | null =
-                impact_score === null || impact_score === undefined
-                    ? null
-                    : Number.isInteger(Number(impact_score)) && Number(impact_score) >= 1 && Number(impact_score) <= 5
-                        ? Number(impact_score)
-                        : NaN;
+            // Validate impact_score / likelihood_score: ต้องเป็น null หรือ integer 1-5
+            const normalizeScore = (v: number | null | undefined): number | null | typeof NaN => {
+                if (v === null || v === undefined) return null;
+                const n = Number(v);
+                return Number.isInteger(n) && n >= 1 && n <= 5 ? n : NaN;
+            };
+            const normalizedImpact = normalizeScore(impact_score);
+            const normalizedLikelihood = normalizeScore(likelihood_score);
             if (Number.isNaN(normalizedImpact)) {
                 set.status = StatusCodes.BAD_REQUEST;
                 return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Invalid impact_score (ต้องเป็น null หรือ 1-5)` };
+            }
+            if (Number.isNaN(normalizedLikelihood)) {
+                set.status = StatusCodes.BAD_REQUEST;
+                return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Invalid likelihood_score (ต้องเป็น null หรือ 1-5)` };
             }
 
             const formSaveData = {
@@ -436,7 +441,8 @@ MedErrorRoute.post('/create-error-type-list', async ({
                 error_type_list: error_type_list,
                 error_type_list_detail: error_type_list_detail,
                 is_active: is_active,
-                impact_score: normalizedImpact
+                impact_score: normalizedImpact,
+                likelihood_score: normalizedLikelihood
             }
             if (type_id === 0) {
                 const savedErrorTypeList = await mederror.saveData(tableName, formSaveData)

@@ -484,7 +484,7 @@ ReportRoute.get('/summary8', async ({
     }
 });
 
-// Using by ReportSummary9
+// รายงานแยกรายละเอียด Error — subtype level, รองรับ compare 2 periods, มี Impact/Likelihood/Level
 ReportRoute.get('/summary9', async ({
     jwt,
     set,
@@ -498,7 +498,7 @@ ReportRoute.get('/summary9', async ({
 }) => {
     try {
         const headers = request.headers
-        const { firstDate, lastDate, errorType } = query as GetMedErrorSummary9Options
+        const { firstDateA, lastDateA, firstDateB, lastDateB, errorType } = query as GetMedErrorSummary9Options
         const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
@@ -532,20 +532,37 @@ ReportRoute.get('/summary9', async ({
         if (!payload) {
             set.status = StatusCodes.UNAUTHORIZED;
             return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
-        } else {
-            const GetMedErrorReportSummaryByDept = await reports.getReportSummary9({ firstDate, lastDate, errorType })
-
-            if (!_.isEmpty(GetMedErrorReportSummaryByDept)) {
-                set.status = StatusCodes.OK;
-                return { statusCode: StatusCodes.OK, reportList: GetMedErrorReportSummaryByDept };
-            } else {
-                set.status = StatusCodes.OK;
-                return { statusCode: StatusCodes.NOT_FOUND, reportList: [] };
-            }
         }
 
+        if (!firstDateA || !lastDateA || !errorType) {
+            set.status = StatusCodes.BAD_REQUEST;
+            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: `Missing required params: firstDateA, lastDateA, errorType` };
+        }
+
+        const ERROR_TYPE_NAMES: Record<number, string> = {
+            1: 'Prescription Error',
+            2: 'Dispensing Error',
+            3: 'Pre-Administration Error',
+            4: 'Administration Error',
+            5: 'Processing Error',
+            6: 'Transcribing Error',
+        };
+        const numType = Number(errorType);
+        const errorTypeName = ERROR_TYPE_NAMES[numType] || '';
+
+        const rows = await reports.getReportSummary9({ firstDateA, lastDateA, firstDateB, lastDateB, errorType });
+
+        set.status = StatusCodes.OK;
+        return {
+            statusCode: StatusCodes.OK,
+            errorType: numType,
+            errorTypeName,
+            compare: Boolean(firstDateB && lastDateB),
+            reportList: rows || [],
+        };
+
     } catch (error) {
-        console.error("[Report] error");
+        console.error("[Report] summary9 error");
         set.status = StatusCodes.INTERNAL_SERVER_ERROR;
         return {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

@@ -21,10 +21,29 @@ export interface GetMedErrorSummary7Options {
     lastDate: string;   // YYYY-MM-DD
 }
 
+// รายงานแยกรายละเอียด Error — subtype detail + Impact + Likelihood + Level
+// รองรับเปรียบเทียบ 2 ช่วงเวลา (Period A + Period B optional)
 export interface GetMedErrorSummary9Options {
-    firstDate: string; // YYYY-MM-DD
-    lastDate: string;   // YYYY-MM-DD
-    errorType?: string; // 1-6
+    firstDateA: string; // YYYY-MM-DD — Period A เริ่มต้น (required)
+    lastDateA: string;  // YYYY-MM-DD — Period A สิ้นสุด (required)
+    firstDateB?: string; // YYYY-MM-DD — Period B เริ่มต้น (optional, สำหรับ compare)
+    lastDateB?: string;  // YYYY-MM-DD — Period B สิ้นสุด
+    errorType: string | number; // 1-6 (required)
+}
+
+export interface Summary9Row {
+    type_id: number;
+    error_type: number;
+    error_type_list: string;
+    error_type_list_detail: string;
+    impact_score: number | null;
+    likelihood_score: number | null;
+    had_a: number;
+    non_had_a: number;
+    total_a: number;
+    had_b?: number;
+    non_had_b?: number;
+    total_b?: number;
 }
 
 export interface GetMedErrorSummary8Options {

@@ -220,27 +220,81 @@ export default class ReportModel {
         return await query;
     }
 
+    // รายงานแยกรายละเอียด Error — แสดง subtype จาก med_error_type_list ของประเภท Error ที่เลือก
+    // แต่ละแถว: ชื่อ subtype + HAD/Non-HAD/Total ของ Period A (+ Period B ถ้ามี) + Impact + Likelihood
+    // Match subtype: m.<field_for_type> LIKE CONCAT(etl.error_type_list, ' %')
     async getReportSummary9(options: GetMedErrorSummary9Options) {
-        const { firstDate, lastDate, errorType } = options;
+        const { firstDateA, lastDateA, firstDateB, lastDateB, errorType } = options;
+        const numType = Number(errorType);
+        const FIELD_MAP: Record<number, string> = {
+            1: 'error_prescription',
+            2: 'error_dispensing',
+            3: 'error_pre_administration',
+            4: 'error_adminstration',
+            5: 'error_processing',
+            6: 'error_transcribing',
+        };
+        const field = FIELD_MAP[numType];
+        if (!field) return [];
 
-        const query = this.db('med_error as m')
-            .select(
-                'm.error_ward_name',
-                this.db.raw("COUNT(CASE WHEN m.error_type = 1 THEN 1 END) AS error_prescription"),
-                this.db.raw("COUNT(CASE WHEN m.error_type = 2 THEN 2 END) AS error_dispensing"),
-                this.db.raw("COUNT(CASE WHEN m.error_type = 3 THEN 3 END) AS error_pre_administration"),
-                this.db.raw("COUNT(CASE WHEN m.error_type = 4 THEN 4 END) AS error_adminstration"),
-                this.db.raw("COUNT(CASE WHEN m.error_type = 5 THEN 5 END) AS error_processing"),
-                this.db.raw("COUNT(CASE WHEN m.error_type = 6 THEN 6 END) AS error_transcribing"),
-                this.db.raw("COUNT(m.error_id) AS total")
-            )
-            .whereBetween('m.error_date', [firstDate, lastDate])
-            .groupBy('m.error_ward', 'm.error_ward_name')
-            .orderBy('total', 'desc');
+        const db = this.db;
+        const compare = Boolean(firstDateB && lastDateB);
 
-        if (errorType) {
-            query.andWhere('m.error_type', errorType);
+        const selectCols: any[] = [
+            'etl.type_id',
+            'etl.error_type',
+            'etl.error_type_list',
+            'etl.error_type_list_detail',
+            'etl.impact_score',
+            'etl.likelihood_score',
+            db.raw(
+                `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_alert = 'High Alert Drugs' THEN 1 END) AS had_a`,
+                [firstDateA, lastDateA]
+            ),
+            db.raw(
+                `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END) AS non_had_a`,
+                [firstDateA, lastDateA]
+            ),
+            db.raw(
+                `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? THEN 1 END) AS total_a`,
+                [firstDateA, lastDateA]
+            ),
+        ];
+
+        if (compare) {
+            selectCols.push(
+                db.raw(
+                    `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_alert = 'High Alert Drugs' THEN 1 END) AS had_b`,
+                    [firstDateB!, lastDateB!]
+                ),
+                db.raw(
+                    `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END) AS non_had_b`,
+                    [firstDateB!, lastDateB!]
+                ),
+                db.raw(
+                    `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? THEN 1 END) AS total_b`,
+                    [firstDateB!, lastDateB!]
+                )
+            );
         }
+
+        const query = db('med_error_type_list as etl')
+            .select(selectCols)
+            .leftJoin('med_error as m', function () {
+                this.on('m.error_type', '=', 'etl.error_type')
+                    .andOn(db.raw(`m.${field} LIKE CONCAT(etl.error_type_list, ' %')`));
+            })
+            .where('etl.error_type', numType)
+            .andWhere('etl.is_active', 'Y')
+            .groupBy(
+                'etl.type_id',
+                'etl.error_type',
+                'etl.error_type_list',
+                'etl.error_type_list_detail',
+                'etl.impact_score',
+                'etl.likelihood_score'
+            )
+            .orderBy('etl.error_type_list');
 
         return await query;
     }

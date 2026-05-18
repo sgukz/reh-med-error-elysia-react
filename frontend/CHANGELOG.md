@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-05-12
+
+### รื้อรายงาน "แยกรายละเอียด Error" (ReportSummary9) ใหม่ทั้งไฟล์ตามต้นแบบ
+- เปลี่ยน layout จาก ward × type matrix → **subtype detail report**:
+  - คอลัมน์: รายละเอียด Error (subtype) | HAD | Non-HAD | รวม | Impact | Likelihood | **Level** (Impact + Likelihood)
+  - แถวสุดท้าย "ผลรวม" รวม HAD/Non-HAD/Total ทั้ง period
+  - Cell ของ Level color-coded: ≤3 cyan, 4-6 green, 7 yellow, ≥8 red
+- **เพิ่ม "เปรียบเทียบ 2 ช่วงเวลา" (Compare 2 periods)**:
+  - Toggle เปิด-ปิดได้
+  - เลือก Period A + Period B → แสดง HAD/Non-HAD/รวม ของทั้ง 2 ช่วงพร้อมคอลัมน์ Δ% (เขียว=ลด, แดง=เพิ่ม)
+  - สีพื้น Period B ใช้โทนส้ม (#fff8e1) แยกจาก Period A
+- ประเภท Error เลือกผ่าน Autocomplete required (1 ประเภท: Prescription / Dispensing / Pre-Admin / Admin / Processing / Transcribing)
+- **Export Excel** — รวมหัว, ช่วงวันที่, ข้อมูลทุกแถว + ผลรวม
+
+### ErrorTypePage — เพิ่ม Likelihood + ปรับ UI ตรวจสอบความสมบูรณ์ของคะแนน
+- เพิ่มคอลัมน์ **Likelihood** (Chip คลิกได้ inline editor เหมือน Impact)
+- เพิ่ม Select "คะแนน Likelihood (1-5)" ในฟอร์ม Add/Edit
+- เปลี่ยน Chip ของรายการที่ยังไม่ระบุ Impact/Likelihood เป็น **`ยังไม่ระบุ` (warning + icon)** ให้สังเกตเห็นง่าย
+- เพิ่ม **Alert banner** ด้านบนตาราง: แจ้งจำนวนรายการที่ใช้งานอยู่และยังไม่ได้กำหนด Impact/Likelihood ครบ พร้อม **Switch "แสดงเฉพาะรายการที่ขาด"** ให้ filter ได้ทันที
+- Inline Impact/Likelihood handlers ใช้ helper ร่วมกัน (`saveScoreField`) — preserve field อีกฟิลด์เสมอตอน save
+
 ## [1.14.0] - 2026-05-12
 
 ### Inline Impact Score Editor

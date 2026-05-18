@@ -1,29 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import _ from 'lodash';
 import { useNavigate } from 'react-router-dom';
-import Stack from '@mui/material/Stack';
+import * as XLSX from 'xlsx';
+
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
-import { styled, useTheme } from '@mui/material/styles';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import CircularProgress from '@mui/material/CircularProgress';
 import Autocomplete from '@mui/material/Autocomplete';
-import ListItemText from '@mui/material/ListItemText';
+import Alert from '@mui/material/Alert';
+import { styled } from '@mui/material/styles';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { th } from 'date-fns/locale';
 import dayjs from 'dayjs';
 
-import { getReportSummary9 } from '../../libs/MedError';
+import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
+import { getReportSummary9 } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
 import { formatDateTime, formatDateEN } from '../../utils/formatTime';
 import { MedErrorTypeAll } from '../../data/DataMedError';
@@ -33,96 +39,146 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.common.white,
     borderColor: theme.palette.common.white,
+    fontWeight: 700,
+    fontSize: 13,
   },
   [`&.${tableCellClasses.body}`]: {
-    fontSize: 12,
+    fontSize: 12.5,
   },
 }));
 
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: theme.palette.action.hover,
-  },
-  '&:last-child td, &:last-child th': {
-    border: 1,
-  },
-}));
+// สีของ Level cell (Impact + Likelihood) — อิงจากภาพอ้างอิง
+const levelCellStyle = (level) => {
+  if (level === null || level === undefined || Number.isNaN(level)) {
+    return { backgroundColor: '#f5f5f5', color: '#9e9e9e' };
+  }
+  if (level <= 3) return { backgroundColor: '#80deea', color: '#004d40', fontWeight: 700 }; // cyan
+  if (level <= 6) return { backgroundColor: '#a5d6a7', color: '#1b5e20', fontWeight: 700 }; // green
+  if (level <= 7) return { backgroundColor: '#fff59d', color: '#827717', fontWeight: 700 }; // yellow
+  return { backgroundColor: '#ef9a9a', color: '#b71c1c', fontWeight: 800 }; // red 8+
+};
+
+// สีของ Δ% — เพิ่ม=แดง, ลด=เขียว, 0/null=เทา
+const deltaCellStyle = (deltaPct) => {
+  if (deltaPct === null || deltaPct === undefined || Number.isNaN(deltaPct)) {
+    return { color: '#9e9e9e' };
+  }
+  if (deltaPct > 0) return { color: '#c62828', fontWeight: 700 };
+  if (deltaPct < 0) return { color: '#2e7d32', fontWeight: 700 };
+  return { color: '#616161' };
+};
+
+// คำนวณ Δ% (B vs A): null ถ้า A=0
+const calcDeltaPct = (a, b) => {
+  if (a === 0 || a === null || a === undefined) return null;
+  return Math.round(((b - a) / a) * 100);
+};
+
+const formatDeltaPct = (deltaPct) => {
+  if (deltaPct === null || deltaPct === undefined || Number.isNaN(deltaPct)) return '—';
+  const sign = deltaPct > 0 ? '+' : '';
+  return `${sign}${deltaPct}%`;
+};
 
 const ReportSummary9 = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
 
-  const todayDate = dayjs();
-  const startOfMonth = todayDate.startOf('month');
-  const [firstDate, setFirstDate] = useState(startOfMonth);
-  const [lastDate, setLastDate] = useState(todayDate);
+  const today = dayjs();
+  const startOfMonth = today.startOf('month');
+  const startOfPrevMonth = today.subtract(1, 'month').startOf('month');
+  const endOfPrevMonth = today.subtract(1, 'month').endOf('month');
+
+  // Period A (required)
+  const [firstDateA, setFirstDateA] = useState(startOfMonth);
+  const [lastDateA, setLastDateA] = useState(today);
+  // Period B (optional, สำหรับเปรียบเทียบ)
+  const [compareMode, setCompareMode] = useState(false);
+  const [firstDateB, setFirstDateB] = useState(startOfPrevMonth);
+  const [lastDateB, setLastDateB] = useState(endOfPrevMonth);
+
+  const [selectedErrorType, setSelectedErrorType] = useState(MedErrorTypeAll[0]);
+
   const [token, setToken] = useState(null);
-  
-  const [selectedErrorType, setSelectedErrorType] = useState('');
-  const [selectedErrorTypeCode, setSelectedErrorTypeCode] = useState('');
-
-  const [dateFilter, setDateFilter] = useState({
-    firstDate: formatDateEN(dayjs().startOf('month')),
-    lastDate: formatDateEN(dayjs()),
-    errorType: '',
-  });
-
-  const [dataReport, setDataReport] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [errorTypeName, setErrorTypeName] = useState('');
+  const [isCompareResult, setIsCompareResult] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFirstDateChange = (newDate) => {
-    setFirstDate(newDate);
-    sendRange(newDate, lastDate, selectedErrorTypeCode);
-  };
-
-  const handleLastDateChange = (newDate) => {
-    setLastDate(newDate);
-    sendRange(firstDate, newDate, selectedErrorTypeCode);
-  };
-
-  const handleChangeErrorTypeAutoComplete = (event, value) => {
-    setSelectedErrorType(value);
-    const typeCode = value?.error_type ?? '';
-    setSelectedErrorTypeCode(typeCode);
-    sendRange(firstDate, lastDate, typeCode);
-  };
-
-  const sendRange = (start, end, errType) => {
-    if (start && end) {
-      const formatted = {
-        firstDate: formatDateEN(start),
-        lastDate: formatDateEN(end),
-        errorType: errType,
-      };
-      setDateFilter(formatted);
-      loadReportResult(token, formatted);
-    }
-  };
-
-  const loadReportResult = async (auth_token, filters) => {
-    const GetReportSummary9 = await getReportSummary9(auth_token || token, filters);
-    const { statusCode, reportList } = GetReportSummary9.data;
-    setIsLoading(true);
-    setTimeout(() => {
-      if (statusCode === 200 && !_.isEmpty(reportList)) {
-        setDataReport(reportList);
-        setIsLoading(false);
-      } else {
-        setDataReport([]);
+  const loadReport = useCallback(
+    async (authToken, options) => {
+      if (!authToken) return;
+      const { errType, periodA, periodB, withCompare } = options;
+      if (!errType?.error_type) return;
+      setIsLoading(true);
+      try {
+        const params = {
+          errorType: errType.error_type,
+          firstDateA: periodA.firstDate,
+          lastDateA: periodA.lastDate,
+        };
+        if (withCompare && periodB) {
+          params.firstDateB = periodB.firstDate;
+          params.lastDateB = periodB.lastDate;
+        }
+        const res = await getReportSummary9(authToken, params);
+        const data = res?.data ?? {};
+        if (data.statusCode === 200 && Array.isArray(data.reportList)) {
+          setRows(data.reportList);
+          setErrorTypeName(data.errorTypeName || '');
+          setIsCompareResult(Boolean(data.compare));
+        } else {
+          setRows([]);
+          setErrorTypeName('');
+          setIsCompareResult(false);
+        }
+      } catch (_e) {
+        setRows([]);
+        setErrorTypeName('');
+        setIsCompareResult(false);
+      } finally {
         setIsLoading(false);
       }
-    }, 1000);
-  };
+    },
+    []
+  );
+
+  // เรียก load เมื่อ filter เปลี่ยน — ใช้ค่าจาก state ตอนเรียก
+  const triggerLoad = useCallback(
+    (overrides = {}) => {
+      const periodA = {
+        firstDate: formatDateEN(overrides.firstDateA ?? firstDateA),
+        lastDate: formatDateEN(overrides.lastDateA ?? lastDateA),
+      };
+      const useCompare = overrides.compareMode ?? compareMode;
+      const periodB = useCompare
+        ? {
+            firstDate: formatDateEN(overrides.firstDateB ?? firstDateB),
+            lastDate: formatDateEN(overrides.lastDateB ?? lastDateB),
+          }
+        : null;
+      loadReport(token, {
+        errType: overrides.errType ?? selectedErrorType,
+        periodA,
+        periodB,
+        withCompare: useCompare,
+      });
+    },
+    [token, selectedErrorType, firstDateA, lastDateA, compareMode, firstDateB, lastDateB, loadReport]
+  );
 
   useEffect(() => {
     async function checkVerifyToken() {
       const verify = await verifyToken(null);
-      const { statusCode, access_token } = verify || {};
-      if (statusCode === 200 && access_token) {
-        if (access_token) {
-          setToken(access_token);
-          loadReportResult(access_token, dateFilter);
-        }
+      const { statusCode, profile, access_token: newToken } = verify ?? {};
+      if (statusCode === 200 && profile) {
+        setToken(newToken || null);
+        // โหลดข้อมูลครั้งแรกด้วย Period A เดือนปัจจุบัน + ประเภท Error แรก
+        loadReport(newToken, {
+          errType: MedErrorTypeAll[0],
+          periodA: { firstDate: formatDateEN(startOfMonth), lastDate: formatDateEN(today) },
+          periodB: null,
+          withCompare: false,
+        });
       } else {
         navigate('/login', { replace: true });
       }
@@ -131,175 +187,380 @@ const ReportSummary9 = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // คำนวณ rows ที่มี derived fields (total, delta, level)
+  const enrichedRows = useMemo(() => {
+    return rows.map((r) => {
+      const hadA = Number(r.had_a) || 0;
+      const nonHadA = Number(r.non_had_a) || 0;
+      const totalA = Number(r.total_a) || 0;
+      const hadB = isCompareResult ? Number(r.had_b) || 0 : 0;
+      const nonHadB = isCompareResult ? Number(r.non_had_b) || 0 : 0;
+      const totalB = isCompareResult ? Number(r.total_b) || 0 : 0;
+      const impact = r.impact_score === null || r.impact_score === undefined ? null : Number(r.impact_score);
+      const likelihood =
+        r.likelihood_score === null || r.likelihood_score === undefined ? null : Number(r.likelihood_score);
+      const level = impact !== null && likelihood !== null ? impact + likelihood : null;
+      const deltaPct = isCompareResult ? calcDeltaPct(totalA, totalB) : null;
+      return {
+        ...r,
+        hadA,
+        nonHadA,
+        totalA,
+        hadB,
+        nonHadB,
+        totalB,
+        impact,
+        likelihood,
+        level,
+        deltaPct,
+      };
+    });
+  }, [rows, isCompareResult]);
+
+  // แถวผลรวม
+  const totalsRow = useMemo(() => {
+    return enrichedRows.reduce(
+      (acc, r) => {
+        acc.hadA += r.hadA;
+        acc.nonHadA += r.nonHadA;
+        acc.totalA += r.totalA;
+        if (isCompareResult) {
+          acc.hadB += r.hadB;
+          acc.nonHadB += r.nonHadB;
+          acc.totalB += r.totalB;
+        }
+        return acc;
+      },
+      { hadA: 0, nonHadA: 0, totalA: 0, hadB: 0, nonHadB: 0, totalB: 0 }
+    );
+  }, [enrichedRows, isCompareResult]);
+
+  const totalsDeltaPct = isCompareResult ? calcDeltaPct(totalsRow.totalA, totalsRow.totalB) : null;
+
+  const incompleteRowCount = enrichedRows.filter((r) => r.level === null).length;
+
+  // Filter handlers
+  const handleFirstA = (newDate) => {
+    setFirstDateA(newDate);
+    if (newDate && lastDateA) triggerLoad({ firstDateA: newDate });
+  };
+  const handleLastA = (newDate) => {
+    setLastDateA(newDate);
+    if (firstDateA && newDate) triggerLoad({ lastDateA: newDate });
+  };
+  const handleFirstB = (newDate) => {
+    setFirstDateB(newDate);
+    if (compareMode && newDate && lastDateB) triggerLoad({ firstDateB: newDate });
+  };
+  const handleLastB = (newDate) => {
+    setLastDateB(newDate);
+    if (compareMode && firstDateB && newDate) triggerLoad({ lastDateB: newDate });
+  };
+  const handleErrTypeChange = (_e, value) => {
+    if (!value) return;
+    setSelectedErrorType(value);
+    triggerLoad({ errType: value });
+  };
+  const handleCompareToggle = (e) => {
+    const next = e.target.checked;
+    setCompareMode(next);
+    triggerLoad({ compareMode: next });
+  };
+
+  // Excel Export
+  const handleExportExcel = () => {
+    if (_.isEmpty(enrichedRows)) return;
+
+    const periodALabel = `${formatDateTime(formatDateEN(firstDateA))} - ${formatDateTime(formatDateEN(lastDateA))}`;
+    const periodBLabel = isCompareResult
+      ? `${formatDateTime(formatDateEN(firstDateB))} - ${formatDateTime(formatDateEN(lastDateB))}`
+      : '';
+
+    const exportRows = enrichedRows.map((r) => {
+      const base = {
+        'รายละเอียด Error': `${r.error_type_list} ${r.error_type_list_detail}`,
+        'HAD (A)': r.hadA,
+        'Non-HAD (A)': r.nonHadA,
+        'รวม (A)': r.totalA,
+      };
+      if (isCompareResult) {
+        Object.assign(base, {
+          'HAD (B)': r.hadB,
+          'Non-HAD (B)': r.nonHadB,
+          'รวม (B)': r.totalB,
+          'Δ%': r.deltaPct === null ? '' : `${r.deltaPct > 0 ? '+' : ''}${r.deltaPct}%`,
+        });
+      }
+      Object.assign(base, {
+        Impact: r.impact ?? '',
+        Likelihood: r.likelihood ?? '',
+        Level: r.level ?? '',
+      });
+      return base;
+    });
+
+    // แถวผลรวมท้ายตาราง
+    const totalsBase = {
+      'รายละเอียด Error': 'ผลรวม',
+      'HAD (A)': totalsRow.hadA,
+      'Non-HAD (A)': totalsRow.nonHadA,
+      'รวม (A)': totalsRow.totalA,
+    };
+    if (isCompareResult) {
+      Object.assign(totalsBase, {
+        'HAD (B)': totalsRow.hadB,
+        'Non-HAD (B)': totalsRow.nonHadB,
+        'รวม (B)': totalsRow.totalB,
+        'Δ%': totalsDeltaPct === null ? '' : `${totalsDeltaPct > 0 ? '+' : ''}${totalsDeltaPct}%`,
+      });
+    }
+    Object.assign(totalsBase, { Impact: '', Likelihood: '', Level: '' });
+    exportRows.push(totalsBase);
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet([], { skipHeader: true });
+    XLSX.utils.sheet_add_aoa(ws, [[`รายงานแยกรายละเอียด Error — ${errorTypeName}`]], { origin: 'A1' });
+    XLSX.utils.sheet_add_aoa(ws, [[`ช่วง A: ${periodALabel}`]], { origin: 'A2' });
+    if (isCompareResult) {
+      XLSX.utils.sheet_add_aoa(ws, [[`ช่วง B: ${periodBLabel}`]], { origin: 'A3' });
+    }
+    XLSX.utils.sheet_add_json(ws, exportRows, { origin: isCompareResult ? 'A5' : 'A4' });
+    XLSX.utils.book_append_sheet(wb, ws, 'Summary9');
+    XLSX.writeFile(wb, `รายงานแยกรายละเอียด_Error_${errorTypeName || ''}_${formatDateEN(firstDateA)}_to_${formatDateEN(lastDateA)}.xlsx`);
+  };
+
+  const periodALabel =
+    formatDateEN(firstDateA) === formatDateEN(lastDateA)
+      ? formatDateTime(formatDateEN(firstDateA))
+      : `${formatDateTime(formatDateEN(firstDateA))} - ${formatDateTime(formatDateEN(lastDateA))}`;
+  const periodBLabel = isCompareResult
+    ? formatDateEN(firstDateB) === formatDateEN(lastDateB)
+      ? formatDateTime(formatDateEN(firstDateB))
+      : `${formatDateTime(formatDateEN(firstDateB))} - ${formatDateTime(formatDateEN(lastDateB))}`
+    : '';
+
   return (
     <Box>
-      <Stack direction={'column'}>
+      <Stack direction="column">
         <Typography variant="h6">รายงานแยกรายละเอียด Error</Typography>
+        <Typography variant="body2" color="text.secondary">
+          แสดงรายการ subtype ของประเภท Error ที่เลือก พร้อม HAD/Non-HAD, Impact, Likelihood และ Level (Impact + Likelihood)
+        </Typography>
       </Stack>
-      <Stack spacing={2} direction={'row'} sx={{ mb: 2, py: 3, flexWrap: 'wrap' }}>
+
+      <Stack spacing={2} direction="row" sx={{ mb: 2, py: 3, flexWrap: 'wrap', alignItems: 'center' }}>
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mr: 1, color: 'primary.main' }}>
+              ช่วง A:
+            </Typography>
             <DatePicker
               label="วันที่"
-              value={firstDate}
-              onChange={handleFirstDateChange}
-              inputFormat="d MMMM yyyy" disableMaskedInput
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  value={firstDate}
-                  size="small"
-                  onClick={params.inputProps.onClick}
-                  readOnly
-                  sx={{ width: 220 }}
-                />
-              )}
+              value={firstDateA}
+              onChange={handleFirstA}
+              inputFormat="d MMMM yyyy"
+              disableMaskedInput
+              renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
             />
             <DatePicker
               label="ถึงวันที่"
-              value={lastDate}
-              onChange={handleLastDateChange}
-              inputFormat="d MMMM yyyy" disableMaskedInput
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  value={lastDate}
-                  size="small"
-                  onClick={params.inputProps.onClick}
-                  readOnly
-                  sx={{ width: 220 }}
-                />
-              )}
+              value={lastDateA}
+              onChange={handleLastA}
+              inputFormat="d MMMM yyyy"
+              disableMaskedInput
+              renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
             />
+
             <Autocomplete
               options={MedErrorTypeAll}
               value={selectedErrorType}
-              onChange={handleChangeErrorTypeAutoComplete}
+              onChange={handleErrTypeChange}
               getOptionLabel={(option) => (option ? option.error_type_name : '')}
-              isOptionEqualToValue={(option, value) => (value ? option.error_type === value.error_type : false)}
+              isOptionEqualToValue={(option, value) => option?.error_type === value?.error_type}
               size="small"
-              sx={{ width: 300 }}
-              renderOption={(props, option) => (
-                <li {...props}>
-                  <ListItemText primary={option.error_type_name} />
-                </li>
-              )}
+              sx={{ width: 280 }}
+              disableClearable
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="outlined"
-                  label="เลือกประเภท Error"
-                  placeholder="ค้นหา / เลือกหนึ่งรายการ"
-                />
+                <TextField {...params} label="ประเภท Error *" placeholder="เลือก 1 ประเภท" />
               )}
             />
+
+            <FormControlLabel
+              sx={{ ml: 1 }}
+              control={<Switch size="small" checked={compareMode} onChange={handleCompareToggle} />}
+              label={<Typography variant="body2" sx={{ fontWeight: 600 }}>เปรียบเทียบช่วง B</Typography>}
+            />
+
+            {compareMode && (
+              <>
+                <Typography variant="body2" sx={{ fontWeight: 600, ml: 1, color: 'warning.dark' }}>
+                  ช่วง B:
+                </Typography>
+                <DatePicker
+                  label="วันที่"
+                  value={firstDateB}
+                  onChange={handleFirstB}
+                  inputFormat="d MMMM yyyy"
+                  disableMaskedInput
+                  renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
+                />
+                <DatePicker
+                  label="ถึงวันที่"
+                  value={lastDateB}
+                  onChange={handleLastB}
+                  inputFormat="d MMMM yyyy"
+                  disableMaskedInput
+                  renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
+                />
+              </>
+            )}
+
+            <Button
+              variant="outlined"
+              color="success"
+              startIcon={<Iconify icon="vscode-icons:file-type-excel" />}
+              onClick={handleExportExcel}
+              disabled={_.isEmpty(enrichedRows)}
+              sx={{ ml: 1 }}
+            >
+              Export Excel
+            </Button>
           </Box>
         </LocalizationProvider>
       </Stack>
-      <Box>
-        <Stack direction={'column'} sx={{ mb: 2 }}>
-          <Typography variant="body1" style={{ fontSize: 14 }}>
-            {`ข้อมูลวันที่ ${
-              dateFilter?.firstDate === dateFilter?.lastDate
-                ? formatDateTime(dateFilter?.firstDate)
-                : `${formatDateTime(dateFilter?.firstDate)} - ${formatDateTime(dateFilter?.lastDate)}`
-            }`}
-          </Typography>
-        </Stack>
-        <Scrollbar>
-          <TableContainer component={Paper}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      สถานที่เกิดเหตุการณ์
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      Prescription Error
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      Dispensing Error
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      Pre-Adminstration Error
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      Adminstration Error
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      Processing Error
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      Transcribing Error
-                    </Typography>
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                      รวม
-                    </Typography>
-                  </StyledTableCell>
-                </TableRow>
-              </TableHead>
+
+      {incompleteRowCount > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }} icon={<Iconify icon="eva:alert-triangle-outline" />}>
+          มี {incompleteRowCount} รายการที่ยังไม่ได้ระบุ Impact หรือ Likelihood ครบ → คอลัมน์ Level จะแสดง "—". กรุณาไปที่หน้า{' '}
+          <b>"ข้อมูลรายละเอียดประเภท Error"</b> เพื่อกำหนดคะแนน
+        </Alert>
+      )}
+
+      <Stack direction="column" sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ color: 'primary.main' }}>
+          {errorTypeName || (selectedErrorType?.error_type_name ?? '')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          ช่วง A: {periodALabel}
+          {isCompareResult && (
+            <>
+              {' '}| ช่วง B: <b style={{ color: '#ed6c02' }}>{periodBLabel}</b>
+            </>
+          )}
+        </Typography>
+      </Stack>
+
+      <Scrollbar>
+        <TableContainer component={Paper}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell rowSpan={2} sx={{ minWidth: 280 }}>
+                  รายละเอียด Error
+                </StyledTableCell>
+                <StyledTableCell colSpan={3} align="center">
+                  ช่วง A
+                </StyledTableCell>
+                {isCompareResult && (
+                  <>
+                    <StyledTableCell colSpan={3} align="center" sx={{ backgroundColor: '#ed6c02' }}>
+                      ช่วง B
+                    </StyledTableCell>
+                    <StyledTableCell rowSpan={2} align="center">
+                      Δ%
+                    </StyledTableCell>
+                  </>
+                )}
+                <StyledTableCell rowSpan={2} align="center">
+                  Impact
+                </StyledTableCell>
+                <StyledTableCell rowSpan={2} align="center">
+                  Likelihood
+                </StyledTableCell>
+                <StyledTableCell rowSpan={2} align="center">
+                  Level
+                </StyledTableCell>
+              </TableRow>
+              <TableRow>
+                <StyledTableCell align="center">HAD</StyledTableCell>
+                <StyledTableCell align="center">Non-HAD</StyledTableCell>
+                <StyledTableCell align="center">รวม</StyledTableCell>
+                {isCompareResult && (
+                  <>
+                    <StyledTableCell align="center" sx={{ backgroundColor: '#ed6c02' }}>HAD</StyledTableCell>
+                    <StyledTableCell align="center" sx={{ backgroundColor: '#ed6c02' }}>Non-HAD</StyledTableCell>
+                    <StyledTableCell align="center" sx={{ backgroundColor: '#ed6c02' }}>รวม</StyledTableCell>
+                  </>
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {isLoading ? (
-                <TableBody>
-                  <TableRow>
-                    <TableCell align="center" colSpan={8}>
-                      <CircularProgress color="inherit" sx={{ mr: 1 }} />
-                      <Typography variant="body1">{'กำลังโหลดข้อมูล...'}</Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
+                <TableRow>
+                  <TableCell colSpan={isCompareResult ? 11 : 7} align="center" sx={{ py: 4 }}>
+                    <CircularProgress size={22} sx={{ mr: 1 }} />
+                    <Typography variant="body2" component="span">กำลังโหลดข้อมูล...</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : _.isEmpty(enrichedRows) ? (
+                <TableRow>
+                  <TableCell colSpan={isCompareResult ? 11 : 7} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      ไม่มีข้อมูล / กรุณาเลือกประเภท Error แล้วเลือกช่วงวันที่
+                    </Typography>
+                  </TableCell>
+                </TableRow>
               ) : (
-                <TableBody>
-                  {dataReport.length === 0 && (
-                    <TableRow>
-                      <TableCell align="center" colSpan={8}>
-                        <Typography variant="body1" sx={{ color: theme.palette.error.main, fontWeight: 600 }}>
-                          {'ไม่มีข้อมูล'}
+                <>
+                  {enrichedRows.map((r) => (
+                    <TableRow key={r.type_id} hover>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {r.error_type_list} {r.error_type_list_detail}
                         </Typography>
                       </TableCell>
+                      <TableCell align="center">{r.hadA || ''}</TableCell>
+                      <TableCell align="center">{r.nonHadA || ''}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>{r.totalA || ''}</TableCell>
+                      {isCompareResult && (
+                        <>
+                          <TableCell align="center" sx={{ backgroundColor: '#fff8e1' }}>{r.hadB || ''}</TableCell>
+                          <TableCell align="center" sx={{ backgroundColor: '#fff8e1' }}>{r.nonHadB || ''}</TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 600, backgroundColor: '#fff8e1' }}>{r.totalB || ''}</TableCell>
+                          <TableCell align="center" sx={deltaCellStyle(r.deltaPct)}>{formatDeltaPct(r.deltaPct)}</TableCell>
+                        </>
+                      )}
+                      <TableCell align="center">{r.impact ?? '—'}</TableCell>
+                      <TableCell align="center">{r.likelihood ?? '—'}</TableCell>
+                      <TableCell align="center" sx={levelCellStyle(r.level)}>
+                        {r.level ?? '—'}
+                      </TableCell>
                     </TableRow>
-                  )}
-                  {dataReport.length > 0 &&
-                    dataReport.map((_report, index) => (
-                      <StyledTableRow key={index}>
-                        <TableCell>
-                          <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                            {_report.error_ward_name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">{_report.error_prescription}</TableCell>
-                        <TableCell align="center">{_report.error_dispensing}</TableCell>
-                        <TableCell align="center">{_report.error_pre_administration}</TableCell>
-                        <TableCell align="center">{_report.error_adminstration}</TableCell>
-                        <TableCell align="center">{_report.error_processing}</TableCell>
-                        <TableCell align="center">{_report.error_transcribing}</TableCell>
-                        <TableCell align="center">
-                          <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                            {_report.total}
-                          </Typography>
-                        </TableCell>
-                      </StyledTableRow>
-                    ))}
-                </TableBody>
+                  ))}
+                  {/* แถว ผลรวม */}
+                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                    <TableCell sx={{ fontWeight: 700 }}>ผลรวม</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700 }}>{totalsRow.hadA}</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700 }}>{totalsRow.nonHadA}</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 800 }}>{totalsRow.totalA}</TableCell>
+                    {isCompareResult && (
+                      <>
+                        <TableCell align="center" sx={{ fontWeight: 700, backgroundColor: '#fff3e0' }}>{totalsRow.hadB}</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, backgroundColor: '#fff3e0' }}>{totalsRow.nonHadB}</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, backgroundColor: '#fff3e0' }}>{totalsRow.totalB}</TableCell>
+                        <TableCell align="center" sx={deltaCellStyle(totalsDeltaPct)}>{formatDeltaPct(totalsDeltaPct)}</TableCell>
+                      </>
+                    )}
+                    <TableCell align="center">—</TableCell>
+                    <TableCell align="center">—</TableCell>
+                    <TableCell align="center">—</TableCell>
+                  </TableRow>
+                </>
               )}
-            </Table>
-          </TableContainer>
-        </Scrollbar>
-      </Box>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Scrollbar>
     </Box>
   );
 };

@@ -103,7 +103,7 @@ export default class MedErrorModel {
                 .andWhere("etl.is_active", "Y")
         } else {
             return this.db("med_error_type_list AS etl")
-                .select("etl.type_id", "etl.error_type", "et.error_type_name", "etl.error_type_list", "etl.error_type_list_detail", "etl.is_active", "etl.impact_score")
+                .select("etl.type_id", "etl.error_type", "et.error_type_name", "etl.error_type_list", "etl.error_type_list_detail", "etl.is_active", "etl.impact_score", "etl.likelihood_score")
                 .leftJoin("med_error_type AS et", "etl.error_type", "et.error_type")
                 .orderBy([{ column: 'etl.error_type', order: "asc" }, { column: 'etl.type_id', order: 'asc' }]);
         }

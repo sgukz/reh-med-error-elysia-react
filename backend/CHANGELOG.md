@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-05-12
+
+### Added — Likelihood Score + รื้อรายงาน Summary9
+- เพิ่ม column `likelihood_score TINYINT NULL` ใน `med_error_type_list` (migration: `migrations/2026-05-12_add_likelihood_score_to_med_error_type_list.sql`) + Bun script idempotent
+- `TypeErrorListCreate` interface เพิ่ม `likelihood_score: number | null`
+- `POST /med-error/create-error-type-list` validate `likelihood_score` ต้องเป็น null หรือ integer 1-5
+- `MedErrorModel.getErrorTypeByTypeList` SELECT `likelihood_score` ด้วย
+
+### Changed — รื้อ `/reports/summary9` (รายงานแยกรายละเอียด Error)
+ก่อนหน้านี้รายงานเป็น ward × type matrix; v1.7.0 เปลี่ยนเป็น subtype detail report ตามต้นแบบจากผู้ใช้:
+- Query params ใหม่: `firstDateA`, `lastDateA` (required), `firstDateB`, `lastDateB` (optional), `errorType` (required, 1-6)
+- `ReportModel.getReportSummary9` รื้อใหม่:
+  - SELECT subtype จาก `med_error_type_list` (is_active='Y') ของประเภท Error ที่เลือก
+  - LEFT JOIN `med_error` ด้วย `m.<error_field> LIKE CONCAT(etl.error_type_list, ' %')` แยก field ตามประเภท (1=prescription, 2=dispensing, 3=pre_administration, 4=adminstration, 5=processing, 6=transcribing)
+  - COUNT แยก HAD vs Non-HAD ตาม `error_alert` ในแต่ละช่วง (Period A และ Period B ถ้ามี)
+  - SELECT `impact_score`, `likelihood_score` คู่ด้วย (Level = Impact + Likelihood คำนวณฝั่ง frontend)
+- Response รวม `errorType`, `errorTypeName`, `compare` (boolean), `reportList`
+
 ## [1.6.0] - 2026-05-12
 
 ### Backend Database Migration & Fixes
