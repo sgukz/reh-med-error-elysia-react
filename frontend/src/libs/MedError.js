@@ -233,6 +233,7 @@ export const getReportSummary1 = buildReportSummary('summary1');
 export const getReportSummary2 = buildReportSummary('summary2');
 export const getReportSummary3 = buildReportSummary('summary3');
 export const getReportSummary5 = buildReportSummary('summary5');
+export const getReportSummary6 = buildReportSummary('summary6');
 export const getReportSummary7 = buildReportSummary('summary7');
 export const getReportSummary9 = buildReportSummary('summary9');
 export const getReportSummary10 = buildReportSummary('summary10');

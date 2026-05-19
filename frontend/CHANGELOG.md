@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-05-19
+
+### Added — ReportSummary6 (สรุปอุบัติการณ์ที่ได้ RCA แล้ว)
+- หน้ารายงานใหม่: Tab "สรุปอุบัติการณ์ที่ได้ RCA แล้ว" + Chip "New" ใน `ReportPage` (value="6")
+- **Filter bar**: DatePicker (default = ต้นปีงบ พ.ย./ตค.-กย. จนถึงวันนี้) + Dropdown ประเภท Error (ทั้งหมด + 6 ประเภท) + Export Excel
+- **Summary Cards 6 ใบ**: จำนวน RCA / ระดับ E+ / HAD / เวลาตอบสนองเฉลี่ย (วัน) / ประเภทพบบ่อยสุด / หน่วยงานพบบ่อยสุด — แสดง icon + label + ค่า จาก `summary` ที่ backend คำนวณให้
+- **ตาราง 17 คอลัมน์** พร้อม:
+  - **Sort** ได้ทุกคอลัมน์หลัก (numeric สำหรับ rca_days, string สำหรับอื่น ๆ) — default `error_date DESC`
+  - **Search** client-side: เหตุการณ์ / หน่วยงาน / rca_text / ผู้บันทึก / แพทย์ / ประเภท / detail
+  - **TablePagination** (10/25/50/100 — default 25)
+  - **สีแถวตาม severity**: A-D เขียวอ่อน, E-F เหลืองอ่อน, G-I แดงอ่อน
+  - **Chip ระดับความรุนแรง**: สีตาม level (success/warning/error)
+  - **Chip HAD**: ส้มถ้า "High Alert Drugs" / เทา outline ถ้า Non-HAD
+  - **Chip ระยะเวลา RCA**: success ≤7 วัน, warning ≤30 วัน, error >30 วัน
+  - **Tooltip** บนคอลัมน์ที่อาจยาว (event, type_detail, analysis, clear, rca_text) — show ตัวเต็มเมื่อ hover
+- **Export Excel 2 sheets**: "สรุป RCA" (สถิติจาก summary) + "รายละเอียด RCA" (ตารางทั้งหมดที่ผ่าน filter, ไม่ใช่แค่ page ปัจจุบัน)
+- `libs/MedError.js`: เพิ่ม `getReportSummary6` (ใช้ `buildReportSummary` factory ที่มีอยู่)
+
+### Security
+- ส่ง `errorType` เป็นตัวเลขเสมอ (0 = ไม่ filter; 1-6 = filter) — backend clamp อีกชั้น
+- ค้นหา client-side ใช้ `String(v).toLowerCase().includes(q)` ปลอดภัยจาก XSS (ไม่ render HTML จาก user)
+- ปรับค่า `errorType` / `firstDate` / `lastDate` แล้วรีเซ็ต page เป็น 0 ทุกครั้ง — กัน edge case แสดงหน้าว่างเปล่าหลัง filter
+
 ## [1.16.0] - 2026-05-19
 
 ### Added — ReportSummary10 (สถิติจำนวนใบสั่งยา/วันนอน)

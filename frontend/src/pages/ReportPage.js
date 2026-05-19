@@ -20,6 +20,7 @@ import { verifyToken } from '../libs/Auth';
 import ReportSummary1 from '../sections/reports/ReportSummary1';
 import ReportSummary3 from '../sections/reports/ReportSummary3';
 import ReportSummary4 from '../sections/reports/ReportSummary4';
+import ReportSummary6 from '../sections/reports/ReportSummary6';
 import ReportSummary7 from '../sections/reports/ReportSummary7';
 import ReportSummary8 from '../sections/reports/ReportSummary8';
 import ReportSummary9 from '../sections/reports/ReportSummary9';
@@ -78,7 +79,15 @@ export default function ReportPage() {
                     } 
                     value="4" 
                   />
-                  {/* <Tab label="สรุปอุบัติการณ์ที่ได้ RCA แล้ว (Pending)" value="6" /> */}
+                  <Tab
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <span>สรุปอุบัติการณ์ที่ได้ RCA แล้ว</span>
+                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
+                      </Stack>
+                    }
+                    value="6"
+                  />
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />
                   <Tab label="รายงานความคลาดเคลื่อน" value="8" />
                   <Tab
@@ -116,10 +125,9 @@ export default function ReportPage() {
               {/* <TabPanel value="5">
                 <ReportSummary5 />
               </TabPanel> */}
-              {/* <TabPanel value="5">
+              <TabPanel value="6">
                 <ReportSummary6 />
               </TabPanel>
-               */}
               <TabPanel value="7">
                 <ReportSummary7 />
               </TabPanel>

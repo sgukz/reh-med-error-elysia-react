@@ -69,6 +69,46 @@ export interface DrugPairRow {
     count: number;
 }
 
+// รายงานสรุปอุบัติการณ์ที่ได้ RCA แล้ว — Summary6
+export interface GetMedErrorSummary6Options {
+    dateStart: string;  // YYYY-MM-DD
+    dateEnd: string;    // YYYY-MM-DD
+    errorType?: string | number;  // 0 = ทั้งหมด, 1-6 = filter
+}
+
+export interface Summary6Row {
+    error_id: number;
+    error_section: number;
+    error_date: string;
+    error_time: string;
+    error_ward_name: string;
+    error_event: string;
+    error_level: string;
+    error_level_detail: string;
+    error_clear: string;
+    error_analysis: string;
+    error_type: number;
+    error_type_name: string;
+    error_type_detail: string;
+    error_alert: string;
+    error_doctor: string;
+    error_user_name: string;
+    is_rca: string;
+    rca_text: string;
+    rca_by: string;
+    updated_rca: string;
+    rca_days: number | null;
+}
+
+export interface Summary6Stats {
+    total: number;
+    levelEPlus: number;
+    hadCount: number;
+    avgRcaDays: number;
+    topErrorType: string;
+    topWard: string;
+}
+
 // รายงานสถิติจำนวนใบสั่งยา (OPD) / วันนอน (IPD) — Summary10
 export interface GetMedErrorSummary10Options {
     fiscalYear: string | number; // ปี พ.ศ. (e.g. 2567) — backend converts to CE range

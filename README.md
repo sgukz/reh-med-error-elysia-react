@@ -12,11 +12,11 @@
 
 โปรเจกต์นี้แบ่งออกเป็น 2 ส่วนหลัก (Monorepo):
 
-1. **[Frontend](./frontend)** (`v1.14.0`): ระบบหน้าบ้านสำหรับผู้ใช้งานและผู้ดูแลระบบ
+1. **[Frontend](./frontend)** (`v1.17.0`): ระบบหน้าบ้านสำหรับผู้ใช้งานและผู้ดูแลระบบ
    - **Tech Stack**: React 18, Material UI (MUI v5), React Hook Form, Zod, ApexCharts
    - **Package Manager**: [Bun](https://bun.sh/)
 
-2. **[Backend](./backend)** (`v1.6.0`): ระบบ API สำหรับจัดการข้อมูล
+2. **[Backend](./backend)** (`v1.9.0`): ระบบ API สำหรับจัดการข้อมูล
    - **Tech Stack**: [ElysiaJS](https://elysiajs.com/), TypeScript, MariaDB/MySQL (Knex)
    - **Runtime/Package Manager**: [Bun](https://bun.sh/)
 
@@ -38,7 +38,9 @@
 | Master | `/med-error/get-analysis` / `/create-analysis` / `/delete-analysis` | GET/POST/DELETE | จัดการการวิเคราะห์สาเหตุ |
 | Form | `/med-error/med-error` | GET/POST/PUT/DELETE | ฟอร์มรายงาน + RCA |
 | Dashboard | `/med-error/dashboard/mederror` | GET | สรุป Executive |
-| Reports | `/med-error/reports/summary[1,2,3,5,7,8]` | GET | รายงานต่าง ๆ |
+| Reports | `/med-error/reports/summary[1,2,3,5,6,7,8,9,10]` | GET | รายงานต่าง ๆ (รวม Summary6 = สรุปอุบัติการณ์ที่ RCA แล้ว, Summary10 = สถิติใบสั่งยา/วันนอน) |
+| Reports | `/med-error/reports/stat-volume` | GET/POST | TABLE 0 ของ Summary10 (POST = Admin only) |
+| Reports | `/med-error/reports/drug-pair-summary` | GET | คู่ยาคลาดเคลื่อน (dispensing / processing) |
 
 ทุก endpoint ตรวจ `Origin/Referer` กับ allowlist + `client-id` + JWT token
 

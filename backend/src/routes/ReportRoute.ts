@@ -11,7 +11,7 @@ import ReportModel from "../models/ReportModel";
 import MedErrorModel from "../models/MedErrorModel";
 
 //Interface
-import { GetMedErrorSummary1Options, GetMedErrorSummary2Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options, GetMedErrorSummary10Options, StatVolumeUpsertBody } from '../Interfaces/ReportInterface'
+import { GetMedErrorSummary1Options, GetMedErrorSummary2Options, GetMedErrorSummary6Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options, GetMedErrorSummary10Options, StatVolumeUpsertBody } from '../Interfaces/ReportInterface'
 import _ from "lodash";
 import 'moment/locale/th'; // นำเข้า locale ภาษาไทย
 
@@ -327,6 +327,128 @@ ReportRoute.get('/summary5', async ({
     }
 });
 
+
+// Using by ReportSummary6 — สรุปอุบัติการณ์ที่ได้ RCA แล้ว
+ReportRoute.get('/summary6', async ({
+    jwt,
+    set,
+    request,
+    query
+}: {
+    jwt: { verify: (token: string) => Promise<string> };
+    set: { status: number };
+    request: Request
+    query: GetMedErrorSummary6Options
+}) => {
+    try {
+        const headers = request.headers
+        const { dateStart, dateEnd, errorType } = query as GetMedErrorSummary6Options
+        const token = readAuthTokenFromHeaders(headers)
+        const clientId = headers.get("client-id")
+        let originAllow = headers.get("origin");
+
+        if (!originAllow) {
+            const referer = headers.get("referer");
+            if (referer) {
+                try {
+                    originAllow = new URL(referer).origin;
+                } catch (e) {
+                }
+            }
+        }
+
+        if (!originAllow || !ALLOWED_ORIGINS.has(originAllow)) {
+            set.status = StatusCodes.FORBIDDEN;
+            return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow origin [${StatusCodes.FORBIDDEN}]` };
+        }
+
+        if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
+            set.status = StatusCodes.FORBIDDEN;
+            return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
+        }
+
+        if (!token) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
+        }
+
+        const payload = await jwt.verify(token);
+        if (!payload) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
+        }
+
+        // Validate dates — กัน SQL inject ผ่าน whereBetween (knex bind อยู่แล้ว แต่ตรวจ format กันรูปแบบเพี้ยน)
+        const isYMD = (s: any) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+        if (!isYMD(dateStart) || !isYMD(dateEnd)) {
+            set.status = StatusCodes.BAD_REQUEST;
+            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: 'dateStart/dateEnd must be YYYY-MM-DD' };
+        }
+        if (dateStart > dateEnd) {
+            set.status = StatusCodes.BAD_REQUEST;
+            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: 'dateStart must be <= dateEnd' };
+        }
+
+        const reportList = await reports.getReportSummary6({ dateStart, dateEnd, errorType })
+
+        // Build summary (analytics)
+        const total = reportList.length;
+        const E_PLUS = new Set(['E', 'F', 'G', 'H', 'I']);
+        const HIGH_ALERT = 'High Alert Drugs';
+        let levelEPlus = 0;
+        let hadCount = 0;
+        let rcaDaysSum = 0;
+        let rcaDaysCount = 0;
+        const typeCount = new Map<string, number>();
+        const wardCount = new Map<string, number>();
+
+        for (const r of reportList as any[]) {
+            if (E_PLUS.has(String(r.error_level))) levelEPlus += 1;
+            if (r.error_alert === HIGH_ALERT) hadCount += 1;
+            const days = Number(r.rca_days);
+            if (Number.isFinite(days) && days >= 0) {
+                rcaDaysSum += days;
+                rcaDaysCount += 1;
+            }
+            const tName = r.error_type_name || '';
+            if (tName) typeCount.set(tName, (typeCount.get(tName) || 0) + 1);
+            const wName = r.error_ward_name || '';
+            if (wName) wardCount.set(wName, (wardCount.get(wName) || 0) + 1);
+        }
+
+        const pickTop = (m: Map<string, number>) => {
+            let topKey = '';
+            let topVal = -1;
+            for (const [k, v] of m.entries()) {
+                if (v > topVal) {
+                    topKey = k;
+                    topVal = v;
+                }
+            }
+            return topKey;
+        };
+
+        const summary = {
+            total,
+            levelEPlus,
+            hadCount,
+            avgRcaDays: rcaDaysCount > 0 ? Number((rcaDaysSum / rcaDaysCount).toFixed(2)) : 0,
+            topErrorType: pickTop(typeCount),
+            topWard: pickTop(wardCount),
+        };
+
+        set.status = StatusCodes.OK;
+        return { statusCode: StatusCodes.OK, reportList, summary };
+
+    } catch (error) {
+        console.error("[Report] summary6 error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
+    }
+});
 
 //Using by ReportSummary7
 ReportRoute.get('/summary7', async ({

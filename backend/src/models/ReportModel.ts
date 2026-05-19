@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 
-import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options, GetMedErrorSummary10Options, StatVolumeUpsertBody } from '../Interfaces/ReportInterface'
+import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary6Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options, GetMedErrorSummary10Options, StatVolumeUpsertBody } from '../Interfaces/ReportInterface'
 
 export default class ReportModel {
     private db: Knex;
@@ -195,6 +195,57 @@ export default class ReportModel {
 
         if (depCode && Array.isArray(depCode) && depCode.length > 0) {
             query.whereIn('m.error_ward', depCode);
+        }
+
+        return await query;
+    }
+
+    // Using Report 6 — สรุปอุบัติการณ์ที่ได้ RCA แล้ว (is_rca = 'Y')
+    async getReportSummary6(options: GetMedErrorSummary6Options) {
+        const { dateStart, dateEnd, errorType } = options;
+
+        const query = this.db('med_error as me')
+            .select(
+                'me.error_id',
+                'me.error_section',
+                this.db.raw("CONCAT(me.error_date, '') as error_date"),
+                'me.error_time',
+                'me.error_ward_name',
+                'me.error_event',
+                'me.error_level',
+                'me.error_level_detail',
+                'me.error_clear',
+                'me.error_analysis',
+                'me.error_type',
+                'me.error_type_name',
+                'me.error_alert',
+                'me.error_doctor',
+                'me.error_user_name',
+                'me.is_rca',
+                'me.rca_text',
+                'me.rca_by',
+                this.db.raw('CONCAT(me.updated_rca, \'\') as updated_rca'),
+                this.db.raw(`
+                    CASE me.error_type
+                        WHEN 1 THEN me.error_prescription
+                        WHEN 2 THEN me.error_dispensing
+                        WHEN 3 THEN me.error_pre_administration
+                        WHEN 4 THEN me.error_adminstration
+                        WHEN 5 THEN me.error_processing
+                        WHEN 6 THEN me.error_transcribing
+                        ELSE ''
+                    END AS error_type_detail
+                `),
+                this.db.raw('DATEDIFF(me.updated_rca, me.error_date) AS rca_days')
+            )
+            .where('me.is_rca', 'Y')
+            .where('me.app_new', 'Y')
+            .whereBetween('me.error_date', [dateStart, dateEnd])
+            .orderBy('me.error_date', 'desc');
+
+        const numType = Number(errorType);
+        if (Number.isFinite(numType) && numType >= 1 && numType <= 6) {
+            query.andWhere('me.error_type', numType);
         }
 
         return await query;

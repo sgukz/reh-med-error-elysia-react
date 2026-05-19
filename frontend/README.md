@@ -8,6 +8,8 @@
 - **Dashboard & Analytics**: แสดงผลข้อมูลสรุปสำหรับผู้บริหาร (Executive Summary) และกราฟแสดงแนวโน้ม
 - **Drug Pair Reports (v1.13.0+)**: รายงานคู่ยาคลาดเคลื่อนแยก "จัดคลาดเคลื่อน" และ "คีย์คลาดเคลื่อน" พร้อมจำนวนอุบัติการณ์เรียงจากมาก → น้อย
 - **Error Detail Report — Summary 9 (v1.15.0+)**: รายงานแยกรายละเอียด Error ตาม subtype พร้อม HAD/Non-HAD, **Impact + Likelihood + Level color-coded**, รองรับ **เปรียบเทียบ 2 ช่วงเวลา (Δ%)** และ Export Excel
+- **Prescription/IPD Statistics — Summary 10 (v1.16.0+)**: สถิติจำนวนใบสั่งยา (OPD) / วันนอน (IPD) — 4 ตาราง + อัตราต่อ 1,000, Admin (rule=9) กรอกข้อมูลปริมาณรายเดือนได้ใน TABLE 0, Export Excel 4 sheets
+- **RCA Summary Report — Summary 6 (v1.17.0+)**: สรุปอุบัติการณ์ที่ได้ RCA แล้ว — 6 summary cards (จำนวน RCA / ระดับ E+ / HAD / เวลาตอบสนองเฉลี่ย / ประเภทพบบ่อยสุด / หน่วยงานพบบ่อยสุด) + ตาราง 17 คอลัมน์ มี sort/search/pagination, สีแถวตาม severity, Chip ระยะเวลา RCA, Tooltip บนคอลัมน์ยาว, Export Excel 2 sheets
 - **Master Data Management**: จัดการข้อมูลพื้นฐาน เช่น หอผู้ป่วย (Ward), ประเภท Error พร้อม **คะแนน Impact + Likelihood (1-5 ต่อตัว)** สำหรับคำนวณ Risk Level, และการวิเคราะห์สาเหตุ (RCA)
 - **Authentication & Authorization**: ระบบจัดการสิทธิ์ผู้ใช้งาน (User & Admin roles) — **HTTP-only cookie (v1.13.0+)** ลดความเสี่ยง XSS
 - **LINE OA Integration**: รองรับการแจ้งเตือนและการตอบกลับผ่าน LINE Official Account

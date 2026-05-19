@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-05-19
+
+### Added — ReportSummary6 (สรุปอุบัติการณ์ที่ได้ RCA แล้ว)
+- `ReportModel.getReportSummary6({ dateStart, dateEnd, errorType })` — ดึงเฉพาะ `is_rca = 'Y' AND app_new = 'Y'` ในช่วงวันที่ + filter ประเภท Error (0 = ทั้งหมด, 1-6)
+- คำนวณ `rca_days` ฝั่ง SQL ด้วย `DATEDIFF(updated_rca, error_date)` — ไม่ต้องคำนวณซ้ำที่ frontend
+- คอลัมน์ครบ 17 คอลัมน์ตาม spec: error_date/time, ward, event, level, type+detail (CASE WHEN), analysis, alert (HAD/Non-HAD), clear, doctor, rca_text/by + updated_rca, user_name + คอลัมน์คำนวณ rca_days
+- Endpoint `GET /reports/summary6?dateStart=...&dateEnd=...&errorType=0` — return `{ statusCode, reportList, summary }`
+- `summary` aggregate ใน route handler (ไม่ต้อง query เพิ่ม): `total`, `levelEPlus` (E-I), `hadCount`, `avgRcaDays` (2 ทศนิยม), `topErrorType`, `topWard`
+- Interface ใหม่ `GetMedErrorSummary6Options`, `Summary6Row`, `Summary6Stats`
+
+### Security — Summary6 Input Validation
+- ตรวจ `dateStart`/`dateEnd` ต้องตรงรูปแบบ `^\d{4}-\d{2}-\d{2}$` ก่อนส่งเข้า knex (กัน parameter pollution / format inject)
+- ตรวจ `dateStart <= dateEnd` (BAD_REQUEST ถ้าผิดลำดับ)
+- `errorType` parsed ผ่าน `Number()` + clamp `1..6` — ไม่เข้า SQL ถ้านอกช่วง
+- ตามลำดับ **origin gate → client-id gate → JWT verify → input validate → business logic** (เหมือน Summary10)
+
 ## [1.8.0] - 2026-05-19
 
 ### Added — ReportSummary10 (สถิติจำนวนใบสั่งยา/วันนอน)
