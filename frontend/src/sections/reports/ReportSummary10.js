@@ -28,7 +28,6 @@ import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
 import { getReportSummary10, saveStatVolume } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
-import { useAuth } from '../../contexts/AuthContext';
 
 // ============================================================================
 // Constants & helpers
@@ -86,12 +85,13 @@ const EMPTY_COUNT = { had: 0, nonHad: 0, total: 0 };
 // ============================================================================
 // Styled
 // ============================================================================
-const StyledHeadCell = styled(TableCell)(() => ({
+const StyledHeadCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    color: '#fff',
-    borderColor: '#fff',
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    borderColor: theme.palette.common.white,
     fontWeight: 700,
-    fontSize: 12,
+    fontSize: 13,
     padding: '6px 8px',
     textAlign: 'center',
     whiteSpace: 'nowrap',
@@ -99,18 +99,18 @@ const StyledHeadCell = styled(TableCell)(() => ({
 }));
 
 const BodyCell = styled(TableCell)(() => ({
-  fontSize: 12,
+  fontSize: 12.5,
   padding: '4px 8px',
   textAlign: 'center',
   whiteSpace: 'nowrap',
 }));
 
-// สีหัวตาราง
+// สีหัวตาราง — ใช้ theme.palette.primary.main เป็นค่า default แล้ว override ทาง sx prop
 const COLOR = {
-  TABLE0: '#1976d2',     // primary blue
-  TABLE_IPD: '#4f46e5',  // indigo
-  TABLE_OPD: '#0d9488',  // teal
-  TABLE_SUM: '#ed6c02',  // orange
+  TABLE0: 'primary.main',    // ใช้ theme primary
+  TABLE_IPD: '#303f9f',      // indigo dark (ตัดกับสีขาวชัดเจน)
+  TABLE_OPD: '#00695c',      // teal dark
+  TABLE_SUM: '#e65100',      // orange dark
 };
 
 // ============================================================================
@@ -118,8 +118,10 @@ const COLOR = {
 // ============================================================================
 const ReportSummary10 = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isAdmin = Number(user?.rule) === 9;
+
+  // admin detection — ใช้ profile จาก verifyToken() แทน useAuth()
+  // เพราะ useAuth().user อาจเป็น null ตอน component mount
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // ปีงบประมาณ default = ปีงบปัจจุบัน (ตค-กย)
   const nowBE = dayjs().year() + 543;
@@ -231,6 +233,7 @@ const ReportSummary10 = () => {
       const { statusCode, profile, access_token } = verify ?? {};
       if (statusCode === 200 && profile && access_token) {
         setToken(access_token);
+        setIsAdmin(Number(profile.rule) === 9);
         loadAll(access_token, defaultFiscalYear);
       } else {
         navigate('/login', { replace: true });
@@ -414,13 +417,13 @@ const ReportSummary10 = () => {
   const renderTable0 = () => (
     <TableContainer component={Paper} sx={{ mb: 3 }}>
       <Table size="small">
-        <TableHead sx={{ backgroundColor: COLOR.TABLE0 }}>
+        <TableHead>
           <TableRow>
             <StyledHeadCell sx={{ minWidth: 180, textAlign: 'left' }}>รายการ</StyledHeadCell>
             {months.map((m) => (
               <StyledHeadCell key={`h0-${m.month}`}>{m.label}</StyledHeadCell>
             ))}
-            <StyledHeadCell sx={{ backgroundColor: '#0d47a1' }}>รวม</StyledHeadCell>
+            <StyledHeadCell sx={{ backgroundColor: '#1565c0' }}>รวม</StyledHeadCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -465,6 +468,8 @@ const ReportSummary10 = () => {
 
   const renderErrorTable = (wardGroup, title, headColor) => {
     const agg = aggregates[wardGroup]; // pre-computed: perCell / perMonth / perType / grand
+    const hcSx = { backgroundColor: headColor }; // sx override สำหรับ header cells
+    const totalSx = { backgroundColor: '#263238' }; // สีเข้มสำหรับคอลัมน์รวม
     return (
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: headColor }}>
@@ -472,27 +477,27 @@ const ReportSummary10 = () => {
         </Typography>
         <TableContainer component={Paper}>
           <Table size="small">
-            <TableHead sx={{ backgroundColor: headColor }}>
+            <TableHead>
               <TableRow>
-                <StyledHeadCell rowSpan={2} sx={{ minWidth: 160, textAlign: 'left' }}>
+                <StyledHeadCell rowSpan={2} sx={{ minWidth: 160, textAlign: 'left', ...hcSx }}>
                   ประเภท Error
                 </StyledHeadCell>
                 {months.map((m) => (
-                  <StyledHeadCell key={`et-${wardGroup}-${m.month}`} colSpan={3}>{m.label}</StyledHeadCell>
+                  <StyledHeadCell key={`et-${wardGroup}-${m.month}`} colSpan={3} sx={hcSx}>{m.label}</StyledHeadCell>
                 ))}
-                <StyledHeadCell colSpan={3} sx={{ backgroundColor: '#37474f' }}>รวมทั้งหมด</StyledHeadCell>
+                <StyledHeadCell colSpan={3} sx={totalSx}>รวมทั้งหมด</StyledHeadCell>
               </TableRow>
               <TableRow>
                 {months.map((m) => (
                   <React.Fragment key={`sub-${wardGroup}-${m.month}`}>
-                    <StyledHeadCell>HAD</StyledHeadCell>
-                    <StyledHeadCell>Non</StyledHeadCell>
-                    <StyledHeadCell>รวม</StyledHeadCell>
+                    <StyledHeadCell sx={hcSx}>HAD</StyledHeadCell>
+                    <StyledHeadCell sx={hcSx}>Non</StyledHeadCell>
+                    <StyledHeadCell sx={hcSx}>รวม</StyledHeadCell>
                   </React.Fragment>
                 ))}
-                <StyledHeadCell sx={{ backgroundColor: '#37474f' }}>HAD</StyledHeadCell>
-                <StyledHeadCell sx={{ backgroundColor: '#37474f' }}>Non</StyledHeadCell>
-                <StyledHeadCell sx={{ backgroundColor: '#37474f' }}>รวม</StyledHeadCell>
+                <StyledHeadCell sx={totalSx}>HAD</StyledHeadCell>
+                <StyledHeadCell sx={totalSx}>Non</StyledHeadCell>
+                <StyledHeadCell sx={totalSx}>รวม</StyledHeadCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -557,11 +562,11 @@ const ReportSummary10 = () => {
           </Typography>
           <TableContainer component={Paper}>
             <Table size="small">
-              <TableHead sx={{ backgroundColor: COLOR.TABLE_SUM }}>
+              <TableHead>
                 <TableRow>
-                  <StyledHeadCell sx={{ minWidth: 200, textAlign: 'left' }}>ประเภท Error</StyledHeadCell>
+                  <StyledHeadCell sx={{ minWidth: 200, textAlign: 'left', backgroundColor: COLOR.TABLE_SUM }}>ประเภท Error</StyledHeadCell>
                   {months.map((m) => (
-                    <StyledHeadCell key={`c-${sec.title}-${m.month}`}>{m.label}</StyledHeadCell>
+                    <StyledHeadCell key={`c-${sec.title}-${m.month}`} sx={{ backgroundColor: COLOR.TABLE_SUM }}>{m.label}</StyledHeadCell>
                   ))}
                 </TableRow>
               </TableHead>
@@ -654,7 +659,7 @@ const ReportSummary10 = () => {
         {isAdmin && (
           <Button
             variant="contained"
-            color="success"
+            color="primary"
             startIcon={<Iconify icon="eva:save-fill" />}
             onClick={handleSaveStatVolume}
             disabled={isSaving || isLoading}

@@ -68,7 +68,6 @@ export default function ReportPage() {
                   allowScrollButtonsMobile
                 >
                   <Tab label="แยกตามสถานที่เกิดเหตุ" value="1" />
-                  {/* <Tab label="สรุปอุบัติการณ์ความคลาดเคลื่อนหน่วยงานที่พบ" value="2" /> */}
                   <Tab label="หน่วยงานที่เกิดอุบัติการณ์" value="3" />
                   <Tab 
                     label={
@@ -79,7 +78,6 @@ export default function ReportPage() {
                     } 
                     value="4" 
                   />
-                  {/* <Tab label="สรุปอุบัติการณ์ความคลาดเคลื่อนแยก OPD - IPD - ผลิต - คลัง" value="5" /> */}
                   {/* <Tab label="สรุปอุบัติการณ์ที่ได้ RCA แล้ว (Pending)" value="6" /> */}
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />
                   <Tab label="รายงานความคลาดเคลื่อน" value="8" />
