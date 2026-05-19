@@ -69,28 +69,90 @@ cd frontend && npx eslint <files-ที่แก้>
 
 **ถ้าเจอ bug** → แก้ก่อน commit + เพิ่ม `### Fixed` ใน CHANGELOG ของ scope ที่แก้
 
-### 2.2 Security Check
+### 2.2 Security Check — OWASP Top 10 (2025 / 2021 ratified)
 
-**Checklist บังคับสำหรับทุก commit ที่แตะ endpoint / DB / auth / input handling**:
+**Checklist บังคับสำหรับทุก commit ที่แตะ endpoint / DB / auth / input handling / session / config**
 
-#### Backend endpoint
+แต่ละหัวข้อแม็พกับ **OWASP Top 10** อย่างชัดเจน — ถ้ายังไม่มี control ในข้อใด ให้แก้ก่อน commit + เพิ่ม `### Security` ใน CHANGELOG อ้างหมายเลข OWASP ที่ครอบคลุม
+
+#### A01:2021 — Broken Access Control
 - [ ] **Origin allowlist** — ตรวจ `Origin` header (fallback `Referer`) เทียบ `ALLOWED_ORIGINS` ก่อน business
 - [ ] **Client allowlist** — ตรวจ `client-id` header เทียบ `ALLOWED_CLIENTS`
-- [ ] **JWT verify** — `jwt.verify(token)` ก่อน access protected resource
-- [ ] **Admin gate** (ถ้า endpoint เป็น admin only) — เช็ค `rule === 9` จาก `med_error_access`
-- [ ] **Input validation ก่อนเข้า DB** — regex date `^\d{4}-\d{2}-\d{2}$`, integer range/enum, array length cap
-- [ ] **SQL safety** — knex query builder + `this.db.raw('?', [bindings])` (ห้าม template string ใส่ user input)
-- [ ] **Error response generic** — return `getReasonPhrase(500)` ไม่ใช่ `error.message` (กัน leak stack/DB schema)
-- [ ] **Console log แบบ tag** — `console.error('[Module] action error')` ไม่ log `error` object (กัน leak)
-- [ ] **ลำดับ Gate**: `origin → client-id → token → JWT verify → input validate → admin (ถ้ามี) → business logic`
+- [ ] **JWT verify** — `jwt.verify(token)` ก่อน access protected resource (return 401 ถ้า fail)
+- [ ] **Role/Admin gate** — endpoint ที่ต้องการ admin ตรวจ `rule === 9` จาก `med_error_access` (return 403 ถ้า fail)
+- [ ] **Object-level authorization** — ตรวจว่า user เข้าถึง resource ที่เป็นของตนเอง (ห้าม IDOR — ส่ง `error_id` แล้วเข้าถึง record ของ user อื่นได้)
+- [ ] **Method gate** — endpoint POST/PUT/DELETE ต้องไม่รับ GET; verb tampering ถูกบล็อก
 
-#### Frontend
-- [ ] **XSS-safe** — `String(v).toLowerCase().includes(q)` ปลอดภัย, ห้าม `dangerouslySetInnerHTML` กับ user content
-- [ ] **Sanitize ค่า input** — `Math.max(0, Number(v) || 0)` กันค่าลบ/NaN ก่อนส่งให้ backend
-- [ ] **axios `withCredentials: true`** — ใช้ cookie-based auth (ตั้งใน `MedError.js` global default แล้ว)
-- [ ] **ไม่ commit `.env*`** — ตรวจ git status ให้ดี
+#### A02:2021 — Cryptographic Failures
+- [ ] **TLS** — production ใช้ HTTPS (env flag `https`); ห้ามส่ง JWT/credentials ผ่าน HTTP plain
+- [ ] **HTTP-only cookie** — token เก็บใน HTTP-only cookie (JS อ่านไม่ได้) → ลด XSS exfiltration
+- [ ] **Secret rotation** — ไม่ commit secret จริงใน `.env.development`; rotate ก่อน production deploy (ระบุใน README แล้ว)
+- [ ] **Password storage** — ไม่ store plaintext; auth ผ่าน HIS opduser (external) ไม่เก็บใน app DB
 
-**ถ้าพบช่องโหว่** → แก้ก่อน commit + เพิ่ม `### Security` ใน CHANGELOG
+#### A03:2021 — Injection
+- [ ] **SQL** — knex query builder + `this.db.raw('?', [bindings])` เท่านั้น; ห้าม template string ใส่ user input ใน raw SQL
+- [ ] **NoSQL/Command** — ไม่ใช้ `exec()`, `eval()`, `child_process.exec` กับ user input
+- [ ] **LDAP/XML/XSS** — escape ทุก user-rendered content ใน React (default safe); ห้าม `dangerouslySetInnerHTML` กับ user content
+- [ ] **Header injection** — ไม่ปล่อย `\r\n` จาก user เข้า response header
+
+#### A04:2021 — Insecure Design
+- [ ] **Rate limiting** — endpoint ที่เปิดเปิด (login, search) ควรมี rate limit ใน reverse-proxy/CDN
+- [ ] **Business logic guard** — ตรวจ pre-condition ก่อน mutate (เช่น `is_rca='Y'` ก่อนแสดง RCA report; `app_new='Y'` ก่อนนับสถิติ)
+- [ ] **Threat model** — สำหรับ feature ใหม่ ระบุใน CHANGELOG ว่า attacker model อะไรที่ blocked
+- [ ] **Default-deny** — endpoint ใหม่ default 403/401 ก่อน whitelist เงื่อนไขที่ผ่าน
+
+#### A05:2021 — Security Misconfiguration
+- [ ] **CORS** — `ALLOWED_ORIGINS` ต้องเป็น exact match (no `*`, no `null`)
+- [ ] **Generic error response** — return `getReasonPhrase(500)` ไม่ใช่ `error.message` (กัน leak stack/DB schema/file path)
+- [ ] **Debug routes** — ไม่ commit `/debug`, `/test`, swagger ฯลฯ ไป production
+- [ ] **Headers** — `Content-Type: application/json`; ตั้ง `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` ที่ reverse-proxy
+- [ ] **DB pool** — `min:2 max:20` กัน connection exhaustion (DoS)
+
+#### A06:2021 — Vulnerable and Outdated Components
+- [ ] **Dependency check** — ก่อน commit ที่แก้ `package.json` รัน `bun audit` หรือ `npm audit` — เช็ค HIGH/CRITICAL
+- [ ] **Lock file** — commit `bun.lockb` / `package-lock.json` คู่กับ `package.json` (กัน version drift)
+- [ ] **เลิกใช้ลายเซ็นที่ deprecated** — เช่น md5, SHA-1 สำหรับ integrity
+
+#### A07:2021 — Identification and Authentication Failures
+- [ ] **JWT expiry** — มี `exp` claim; refresh token rotation
+- [ ] **Logout effective** — `/auth/logout` ล้าง cookie จริง (`Max-Age=0`)
+- [ ] **Brute force** — login retry มี delay / lockout (ถ้ายังไม่มี → ต้องอยู่ใน roadmap)
+- [ ] **Session fixation** — ออก token ใหม่หลัง login (ไม่ reuse pre-login session id)
+
+#### A08:2021 — Software and Data Integrity Failures
+- [ ] **Migration safety** — SQL migration idempotent (`IF NOT EXISTS`, `IF EXISTS`); ทดสอบ rollback ได้
+- [ ] **Input validation ก่อนเข้า DB** — regex date `^\d{4}-\d{2}-\d{2}$`, integer range/enum, array length cap, normalized
+- [ ] **Deserialization** — ไม่ใช้ `eval(JSON)` หรือ `vm.runInNewContext` กับ user input
+- [ ] **CI/CD trust** — ไม่ `npm install <untrusted-url>`; pin SHA สำหรับ third-party actions/scripts
+
+#### A09:2021 — Security Logging and Monitoring Failures
+- [ ] **Tag-only log** — `console.error('[Module] action error')` ห้าม log `error` object/SQL string/credentials
+- [ ] **Audit trail** — write operation บันทึก `updated_by` + timestamp (มีใน schema แล้ว)
+- [ ] **PII redaction** — ไม่ log HN/AN/รหัสประจำตัว/รหัสผ่านใน console/file
+- [ ] **No verbose stack to client** — stack trace อยู่ฝั่ง server เท่านั้น
+
+#### A10:2021 — Server-Side Request Forgery (SSRF)
+- [ ] **No user-controlled fetch URL** — backend ไม่ทำ HTTP request ไป URL จาก user input
+- [ ] **MOPH/HIS callouts** — host hard-coded ใน env ไม่ใช่ user query
+- [ ] **PDF/image rendering** — ถ้ามี image proxy ต้อง whitelist domain
+
+#### LLM-Specific (OWASP Top 10 for LLM Applications 2025)
+ถ้า feature เกี่ยวกับ Claude/AI integration (ไม่ใช่ feature ปัจจุบัน — แต่อยู่ใน roadmap):
+- [ ] **LLM01 Prompt Injection** — sanitize user input ที่ใส่ลง prompt; ใช้ structured input
+- [ ] **LLM02 Insecure Output Handling** — treat LLM output as untrusted; escape ก่อน render
+- [ ] **LLM06 Sensitive Information Disclosure** — ไม่ส่ง PII (HN/AN) เข้า prompt
+- [ ] **LLM08 Excessive Agency** — LLM tool ต้อง human-in-the-loop สำหรับ destructive actions
+
+#### Frontend-only checks
+- [ ] **XSS-safe rendering** — React default escape; ห้าม `dangerouslySetInnerHTML` กับ user content
+- [ ] **Client sanitize** — `Math.max(0, Number(v) || 0)` กันค่าลบ/NaN ก่อนส่งให้ backend (เช็คซ้ำที่ backend อีกชั้น)
+- [ ] **withCredentials** — axios `withCredentials: true` (ตั้งใน `MedError.js` global default แล้ว)
+- [ ] **ไม่ commit `.env*`** — ตรวจ `git status` ทุกครั้ง
+- [ ] **Source map ใน production** — ปิด `GENERATE_SOURCEMAP=false` ตอน build production
+
+**Severity classification**: ถ้าพบช่องโหว่ระดับ HIGH/CRITICAL ห้าม commit จนกว่าจะแก้ — สำหรับ MEDIUM/LOW เพิ่มเข้า issue tracker + แก้รอบถัดไป
+
+**Reference**: [OWASP Top 10:2021](https://owasp.org/Top10/) (current ratified) • [OWASP Top 10 for LLM Apps 2025](https://genai.owasp.org/llm-top-10/)
 
 ### 2.3 Commit
 
@@ -175,7 +237,7 @@ git push origin main
 
 [ ] 2.1 tsc / eslint ผ่าน
 [ ] 2.1 manual scan: ไม่มี console.log / TODO / secrets / null deref
-[ ] 2.2 Security: origin/client/JWT/validate/raw SQL safe/generic error
+[ ] 2.2 Security: OWASP Top 10 (2025/2021) — A01-A10 + LLM Top 10 ทุก control ที่เกี่ยวข้อง
 [ ] 2.3 git add เฉพาะไฟล์ที่ต้องการ + commit ด้วย HEREDOC + Co-Authored-By
 [ ] 2.4 git push origin main
 ```

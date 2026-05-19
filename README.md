@@ -111,6 +111,19 @@ bun start
 
 ---
 
+## 🤖 Claude Code Skills
+
+โปรเจกต์นี้ติดตั้ง **Anthropic Agent Skills** (จาก [anthropics/skills](https://github.com/anthropics/skills)) เพื่อให้ Claude Code ทำงานกับ stack นี้ได้แม่นยำขึ้น:
+
+- **Project-level** (`.claude/skills/`): `frontend-design` + `webapp-testing` — ตามไปด้วยเมื่อ clone repo
+- **User-level** (`~/.claude/skills/`): `skill-creator` + `claude-api` — reuse ได้ทุกโปรเจกต์
+
+วิธีนำไปใช้กับโปรเจกต์อื่นที่คล้ายกัน (React + REST API): ดู [`.claude/skills/README.md`](./.claude/skills/README.md)
+
+Workflow มาตรฐานสำหรับ scan / fix bug / OWASP Top 10 security check / commit / push: ดู [`skill.md`](./skill.md)
+
+---
+
 ## 📝 Changelog
 
 ดู [`backend/CHANGELOG.md`](./backend/CHANGELOG.md) และ [`frontend/CHANGELOG.md`](./frontend/CHANGELOG.md) สำหรับรายละเอียดการเปลี่ยนแปลงในแต่ละเวอร์ชัน
