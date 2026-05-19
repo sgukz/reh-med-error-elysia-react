@@ -82,7 +82,15 @@ export default function ReportPage() {
                   {/* <Tab label="สรุปอุบัติการณ์ที่ได้ RCA แล้ว (Pending)" value="6" /> */}
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />
                   <Tab label="รายงานความคลาดเคลื่อน" value="8" />
-                  <Tab label="รายงานแยกรายละเอียด Error" value="9" />
+                  <Tab
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <span>รายงานแยกรายละเอียด Error</span>
+                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
+                      </Stack>
+                    }
+                    value="9"
+                  />
                 </TabList>
               </Box>
               <TabPanel value="1">

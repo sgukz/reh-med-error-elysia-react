@@ -267,16 +267,11 @@ const ReportSummary9 = () => {
     triggerLoad({ compareMode: next });
   };
 
-  // Excel Export
+  // Excel Export — รูปแบบเดียวกับ Report 4 (json_to_sheet ตรงๆ, header เป็นภาษาไทย)
   const handleExportExcel = () => {
     if (_.isEmpty(enrichedRows)) return;
 
-    const periodALabel = `${formatDateTime(formatDateEN(firstDateA))} - ${formatDateTime(formatDateEN(lastDateA))}`;
-    const periodBLabel = isCompareResult
-      ? `${formatDateTime(formatDateEN(firstDateB))} - ${formatDateTime(formatDateEN(lastDateB))}`
-      : '';
-
-    const exportRows = enrichedRows.map((r) => {
+    const dataForExcel = enrichedRows.map((r) => {
       const base = {
         'รายละเอียด Error': `${r.error_type_list} ${r.error_type_list_detail}`,
         'HAD (A)': r.hadA,
@@ -315,18 +310,13 @@ const ReportSummary9 = () => {
       });
     }
     Object.assign(totalsBase, { Impact: '', Likelihood: '', Level: '' });
-    exportRows.push(totalsBase);
+    dataForExcel.push(totalsBase);
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet([], { skipHeader: true });
-    XLSX.utils.sheet_add_aoa(ws, [[`รายงานแยกรายละเอียด Error — ${errorTypeName}`]], { origin: 'A1' });
-    XLSX.utils.sheet_add_aoa(ws, [[`ช่วง A: ${periodALabel}`]], { origin: 'A2' });
-    if (isCompareResult) {
-      XLSX.utils.sheet_add_aoa(ws, [[`ช่วง B: ${periodBLabel}`]], { origin: 'A3' });
-    }
-    XLSX.utils.sheet_add_json(ws, exportRows, { origin: isCompareResult ? 'A5' : 'A4' });
-    XLSX.utils.book_append_sheet(wb, ws, 'Summary9');
-    XLSX.writeFile(wb, `รายงานแยกรายละเอียด_Error_${errorTypeName || ''}_${formatDateEN(firstDateA)}_to_${formatDateEN(lastDateA)}.xlsx`);
+    const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'แยกรายละเอียด Error');
+    const fileName = `รายงานแยกรายละเอียด_Error_${errorTypeName || ''}_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
   };
 
   const periodALabel =
@@ -414,17 +404,6 @@ const ReportSummary9 = () => {
                 />
               </>
             )}
-
-            <Button
-              variant="outlined"
-              color="success"
-              startIcon={<Iconify icon="vscode-icons:file-type-excel" />}
-              onClick={handleExportExcel}
-              disabled={_.isEmpty(enrichedRows)}
-              sx={{ ml: 1 }}
-            >
-              Export Excel
-            </Button>
           </Box>
         </LocalizationProvider>
       </Stack>
@@ -436,18 +415,29 @@ const ReportSummary9 = () => {
         </Alert>
       )}
 
-      <Stack direction="column" sx={{ mb: 2 }}>
-        <Typography variant="h6" sx={{ color: 'primary.main' }}>
-          {errorTypeName || (selectedErrorType?.error_type_name ?? '')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          ช่วง A: {periodALabel}
-          {isCompareResult && (
-            <>
-              {' '}| ช่วง B: <b style={{ color: '#ed6c02' }}>{periodBLabel}</b>
-            </>
-          )}
-        </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+        <Stack direction="column">
+          <Typography variant="h6" sx={{ color: 'primary.main' }}>
+            {errorTypeName || (selectedErrorType?.error_type_name ?? '')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            ช่วง A: {periodALabel}
+            {isCompareResult && (
+              <>
+                {' '}| ช่วง B: <b style={{ color: '#ed6c02' }}>{periodBLabel}</b>
+              </>
+            )}
+          </Typography>
+        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<Iconify icon="eva:file-text-fill" />}
+          onClick={handleExportExcel}
+          disabled={_.isEmpty(enrichedRows)}
+          color={_.isEmpty(enrichedRows) ? 'inherit' : 'primary'}
+        >
+          Export Excel
+        </Button>
       </Stack>
 
       <Scrollbar>

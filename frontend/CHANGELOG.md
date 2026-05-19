@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.1] - 2026-05-19
+
+### Fixed
+- **MedErrorPage**: ย้าย `<Backdrop>` ออกจาก `<TableBody>` เป็น sibling ของ `<Scrollbar>` แก้ DOM validation warning `<div> cannot appear as a child of <tbody>` (Backdrop เป็น overlay เต็มหน้าอยู่แล้ว ไม่ต้องอยู่ใน table)
+
+### Changed — ReportPage / ReportSummary9
+- เพิ่ม **Chip "New"** ที่แท็บ "รายงานแยกรายละเอียด Error" (ใช้ pattern เดียวกับ "คู่ยาคลาดเคลื่อน")
+- **Export Excel ของ Report 9 ปรับให้เหมือน Report 4**:
+  - Button: `variant="contained"` + icon `eva:file-text-fill` + dynamic color เมื่อ disabled
+  - ตำแหน่ง: ย้ายไปอยู่ row หัวข้อ (justify-between) แทน filter row
+  - Code: ใช้ `XLSX.utils.json_to_sheet(data)` ตรง ๆ (ไม่มี header rows พิเศษ) — header เป็น column ภาษาไทย, sheet name `'แยกรายละเอียด Error'`, file name `รายงานแยกรายละเอียด_Error_{type}_{YYYYMMDD_HHmmss}.xlsx`
+
 ## [1.15.0] - 2026-05-12
 
 ### รื้อรายงาน "แยกรายละเอียด Error" (ReportSummary9) ใหม่ทั้งไฟล์ตามต้นแบบ

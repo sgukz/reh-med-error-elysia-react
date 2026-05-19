@@ -2233,6 +2233,18 @@ export default function MedErrorPage() {
                 </Typography>
               </Grid>
             </Grid>
+            <Backdrop
+              sx={{
+                color: '#fff',
+                zIndex: (theme) => theme.zIndex.drawer + 10,
+                textAlign: 'center',
+              }}
+              open={isLoading}
+              onClick={handleClose}
+            >
+              <CircularProgress color="inherit" sx={{ mr: 1 }} />
+              <Typography variant="body1">{'กำลังโหลดข้อมูล...'}</Typography>
+            </Backdrop>
             <Scrollbar>
               <TableContainer component={Paper}>
                 <Table stickyHeader>
@@ -2244,18 +2256,6 @@ export default function MedErrorPage() {
                     onRequestSort={handleRequestSort}
                   />
                   <TableBody>
-                    <Backdrop
-                      sx={{
-                        color: '#fff',
-                        zIndex: (theme) => theme.zIndex.drawer + 10,
-                        textAlign: 'center',
-                      }}
-                      open={isLoading}
-                      onClick={handleClose}
-                    >
-                      <CircularProgress color="inherit" sx={{ mr: 1 }} />
-                      <Typography variant="body1">{'กำลังโหลดข้อมูล...'}</Typography>
-                    </Backdrop>
                     {filteredMedError.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                       const {
                         error_id,

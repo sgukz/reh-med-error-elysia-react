@@ -186,15 +186,18 @@ AuthRoute.post('/profile', async ({ jwt, set, request }: any) => {
             return { statusCode: StatusCodes.FORBIDDEN, statusMessage: `Not allow client [${StatusCodes.FORBIDDEN}]` };
         }
 
+        // ไม่มี token / token หมดอายุ — ตอบ 200 + profile: null
+        // (เพื่อไม่ให้ browser console ขึ้น 401 ตอนหน้า Login เปิดครั้งแรก)
+        // หน้าที่ต้อง redirect ใช้ profile === null เป็นสัญญาณว่า "ยังไม่ได้ login"
         if (!token) {
-            set.status = StatusCodes.UNAUTHORIZED;
-            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data` };
+            set.status = StatusCodes.OK;
+            return { statusCode: StatusCodes.OK, profile: null };
         }
 
         const payload = await jwt.verify(token);
         if (!payload) {
-            set.status = StatusCodes.UNAUTHORIZED;
-            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed` };
+            set.status = StatusCodes.OK;
+            return { statusCode: StatusCodes.OK, profile: null };
         }
         set.status = StatusCodes.OK;
         return { statusCode: StatusCodes.OK, profile: payload, access_token: token };

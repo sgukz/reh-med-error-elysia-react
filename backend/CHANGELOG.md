@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-05-19
+
+### Fixed
+- **`/auth/profile`**: ตอบ **200 + `{profile: null}`** เมื่อยังไม่ได้ login / token หมดอายุ แทนการตอบ 401 — ลดการขึ้น error สีแดงใน browser console ตอนเปิดหน้า Login ครั้งแรก (frontend เช็ค `if (profile)` อยู่แล้ว ทำงานต่อได้)
+- ยังคง 403 สำหรับ Origin / Client-ID ไม่ผ่าน (เป็น config error ที่ต้องเห็น) และ protected routes อื่น ๆ ยังตอบ 401 ตามเดิม (axios response interceptor ใช้ redirect ปกติ)
+
 ## [1.7.0] - 2026-05-12
 
 ### Added — Likelihood Score + รื้อรายงาน Summary9
