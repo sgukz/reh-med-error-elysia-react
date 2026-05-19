@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 
-import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options } from '../Interfaces/ReportInterface'
+import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options, GetMedErrorSummary10Options, StatVolumeUpsertBody } from '../Interfaces/ReportInterface'
 
 export default class ReportModel {
     private db: Knex;

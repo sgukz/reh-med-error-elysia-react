@@ -68,3 +68,29 @@ export interface DrugPairRow {
     drug_wrong: string;
     count: number;
 }
+
+// รายงานสถิติจำนวนใบสั่งยา (OPD) / วันนอน (IPD) — Summary10
+export interface GetMedErrorSummary10Options {
+    fiscalYear: string | number; // ปี พ.ศ. (e.g. 2567) — backend converts to CE range
+}
+
+// ข้อมูลจำนวนวันนอน/ใบสั่งยาที่แอดมินกรอก
+export interface StatVolumeRow {
+    stat_id?: number;
+    stat_year: number;   // ปี ค.ศ.
+    stat_month: number;  // 1-12
+    ipd_patient_days: number;
+    opd_prescriptions: number;
+    updated_by?: string;
+    updated_at?: string;
+}
+
+export interface StatVolumeUpsertBody {
+    fiscalYear: number;  // ปี พ.ศ.
+    rows: Array<{
+        stat_month: number;
+        ipd_patient_days: number;
+        opd_prescriptions: number;
+    }>;
+    updated_by?: string;
+}
