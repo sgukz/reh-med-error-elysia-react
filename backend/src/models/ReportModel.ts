@@ -393,4 +393,120 @@ export default class ReportModel {
             .orderBy('count', 'desc');
     }
 
+    // ========================================================================
+    // ReportSummary10 — สถิติจำนวนใบสั่งยา (OPD) + วันนอน (IPD)
+    // ปีงบประมาณ พ.ศ. 2567 = ตค.2023 - กย.2024 (ปี ค.ศ. 2023 ตค-ธค + 2024 มค-กย)
+    // ========================================================================
+
+    // แปลงปีงบประมาณ พ.ศ. → ช่วงปี/เดือน (ค.ศ.) ของ 12 เดือนในปีงบ
+    private fiscalYearToMonths(fiscalYearBE: number): Array<{ year: number; month: number }> {
+        const ceStart = fiscalYearBE - 543 - 1; // ปี ค.ศ. ที่เริ่มต้นปีงบ (ตค.)
+        const ceEnd = fiscalYearBE - 543;       // ปี ค.ศ. ที่จบปีงบ (กย.)
+        const months: Array<{ year: number; month: number }> = [];
+        for (let m = 10; m <= 12; m += 1) months.push({ year: ceStart, month: m });
+        for (let m = 1; m <= 9; m += 1) months.push({ year: ceEnd, month: m });
+        return months;
+    }
+
+    // ดึง TABLE 0 — return 12 rows เรียงตามลำดับปีงบ (ตค.-กย.), เติม 0 ถ้ายังไม่มีในตาราง
+    async getStatVolume(fiscalYearBE: number) {
+        const months = this.fiscalYearToMonths(fiscalYearBE);
+        const ceYears = Array.from(new Set(months.map(m => m.year)));
+
+        const existing = await this.db('med_error_stat_volume')
+            .select('stat_id', 'stat_year', 'stat_month', 'ipd_patient_days', 'opd_prescriptions', 'updated_by',
+                this.db.raw('CONCAT(updated_at) as updated_at'))
+            .whereIn('stat_year', ceYears)
+            .whereIn('stat_month', months.map(m => m.month));
+
+        const map = new Map<string, any>();
+        existing.forEach((r: any) => map.set(`${r.stat_year}-${r.stat_month}`, r));
+
+        return months.map(({ year, month }) => {
+            const row = map.get(`${year}-${month}`);
+            return {
+                stat_id: row?.stat_id ?? null,
+                stat_year: year,
+                stat_month: month,
+                ipd_patient_days: row ? Number(row.ipd_patient_days) : 0,
+                opd_prescriptions: row ? Number(row.opd_prescriptions) : 0,
+                updated_by: row?.updated_by ?? null,
+                updated_at: row?.updated_at ?? null,
+            };
+        });
+    }
+
+    // upsert ทีละแถวด้วย INSERT ... ON DUPLICATE KEY UPDATE (ใช้ unique key uq_year_month)
+    async upsertStatVolume(body: StatVolumeUpsertBody): Promise<number> {
+        const { fiscalYear, rows, updated_by } = body;
+        if (!Array.isArray(rows) || rows.length === 0) return 0;
+        const months = this.fiscalYearToMonths(fiscalYear);
+        const monthToYear = new Map<number, number>();
+        months.forEach(({ year, month }) => monthToYear.set(month, year));
+
+        let affected = 0;
+        for (const r of rows) {
+            const ceYear = monthToYear.get(Number(r.stat_month));
+            if (!ceYear) continue;
+            const ipd = Number.isFinite(Number(r.ipd_patient_days)) ? Number(r.ipd_patient_days) : 0;
+            const opd = Number.isFinite(Number(r.opd_prescriptions)) ? Number(r.opd_prescriptions) : 0;
+            await this.db.raw(
+                `INSERT INTO med_error_stat_volume (stat_year, stat_month, ipd_patient_days, opd_prescriptions, updated_by)
+                 VALUES (?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                   ipd_patient_days = VALUES(ipd_patient_days),
+                   opd_prescriptions = VALUES(opd_prescriptions),
+                   updated_by = VALUES(updated_by)`,
+                [ceYear, Number(r.stat_month), ipd, opd, updated_by || null]
+            );
+            affected += 1;
+        }
+        return affected;
+    }
+
+    // นับ Error แยก HAD/Non-HAD ตามเดือน × error_type × ward_group (IPD/OPD)
+    // IPD = med_error_dep_group_id 2; OPD = 1, 5, 6
+    async getReportSummary10(options: GetMedErrorSummary10Options) {
+        const fiscalYearBE = Number(options.fiscalYear);
+        const months = this.fiscalYearToMonths(fiscalYearBE);
+        const ceStart = months[0].year;       // ตค. start year
+        const ceEnd = months[months.length - 1].year; // กย. end year
+        const firstDate = `${ceStart}-10-01`;
+        const lastDate = `${ceEnd}-09-30`;
+
+        const rows = await this.db('med_error as m')
+            .select(
+                'm.error_type',
+                this.db.raw('MONTH(m.error_date) AS error_month'),
+                this.db.raw('YEAR(m.error_date) AS error_year'),
+                this.db.raw(`CASE
+                    WHEN d.med_error_dep_group_id = 2 THEN 'IPD'
+                    WHEN d.med_error_dep_group_id IN (1,5,6) THEN 'OPD'
+                    ELSE 'OTHER'
+                END AS ward_group`),
+                this.db.raw(`COUNT(CASE WHEN m.error_alert = 'High Alert Drugs' THEN 1 END) AS had_count`),
+                this.db.raw(`COUNT(CASE WHEN m.error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END) AS non_had_count`),
+                this.db.raw('COUNT(*) AS total_count')
+            )
+            .innerJoin('med_error_dept as d', 'm.error_ward', 'd.med_error_depcode')
+            .whereBetween('m.error_date', [firstDate, lastDate])
+            .whereIn('d.med_error_dep_group_id', [1, 2, 5, 6])
+            .whereIn('m.error_type', [1, 2, 3, 4, 5, 6])
+            .groupByRaw(`m.error_type, MONTH(m.error_date), YEAR(m.error_date), ward_group`)
+            .orderByRaw(`m.error_type ASC, error_year ASC, error_month ASC`);
+
+        // แปลงตัวเลข + ตัด OTHER (กันกรณี ward group ไม่ตรง mapping)
+        return rows
+            .filter((r: any) => r.ward_group === 'IPD' || r.ward_group === 'OPD')
+            .map((r: any) => ({
+                error_type: Number(r.error_type),
+                error_month: Number(r.error_month),
+                error_year: Number(r.error_year),
+                ward_group: r.ward_group,
+                had_count: Number(r.had_count) || 0,
+                non_had_count: Number(r.non_had_count) || 0,
+                total_count: Number(r.total_count) || 0,
+            }));
+    }
+
 }

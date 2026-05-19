@@ -23,6 +23,7 @@ import ReportSummary4 from '../sections/reports/ReportSummary4';
 import ReportSummary7 from '../sections/reports/ReportSummary7';
 import ReportSummary8 from '../sections/reports/ReportSummary8';
 import ReportSummary9 from '../sections/reports/ReportSummary9';
+import ReportSummary10 from '../sections/reports/ReportSummary10';
 
 export default function ReportPage() {
   const navigate = useNavigate();
@@ -91,6 +92,15 @@ export default function ReportPage() {
                     }
                     value="9"
                   />
+                  <Tab
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <span>สถิติจำนวนใบสั่งยา/วันนอน</span>
+                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
+                      </Stack>
+                    }
+                    value="10"
+                  />
                 </TabList>
               </Box>
               <TabPanel value="1">
@@ -120,6 +130,9 @@ export default function ReportPage() {
               </TabPanel>
               <TabPanel value="9">
                 <ReportSummary9 />
+              </TabPanel>
+              <TabPanel value="10">
+                <ReportSummary10 />
               </TabPanel>
             </TabContext>
           </Box>

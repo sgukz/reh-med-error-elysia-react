@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-05-19
+
+### Added — ReportSummary10 (สถิติจำนวนใบสั่งยา/วันนอน)
+- ตารางใหม่ `med_error_stat_volume` (stat_year, stat_month, ipd_patient_days, opd_prescriptions, updated_by/at + UNIQUE(year,month))
+- `ReportModel.getStatVolume(fy)` / `upsertStatVolume(body)` / `getReportSummary10(opts)`
+- Endpoints:
+  - `GET /reports/summary10?fiscalYear=...` — รวม `statVolume + errorCounts` ใน response เดียว
+  - `GET /reports/stat-volume?fiscalYear=...`
+  - `POST /reports/stat-volume` — Admin only (`rule===9` จาก `med_error_access.active=1`)
+- `med_error.error_ward` JOIN `med_error_dept` filter `med_error_dep_group_id IN (1,2,5,6)`, CASE → IPD/OPD ward group
+- Migration: `migrations/2026-05-19_create_med_error_stat_volume.sql` + Bun script idempotent
+
+### Security — Input Validation Layer สำหรับ Summary10
+- `parseFiscalYear(v)` — reject non-integer / NaN / นอกช่วง พ.ศ. 2400-2700
+- `validateStatVolumeRows(rows)` — reject ค่าลบ / `stat_month` นอก 1-12 / เดือนซ้ำ / array ว่าง / > 12 รายการ
+- ทุก endpoint ของ summary10 ใช้ลำดับ: **auth → validate → business logic**
+
+### Performance — Database Indexes
+ก่อน v1.8.0 ตาราง `med_error` (≈15K rows) มี index แค่ PRIMARY (error_id) — ทุก report ที่ filter วันที่ทำ full table scan
+- `med_error.idx_error_date` (error_date) — ครอบคลุมทุก report
+- `med_error.idx_error_type_date` (error_type, error_date) — Summary 8/9/10
+- `med_error.idx_error_ward` (error_ward) — Summary 1/10 (JOIN dept)
+- `med_error_type_list.idx_etl_type_active` (error_type, is_active) — Summary 9 subtype filter
+- EXPLAIN ยืนยัน optimizer ใช้ index → Summary10 11ms, Summary1 4ms
+- Migration: `migrations/2026-05-19_add_report_indexes.sql` + Bun script idempotent
+
+### Ops scripts
+- `scripts/run-stat-volume-migration.ts` / `run-report-indexes-migration.ts` — migration runners
+- `scripts/audit-report-indexes.ts` / `benchmark-report-queries.ts` — diagnostic toolbox
+
 ## [1.7.1] - 2026-05-19
 
 ### Fixed

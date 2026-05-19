@@ -235,6 +235,26 @@ export const getReportSummary3 = buildReportSummary('summary3');
 export const getReportSummary5 = buildReportSummary('summary5');
 export const getReportSummary7 = buildReportSummary('summary7');
 export const getReportSummary9 = buildReportSummary('summary9');
+export const getReportSummary10 = buildReportSummary('summary10');
+
+// TABLE 0 ของ Summary10 — ดึงเฉพาะ stat_volume
+export function getStatVolume(token, { fiscalYear }) {
+  return axios({
+    method: API_METHOD.GET,
+    url: `${API_ROUTE.REPORT_MEDERROR}/stat-volume?fiscalYear=${encodeURIComponent(fiscalYear)}`,
+    headers: authHeader(token),
+  });
+}
+
+// save/update TABLE 0 (admin only — backend ตรวจ rule=9)
+export function saveStatVolume(token, data) {
+  return axios({
+    method: API_METHOD.POST,
+    url: `${API_ROUTE.REPORT_MEDERROR}/stat-volume`,
+    headers: authHeader(token),
+    data,
+  });
+}
 
 // คู่ยาที่คลาดเคลื่อน — pairType: 'dispensing' (จัด) | 'processing' (คีย์)
 export function getDrugPairSummary(token, { firstDate, lastDate, pairType }) {

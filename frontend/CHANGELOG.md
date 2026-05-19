@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-05-19
+
+### Added — ReportSummary10 (สถิติจำนวนใบสั่งยา/วันนอน)
+- หน้ารายงานใหม่ 4 ตาราง — TABLE 0 (admin กรอกข้อมูลปริมาณ IPD/OPD), A (IPD errors), B (OPD errors), C (อัตรา/1,000)
+- ใช้ปีงบประมาณ พ.ศ. (ตค.-กย.) — เลือกได้ย้อนหลัง 5 ปี + ปีหน้า
+- TABLE 0: TextField สำหรับ admin (`rule===9`), read-only สำหรับ user — Switch โหมดเห็นได้ใน UI
+- TABLE A/B: 6 error types × 12 เดือน × HAD/Non-HAD/รวม + แถวผลรวม + คอลัมน์รวมทั้งหมด
+- TABLE C: 4 sections (IPD / IPD-HAD / OPD / OPD-HAD) — สูตร `count × 1000 / volume` (2 ทศนิยม)
+- **Export Excel 4 sheets** — TABLE 0 / A / B / C
+- Tab "สถิติจำนวนใบสั่งยา/วันนอน" + Chip "New" ใน ReportPage (value="10")
+- `libs/MedError.js`: `getReportSummary10`, `getStatVolume`, `saveStatVolume`
+
+### Security
+- Client-side sanitize ค่า input ใน TABLE 0 — ป้องกันค่าลบ / NaN / string (ผ่าน `handleEditCell` + `Math.max(0, ...)` ก่อนส่ง)
+- เคลียร์ state เก่าก่อน fetch ปีใหม่ — กัน flash ของข้อมูลปีก่อนระหว่าง loading
+
+### Performance — Map O(1) lookup + useMemo
+ก่อนหน้านี้ render ของ ReportSummary10 ใช้ `.find()` ใน `errorCounts` array ทุก cell (~500 cells × O(n))
+- เพิ่ม `countsMap` + `volumeMap` (Map keyed by `${type}-${year}-${month}-${ward}`) — สร้างครั้งเดียวต่อ data change ด้วย `useMemo`
+- `aggregates` pre-compute `perCell` / `perMonth` / `perType` / `grand` ของ IPD + OPD ในรอบเดียว
+- ลบ inner-loop sums ใน totals row → render ใช้ Map.get() O(1)
+- `getCellValue` ห่อด้วย `useCallback`
+- Excel export ใช้ `aggregates` เดียวกัน — ไม่ซ้ำคำนวณ
+- Complexity: O(n²) → O(n + cells)
+
 ## [1.15.1] - 2026-05-19
 
 ### Fixed
