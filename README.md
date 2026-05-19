@@ -120,7 +120,7 @@ bun start
 
 วิธีนำไปใช้กับโปรเจกต์อื่นที่คล้ายกัน (React + REST API): ดู [`.claude/skills/README.md`](./.claude/skills/README.md)
 
-Workflow มาตรฐานสำหรับ scan / fix bug / OWASP Top 10 security check / commit / push: ดู [`skill.md`](./skill.md)
+Workflow มาตรฐานสำหรับ scan / fix bug / OWASP Top 10 security check / commit / push: ดู [`AGENTS.md`](./AGENTS.md) — auto-loaded โดย Claude Code, Cursor, Aider, Codex และ AI agent อื่น ๆ ที่รองรับมาตรฐาน [agents.md](https://agents.md/)
 
 ---
 

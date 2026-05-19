@@ -69,4 +69,4 @@ cp -r /tmp/anthropic-skills/skills/<skill-name> .claude/skills/
 
 - [Anthropic Skills Repo](https://github.com/anthropics/skills) — official 17 skills
 - [Claude Code Skills Docs](https://code.claude.com/docs/en/skills) — frontmatter spec
-- `../../skill.md` — project commit workflow (docs/version/scan/security/commit)
+- `../../AGENTS.md` — project commit workflow (docs/version/scan/OWASP security/commit) — auto-loaded โดย AI agents ที่รองรับมาตรฐาน [agents.md](https://agents.md/)

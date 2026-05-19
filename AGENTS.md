@@ -1,9 +1,12 @@
-# Skill: Standard Commit Workflow
+# AGENTS.md — Standard Workflow for AI Agents
 
-> วิธีทำงานมาตรฐานเวลา **commit ทุกครั้ง** ในโปรเจกต์ reh-med-error-elysia-react
-> ต้องทำให้ครบทั้ง **ข้อ 1** (docs/version) + **ข้อ 2** (scan/fix/security/commit/push)
+> คำแนะนำสำหรับ AI agents (Claude Code, Cursor, Aider, Codex, Continue, Gemini CLI ฯลฯ) ที่ทำงานกับโปรเจกต์นี้
+> ไฟล์นี้ **auto-loaded** โดย AI agents ที่รองรับมาตรฐาน [agents.md](https://agents.md/) — ไม่ต้อง paste manually
+> ทุก commit ต้องทำให้ครบทั้ง **ข้อ 1** (docs/version) + **ข้อ 2** (scan/fix/OWASP security/commit/push)
 >
 > **Stack**: Elysia + Knex + MariaDB (backend) / React 18 + MUI v5 + xlsx (frontend), Bun runtime
+>
+> **Skills**: ดู [.claude/skills/README.md](./.claude/skills/README.md) — `frontend-design`, `webapp-testing` (project) + `skill-creator`, `claude-api` (user-level)
 
 ---
 
