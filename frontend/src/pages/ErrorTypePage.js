@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import _, { filter } from 'lodash';
@@ -25,6 +25,9 @@ import FormLabel from '@mui/material/FormLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
+import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import OutlinedInput from '@mui/material/OutlinedInput';
 import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
@@ -51,7 +54,7 @@ import { z } from 'zod';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
 // sections
-import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
+import { UserListHead } from '../sections/@dashboard/user';
 
 // Lib MedError
 import { errorTypeListCreate, errorTypeListDelete, getErrorTypeByTypeList } from '../libs/MedError';
@@ -119,6 +122,7 @@ const impactChipColor = (score) => {
 const color = red[500];
 
 const TABLE_HEAD_ERROR_TYPE = [
+  { id: 'error_type_list', label: '#', alignHead: 'center' },
   { id: 'error_type_name', label: 'ประเภท', alignRight: false, alignHead: 'left' },
   { id: 'error_type_list_detail', label: 'รายละเอียด Error', alignRight: false, alignHead: 'left' },
   { id: 'impact_score', label: 'Impact', alignRight: false, alignHead: 'center' },
@@ -142,21 +146,45 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-function applySortFilter(array, comparator, query) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
+function applySortFilter(array, comparator, query, errorType, impactFilter, activeStatus) {
+  let result = array;
+
+  // filter by main error type
+  if (errorType !== 'all') {
+    result = result.filter((_t) => Number(_t.error_type) === Number(errorType));
+  }
+
+  // filter by impact
+  if (impactFilter !== 'all') {
+    if (impactFilter === 'none') {
+      result = result.filter((_t) => _t.impact_score === null || _t.impact_score === undefined);
+    } else {
+      result = result.filter((_t) => Number(_t.impact_score) === Number(impactFilter));
+    }
+  }
+
+  // filter by status
+  if (activeStatus !== 'all') {
+    result = result.filter((_t) => _t.is_active === activeStatus);
+  }
+
+  // filter by search query
+  if (query) {
+    result = filter(
+      result,
+      (_error_type) =>
+        (_error_type.error_type_list_detail || '').toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
+        (_error_type.error_type_name || '').toLowerCase().indexOf(query.toLowerCase()) !== -1
+    );
+  }
+
+  // sort
+  const stabilizedThis = result.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
-  if (query) {
-    return filter(
-      array,
-      (_error_type) =>
-        _error_type.error_type_list_detail.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
-        _error_type.error_type_name.toLowerCase().indexOf(query.toLowerCase()) !== -1
-    );
-  }
   return stabilizedThis.map((el) => el[0]);
 }
 
@@ -175,6 +203,9 @@ export default function ErrorTypePage() {
   const [orderBy, setOrderBy] = useState('error_type_name');
 
   const [filterName, setFilterName] = useState('');
+  const [filterErrorType, setFilterErrorType] = useState('all');
+  const [filterImpact, setFilterImpact] = useState('all');
+  const [filterActive, setFilterActive] = useState('all');
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -453,14 +484,61 @@ export default function ErrorTypePage() {
   const incompleteCount = medErrorType.filter((r) => r.is_active === 'Y' && isIncompleteRow(r)).length;
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
 
-  const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - medErrorType.length) : 0;
-
-  const baseFilteredErrorType = applySortFilter(medErrorType, getComparator(order, orderBy), filterName);
+  const baseFilteredErrorType = applySortFilter(
+    medErrorType,
+    getComparator(order, orderBy),
+    filterName,
+    filterErrorType,
+    filterImpact,
+    filterActive
+  );
   const filteredErrorType = showIncompleteOnly
     ? baseFilteredErrorType.filter(isIncompleteRow)
     : baseFilteredErrorType;
 
-  const isNotFound = !filteredErrorType.length && !!filterName;
+  const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredErrorType.length) : 0;
+  const isNotFound =
+    !filteredErrorType.length &&
+    (!!filterName || filterErrorType !== 'all' || filterImpact !== 'all' || filterActive !== 'all' || showIncompleteOnly);
+
+  // derive options
+  const errorTypeOptions = useMemo(() => {
+    const map = new Map();
+    medErrorType.forEach((t) => {
+      const id = Number(t.error_type);
+      if (id && !map.has(id)) {
+        map.set(id, { label: t.error_type_name || `ประเภท ${id}`, count: 0 });
+      }
+      if (id) map.get(id).count += 1;
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([id, v]) => ({ id, label: v.label, count: v.count }));
+  }, [medErrorType]);
+
+  const impactCounts = useMemo(() => {
+    const c = { none: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    medErrorType.forEach((t) => {
+      if (t.impact_score === null || t.impact_score === undefined) c.none += 1;
+      else c[Number(t.impact_score)] = (c[Number(t.impact_score)] || 0) + 1;
+    });
+    return c;
+  }, [medErrorType]);
+
+  const activeCount = useMemo(() => medErrorType.filter((t) => t.is_active === 'Y').length, [medErrorType]);
+  const inactiveCount = medErrorType.length - activeCount;
+
+  const hasActiveFilter =
+    !!filterName || filterErrorType !== 'all' || filterImpact !== 'all' || filterActive !== 'all' || showIncompleteOnly;
+
+  const handleClearFilters = () => {
+    setFilterName('');
+    setFilterErrorType('all');
+    setFilterImpact('all');
+    setFilterActive('all');
+    setShowIncompleteOnly(false);
+    setPage(0);
+  };
 
   const isEdit = Boolean(selectedID && selectedID.type_id);
   return (
@@ -541,7 +619,95 @@ export default function ErrorTypePage() {
         )}
 
         <Card>
-          <UserListToolbar filterName={filterName} onFilterName={handleFilterByName} />
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            sx={{ p: 2.5, pb: 1.5, flexWrap: 'wrap' }}
+          >
+            <OutlinedInput
+              value={filterName}
+              onChange={handleFilterByName}
+              placeholder="ค้นหาประเภท / รายละเอียด"
+              size="small"
+              sx={{ minWidth: { xs: '100%', md: 260 } }}
+              startAdornment={
+                <InputAdornment position="start">
+                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', width: 20, height: 20 }} />
+                </InputAdornment>
+              }
+            />
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel id="filter-error-type-label">ประเภทหลัก</InputLabel>
+              <Select
+                labelId="filter-error-type-label"
+                value={filterErrorType}
+                label="ประเภทหลัก"
+                onChange={(e) => {
+                  setFilterErrorType(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">ทั้งหมด ({medErrorType.length})</MenuItem>
+                {errorTypeOptions.map((t) => (
+                  <MenuItem key={t.id} value={t.id}>
+                    {t.label} ({t.count})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="filter-impact-label">Impact</InputLabel>
+              <Select
+                labelId="filter-impact-label"
+                value={filterImpact}
+                label="Impact"
+                onChange={(e) => {
+                  setFilterImpact(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">ทั้งหมด</MenuItem>
+                <MenuItem value={1}>1 ({impactCounts[1] || 0})</MenuItem>
+                <MenuItem value={2}>2 ({impactCounts[2] || 0})</MenuItem>
+                <MenuItem value={3}>3 ({impactCounts[3] || 0})</MenuItem>
+                <MenuItem value={4}>4 ({impactCounts[4] || 0})</MenuItem>
+                <MenuItem value={5}>5 ({impactCounts[5] || 0})</MenuItem>
+                <MenuItem value="none">ยังไม่ระบุ ({impactCounts.none || 0})</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="filter-active-label">สถานะ</InputLabel>
+              <Select
+                labelId="filter-active-label"
+                value={filterActive}
+                label="สถานะ"
+                onChange={(e) => {
+                  setFilterActive(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">ทั้งหมด</MenuItem>
+                <MenuItem value="Y">เปิดใช้งาน ({activeCount})</MenuItem>
+                <MenuItem value="N">ปิดใช้งาน ({inactiveCount})</MenuItem>
+              </Select>
+            </FormControl>
+            {hasActiveFilter && (
+              <Button
+                size="small"
+                color="inherit"
+                onClick={handleClearFilters}
+                startIcon={<Iconify icon="eva:close-circle-outline" />}
+              >
+                ล้าง filter
+              </Button>
+            )}
+            <Box sx={{ flexGrow: 1 }} />
+            <Typography sx={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>
+              แสดง <b style={{ color: '#0d9488' }}>{filteredErrorType.length}</b> จากทั้งหมด{' '}
+              <b>{medErrorType.length}</b> รายการ
+            </Typography>
+          </Stack>
           <Scrollbar>
             <TableContainer component={Paper}>
               <Table stickyHeader>
@@ -549,7 +715,7 @@ export default function ErrorTypePage() {
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD_ERROR_TYPE}
-                  rowCount={medErrorType.length}
+                  rowCount={filteredErrorType.length}
                   onRequestSort={handleRequestSort}
                 />
                 <TableBody>
@@ -558,8 +724,11 @@ export default function ErrorTypePage() {
 
                     return (
                         <TableRow key={type_id} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
-                          <TableCell align="left">{error_type_name}</TableCell>
-                          <TableCell align="left">{`${error_type_list}. ${error_type_list_detail}`}</TableCell>
+                          <TableCell align="center" sx={{ fontFamily: 'monospace', color: '#64748b', fontSize: 13 }}>
+                            {error_type_list}
+                          </TableCell>
+                          <TableCell align="left" sx={{ fontWeight: 500 }}>{error_type_name}</TableCell>
+                          <TableCell align="left">{error_type_list_detail}</TableCell>
                           <TableCell align="center">
                             <Tooltip title="คลิกเพื่อแก้ไข Impact" arrow>
                               <Box
@@ -588,6 +757,7 @@ export default function ErrorTypePage() {
                           </TableCell>
                           <TableCell align="center">
                             <Chip
+                              size="small"
                               sx={{
                                 backgroundColor: is_active === 'Y' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                                 color: is_active === 'Y' ? '#16a34a' : '#dc2626',
@@ -619,14 +789,14 @@ export default function ErrorTypePage() {
                   })}
                   {emptyRowsMedError > 0 && (
                     <TableRow style={{ height: 53 * emptyRowsMedError }}>
-                      <TableCell colSpan={5} />
+                      <TableCell colSpan={6} />
                     </TableRow>
                   )}
                 </TableBody>
                 {isNotFound && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={6} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -637,9 +807,7 @@ export default function ErrorTypePage() {
                           </Typography>
 
                           <Typography variant="body2">
-                            ไม่มีผลลัพธ์ที่ค้นหา &nbsp;
-                            <strong>&quot;{filterName}&quot;</strong>.
-                            <br /> กรุณาลองใหม่อีกครั้ง
+                            ไม่มีผลลัพธ์ตามเงื่อนไขที่เลือก กรุณาลองปรับ filter หรือคำค้นหา
                           </Typography>
                         </Paper>
                       </TableCell>
@@ -649,7 +817,7 @@ export default function ErrorTypePage() {
                 {medErrorType.length === 0 && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={6} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -667,11 +835,13 @@ export default function ErrorTypePage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25, 100]}
             component="div"
-            count={medErrorType.length}
+            count={filteredErrorType.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="แถวต่อหน้า:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} จาก ${count} รายการ`}
           />
         </Card>
       </Container>

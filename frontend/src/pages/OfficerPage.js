@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import _, { filter } from 'lodash';
@@ -25,6 +25,9 @@ import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
 import FormLabel from '@mui/material/FormLabel';
+import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 
@@ -43,7 +46,7 @@ import { red } from '@mui/material/colors';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
 // sections
-import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
+import { UserListHead } from '../sections/@dashboard/user';
 // Lib Auth
 import { verifyToken } from '../libs/Auth';
 // Lib MedError
@@ -68,6 +71,7 @@ const Toast = MySwal.mixin({
 // Notify Toast Config
 
 const TABLE_HEAD_PERSON = [
+  { id: 'no', label: 'ลำดับ', alignHead: 'center' },
   { id: 'error_key_person_name', label: 'ชื่อ - สกุล', alignRight: false, alignHead: 'left' },
   { id: 'error_key_sec', label: 'ประเภทตำแหน่ง', alignRight: false, alignHead: 'center' },
   { id: '', label: 'จัดการ', alignHead: 'center' },
@@ -89,16 +93,29 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-function applySortFilter(array, comparator, query) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
+function applySortFilter(array, comparator, query, secId) {
+  let result = array;
+
+  // filter by position type
+  if (secId !== 'all') {
+    result = result.filter((_p) => Number(_p.error_key_sec) === Number(secId));
+  }
+
+  // filter by search query
+  if (query) {
+    result = filter(
+      result,
+      (_person) => (_person.error_key_person_name || '').toLowerCase().indexOf(query.toLowerCase()) !== -1
+    );
+  }
+
+  // sort
+  const stabilizedThis = result.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
-  if (query) {
-    return filter(array, (_person) => _person.error_key_person_name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
-  }
   return stabilizedThis.map((el) => el[0]);
 }
 
@@ -132,6 +149,7 @@ export default function OfficerPage() {
   const [orderBy, setOrderBy] = useState('error_key_sec');
 
   const [filterName, setFilterName] = useState('');
+  const [filterSec, setFilterSec] = useState('all');
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -412,11 +430,32 @@ export default function OfficerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - medErrorPerson.length) : 0;
+  const filteredOfficer = applySortFilter(medErrorPerson, getComparator(order, orderBy), filterName, filterSec);
+  const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredOfficer.length) : 0;
+  const isNotFound = !filteredOfficer.length && (!!filterName || filterSec !== 'all');
 
-  const filteredOfficer = applySortFilter(medErrorPerson, getComparator(order, orderBy), filterName);
+  // derive sec options + counts from current data
+  const secOptions = useMemo(() => {
+    const map = new Map();
+    medErrorPerson.forEach((p) => {
+      const id = Number(p.error_key_sec);
+      if (id && !map.has(id)) {
+        map.set(id, { label: p.error_key_sec_name || `ตำแหน่ง ${id}`, count: 0 });
+      }
+      if (id) map.get(id).count += 1;
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([id, v]) => ({ id, label: v.label, count: v.count }));
+  }, [medErrorPerson]);
 
-  const isNotFound = !filteredOfficer.length && !!filterName;
+  const handleClearFilters = () => {
+    setFilterName('');
+    setFilterSec('all');
+    setPage(0);
+  };
+
+  const hasActiveFilter = !!filterName || filterSec !== 'all';
   return (
     <>
       <Helmet>
@@ -462,7 +501,59 @@ export default function OfficerPage() {
           </Stack>
         </Box>
         <Card>
-          <UserListToolbar filterName={filterName} onFilterName={handleFilterByName} />
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            sx={{ p: 2.5, pb: 1.5, flexWrap: 'wrap' }}
+          >
+            <OutlinedInput
+              value={filterName}
+              onChange={handleFilterByName}
+              placeholder="ค้นหาชื่อ - สกุล"
+              size="small"
+              sx={{ minWidth: { xs: '100%', md: 280 } }}
+              startAdornment={
+                <InputAdornment position="start">
+                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', width: 20, height: 20 }} />
+                </InputAdornment>
+              }
+            />
+            <FormControl size="small" sx={{ minWidth: 220 }}>
+              <InputLabel id="filter-sec-label">ประเภทตำแหน่ง</InputLabel>
+              <Select
+                labelId="filter-sec-label"
+                value={filterSec}
+                label="ประเภทตำแหน่ง"
+                onChange={(e) => {
+                  setFilterSec(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">ทั้งหมด ({medErrorPerson.length})</MenuItem>
+                {secOptions.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>
+                    {s.label} ({s.count})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {hasActiveFilter && (
+              <Button
+                size="small"
+                color="inherit"
+                onClick={handleClearFilters}
+                startIcon={<Iconify icon="eva:close-circle-outline" />}
+              >
+                ล้าง filter
+              </Button>
+            )}
+            <Box sx={{ flexGrow: 1 }} />
+            <Typography sx={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>
+              แสดง <b style={{ color: '#0d9488' }}>{filteredOfficer.length}</b> จากทั้งหมด{' '}
+              <b>{medErrorPerson.length}</b> รายการ
+            </Typography>
+          </Stack>
           <Scrollbar>
             <TableContainer component={Paper}>
               <Table stickyHeader>
@@ -470,17 +561,20 @@ export default function OfficerPage() {
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD_PERSON}
-                  rowCount={medErrorPerson.length}
+                  rowCount={filteredOfficer.length}
                   onRequestSort={handleRequestSort}
                 />
                 <TableBody>
-                  {filteredOfficer.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                  {filteredOfficer.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                     const { error_key_person_id, error_key_person_name, error_key_sec, error_key_sec_name } = row;
                     return (
                         <TableRow key={error_key_person_id} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
-                          <TableCell align="left">{error_key_person_name}</TableCell>
+                          <TableCell align="center" sx={{ color: '#64748b', fontSize: 13 }}>
+                            {page * rowsPerPage + index + 1}
+                          </TableCell>
+                          <TableCell align="left" sx={{ fontWeight: 500 }}>{error_key_person_name}</TableCell>
                           <TableCell align="center">
-                            <Chip label={error_key_sec_name} sx={getSecChipStyle(error_key_sec)} />
+                            <Chip size="small" label={error_key_sec_name} sx={getSecChipStyle(error_key_sec)} />
                           </TableCell>
                           <TableCell align="center">
                             <Tooltip title="จัดการ">
@@ -503,14 +597,14 @@ export default function OfficerPage() {
                   })}
                   {emptyRowsMedError > 0 && (
                     <TableRow style={{ height: 53 * emptyRowsMedError }}>
-                      <TableCell colSpan={3} />
+                      <TableCell colSpan={4} />
                     </TableRow>
                   )}
                 </TableBody>
                 {isNotFound && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={3} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={4} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -521,9 +615,7 @@ export default function OfficerPage() {
                           </Typography>
 
                           <Typography variant="body2">
-                            ไม่มีผลลัพธ์ที่ค้นหา &nbsp;
-                            <strong>&quot;{filterName}&quot;</strong>.
-                            <br /> กรุณาลองใหม่อีกครั้ง
+                            ไม่มีผลลัพธ์ตามเงื่อนไขที่เลือก กรุณาลองปรับ filter หรือคำค้นหา
                           </Typography>
                         </Paper>
                       </TableCell>
@@ -533,7 +625,7 @@ export default function OfficerPage() {
                 {medErrorPerson.length === 0 && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={3} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={4} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -551,11 +643,13 @@ export default function OfficerPage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25, 100]}
             component="div"
-            count={medErrorPerson.length}
+            count={filteredOfficer.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="แถวต่อหน้า:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} จาก ${count} รายการ`}
           />
         </Card>
       </Container>

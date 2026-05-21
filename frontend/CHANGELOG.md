@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-05-21
+
+### Added — Filter + table UX (Department / Officer / ErrorType)
+- **DepartmentPage** ([frontend/src/pages/DepartmentPage.js](frontend/src/pages/DepartmentPage.js))
+  - Filter `ประเภท (Group)` derive จากข้อมูลจริง — option แสดงชื่อกลุ่ม OPD/IPD/งานคลัง/งานผลิต/OPD2/OPD-Primary/กลับบ้าน/TPN/เคมีบำบัด
+  - Filter `สถานะ` (เปิดใช้งาน N รายการ / ปิดใช้งาน N รายการ) มี count ในตัวเลือก
+  - Search รองรับชื่อหน่วยงาน + รหัส (`med_error_depcode`)
+  - เพิ่มคอลัมน์ `รหัส` (monospace) ในตาราง
+  - แสดง "แสดง X จากทั้งหมด Y รายการ" ทาง toolbar ขวา + ปุ่ม "ล้าง filter"
+- **OfficerPage** ([frontend/src/pages/OfficerPage.js](frontend/src/pages/OfficerPage.js))
+  - Filter `ประเภทตำแหน่ง` (เภสัชกร / พนักงานประจำห้องยา / เจ้าพนักงานเภสัชกรรม / อื่นๆ) — derive + count
+  - เพิ่มคอลัมน์ `ลำดับ` ในตาราง (ตามหน้าปัจจุบัน)
+  - Counter + ปุ่ม clear filter เหมือนกันทั้งระบบ
+- **ErrorTypePage** ([frontend/src/pages/ErrorTypePage.js](frontend/src/pages/ErrorTypePage.js))
+  - Filter `ประเภทหลัก` (Prescription / Processing / Dispensing / Pre-Admin / Administration) derive จากข้อมูล
+  - Filter `Impact` (1-5 + "ยังไม่ระบุ") — แต่ละ option มี count
+  - Filter `สถานะ` (เปิดใช้งาน / ปิดใช้งาน)
+  - Search รองรับชื่อประเภท + รายละเอียด Error
+  - แยกคอลัมน์ `#` (เลข error_type_list, monospace) ออกจาก `รายละเอียด Error`
+  - เก็บ Alert "แสดงเฉพาะรายการที่ขาด Impact" เดิมไว้ + รวมเข้ากับ clear-filter handler
+- ทุกหน้า: TablePagination ปรับ label เป็นภาษาไทย (`แถวต่อหน้า:` / `X-Y จาก Z รายการ`), `count` ใช้ `filteredXxx.length` แทน `medErrorXxx.length` เพื่อให้แสดงจำนวนหลัง filter ถูกต้อง
+- เลิกใช้ `UserListToolbar` ในทั้ง 3 หน้า (toolbar shared) แทนด้วย inline toolbar ของแต่ละหน้าให้ขยาย filter ได้อิสระ
+
+### Security
+- Filter เป็น client-side เท่านั้น — ไม่กระทบ data fetching / authorization
+- Input ผ่าน React default escape (A03:2021 Injection) — search query ใช้ `.toLowerCase().indexOf()` ปลอดภัย
+- Filter state เป็น primitive (`'all' | number | 'Y' | 'N'`) — ไม่มี user-controlled key injection
+
 ## [1.21.0] - 2026-05-21
 
 ### Added — Glass header card propagation (UI consistency)

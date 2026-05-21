@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import _, { filter } from 'lodash';
@@ -32,6 +32,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContentText from '@mui/material/DialogContentText';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import OutlinedInput from '@mui/material/OutlinedInput';
 import { red } from '@mui/material/colors';
 
 // Hook form
@@ -47,7 +50,7 @@ import withReactContent from 'sweetalert2-react-content';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
 // sections
-import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
+import { UserListHead } from '../sections/@dashboard/user';
 
 // Lib MedError
 import { getMedErrorDeptAll, deptCreate, deptDelete } from '../libs/MedError';
@@ -89,7 +92,8 @@ const Toast = MySwal.mixin({
 // Notify Toast Config
 
 const TABLE_HEAD_DEPARTMENT = [
-  { id: 'med_error_depname', label: 'ชื่อหน่วยงาน/หอผู้ป่วย', alignHead: 'left' },
+  { id: 'med_error_depcode', label: 'รหัส', alignHead: 'center' },
+  { id: 'med_error_depname', label: 'ชื่อหน่วยงาน / หอผู้ป่วย', alignHead: 'left' },
   { id: 'med_error_dep_group_detail', label: 'ประเภท', alignRight: false, alignHead: 'center' },
   { id: 'med_error_is_active', label: 'สถานะ', alignRight: false, alignHead: 'center' },
   { id: '', label: 'จัดการ', alignHead: 'center' },
@@ -111,16 +115,36 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-function applySortFilter(array, comparator, query) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
+function applySortFilter(array, comparator, query, groupId, activeStatus) {
+  let result = array;
+
+  // filter by group
+  if (groupId !== 'all') {
+    result = result.filter((_dept) => Number(_dept.med_error_dep_group_id) === Number(groupId));
+  }
+
+  // filter by status
+  if (activeStatus !== 'all') {
+    result = result.filter((_dept) => _dept.med_error_is_active === activeStatus);
+  }
+
+  // filter by search query
+  if (query) {
+    result = filter(
+      result,
+      (_dept) =>
+        (_dept.med_error_depname || '').toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
+        String(_dept.med_error_depcode || '').toLowerCase().indexOf(query.toLowerCase()) !== -1
+    );
+  }
+
+  // sort
+  const stabilizedThis = result.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
-  if (query) {
-    return filter(array, (_dept) => _dept.med_error_depname.toLowerCase().indexOf(query.toLowerCase()) !== -1);
-  }
   return stabilizedThis.map((el) => el[0]);
 }
 
@@ -160,6 +184,8 @@ export default function DepartmentPage() {
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [open, setOpen] = useState(null);
   const [filterName, setFilterName] = useState('');
+  const [filterGroup, setFilterGroup] = useState('all');
+  const [filterActive, setFilterActive] = useState('all');
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [medErrorDept, setMedErrorDept] = useState([]);
 
@@ -391,9 +417,44 @@ export default function DepartmentPage() {
     checkVerifyToken();
   }, [navigate]);
 
-  const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - medErrorDept.length) : 0;
-  const filteredDepartment = applySortFilter(medErrorDept, getComparator(order, orderBy), filterName);
-  const isNotFound = !filteredDepartment.length && !!filterName;
+  const filteredDepartment = applySortFilter(
+    medErrorDept,
+    getComparator(order, orderBy),
+    filterName,
+    filterGroup,
+    filterActive
+  );
+  const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredDepartment.length) : 0;
+  const isNotFound = !filteredDepartment.length && (!!filterName || filterGroup !== 'all' || filterActive !== 'all');
+
+  // unique group options from current data
+  const groupOptions = useMemo(() => {
+    const map = new Map();
+    medErrorDept.forEach((d) => {
+      const id = Number(d.med_error_dep_group_id);
+      if (id && !map.has(id)) {
+        map.set(id, d.med_error_dep_group_detail || `กลุ่ม ${id}`);
+      }
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([id, label]) => ({ id, label }));
+  }, [medErrorDept]);
+
+  const activeCount = useMemo(
+    () => medErrorDept.filter((d) => d.med_error_is_active === 'Y').length,
+    [medErrorDept]
+  );
+  const inactiveCount = medErrorDept.length - activeCount;
+
+  const handleClearFilters = () => {
+    setFilterName('');
+    setFilterGroup('all');
+    setFilterActive('all');
+    setPage(0);
+  };
+
+  const hasActiveFilter = !!filterName || filterGroup !== 'all' || filterActive !== 'all';
 
   const isEdit = Boolean(selectedID && selectedID.med_error_depcode);
 
@@ -442,7 +503,75 @@ export default function DepartmentPage() {
           </Stack>
         </Box>
         <Card>
-          <UserListToolbar filterName={filterName} onFilterName={handleFilterByName} />
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            sx={{ p: 2.5, pb: 1.5, flexWrap: 'wrap' }}
+          >
+            <OutlinedInput
+              value={filterName}
+              onChange={handleFilterByName}
+              placeholder="ค้นหาชื่อหน่วยงาน / รหัส"
+              size="small"
+              sx={{ minWidth: { xs: '100%', md: 280 } }}
+              startAdornment={
+                <InputAdornment position="start">
+                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', width: 20, height: 20 }} />
+                </InputAdornment>
+              }
+            />
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="filter-group-label">ประเภท</InputLabel>
+              <Select
+                labelId="filter-group-label"
+                value={filterGroup}
+                label="ประเภท"
+                onChange={(e) => {
+                  setFilterGroup(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">ทั้งหมด ({medErrorDept.length})</MenuItem>
+                {groupOptions.map((g) => (
+                  <MenuItem key={g.id} value={g.id}>
+                    {g.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="filter-active-label">สถานะ</InputLabel>
+              <Select
+                labelId="filter-active-label"
+                value={filterActive}
+                label="สถานะ"
+                onChange={(e) => {
+                  setFilterActive(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">ทั้งหมด</MenuItem>
+                <MenuItem value="Y">เปิดใช้งาน ({activeCount})</MenuItem>
+                <MenuItem value="N">ปิดใช้งาน ({inactiveCount})</MenuItem>
+              </Select>
+            </FormControl>
+            {hasActiveFilter && (
+              <Button
+                size="small"
+                color="inherit"
+                onClick={handleClearFilters}
+                startIcon={<Iconify icon="eva:close-circle-outline" />}
+              >
+                ล้าง filter
+              </Button>
+            )}
+            <Box sx={{ flexGrow: 1 }} />
+            <Typography sx={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>
+              แสดง <b style={{ color: '#0d9488' }}>{filteredDepartment.length}</b> จากทั้งหมด{' '}
+              <b>{medErrorDept.length}</b> รายการ
+            </Typography>
+          </Stack>
           <Scrollbar>
             <TableContainer component={Paper}>
               <Table stickyHeader>
@@ -450,7 +579,7 @@ export default function DepartmentPage() {
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD_DEPARTMENT}
-                  rowCount={medErrorDept.length}
+                  rowCount={filteredDepartment.length}
                   onRequestSort={handleRequestSort}
                 />
                 <TableBody>
@@ -464,12 +593,16 @@ export default function DepartmentPage() {
                     } = row;
                     return (
                         <TableRow key={med_error_depcode} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
-                          <TableCell align="left">{med_error_depname}</TableCell>
+                          <TableCell align="center" sx={{ fontFamily: 'monospace', color: '#64748b', fontSize: 13 }}>
+                            {med_error_depcode}
+                          </TableCell>
+                          <TableCell align="left" sx={{ fontWeight: 500 }}>{med_error_depname}</TableCell>
                           <TableCell align="center">
-                            <Chip sx={getChipColor(+med_error_dep_group_id)} label={med_error_dep_group_detail} />
+                            <Chip size="small" sx={getChipColor(+med_error_dep_group_id)} label={med_error_dep_group_detail} />
                           </TableCell>
                           <TableCell align="center">
                             <Chip
+                              size="small"
                               sx={{
                                 backgroundColor: med_error_is_active === 'Y' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                                 color: med_error_is_active === 'Y' ? '#16a34a' : '#dc2626',
@@ -500,14 +633,14 @@ export default function DepartmentPage() {
                   })}
                   {emptyRowsMedError > 0 && (
                     <TableRow style={{ height: 53 * emptyRowsMedError }}>
-                      <TableCell colSpan={3} />
+                      <TableCell colSpan={5} />
                     </TableRow>
                   )}
                 </TableBody>
                 {isNotFound && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={3} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -518,9 +651,7 @@ export default function DepartmentPage() {
                           </Typography>
 
                           <Typography variant="body2">
-                            ไม่มีผลลัพธ์ที่ค้นหา &nbsp;
-                            <strong>&quot;{filterName}&quot;</strong>.
-                            <br /> กรุณาลองใหม่อีกครั้ง
+                            ไม่มีผลลัพธ์ตามเงื่อนไขที่เลือก กรุณาลองปรับ filter หรือคำค้นหา
                           </Typography>
                         </Paper>
                       </TableCell>
@@ -530,7 +661,7 @@ export default function DepartmentPage() {
                 {medErrorDept.length === 0 && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={3} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -548,11 +679,13 @@ export default function DepartmentPage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25, 100]}
             component="div"
-            count={medErrorDept.length}
+            count={filteredDepartment.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="แถวต่อหน้า:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} จาก ${count} รายการ`}
           />
         </Card>
       </Container>
