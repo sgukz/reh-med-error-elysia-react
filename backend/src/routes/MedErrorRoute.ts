@@ -1662,7 +1662,124 @@ function popKeys(obj: Record<string, any>, keys: Array<string>) {
     return removed;
 }
 
-export default MedErrorRoute;
+import { t } from "elysia";
+import LikelihoodModel from "../models/LikelihoodModel";
 
+// GET /likelihood - Get Likelihood Criteria
+MedErrorRoute.get('/likelihood', async ({
+    jwt,
+    set,
+    request
+}: {
+    jwt: { verify: (token: string) => Promise<string> };
+    set: { status: number };
+    request: Request
+}) => {
+    try {
+        const headers = request.headers;
+        const token = readAuthTokenFromHeaders(headers);
+        
+        if (!token) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
+        }
+
+        const payload = await jwt.verify(token);
+        if (!payload) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
+        }
+
+        const model = new LikelihoodModel(DBSec);
+        const data = await model.getLikelihoodCriteria();
+
+        if (data.length > 0) {
+            set.status = StatusCodes.OK;
+            return { statusCode: StatusCodes.OK, dataList: data };
+        } else {
+            set.status = StatusCodes.NOT_FOUND;
+            return { statusCode: StatusCodes.NOT_FOUND, dataList: [] };
+        }
+    } catch (error) {
+        console.error("[MedErrorRoute] Error getLikelihoodCriteria:", error);
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            error: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
+    }
+});
+
+// PUT /likelihood - Update Likelihood Criteria
+MedErrorRoute.put('/likelihood', async ({
+    jwt,
+    set,
+    request,
+    body
+}: {
+    jwt: { verify: (token: string) => Promise<string> };
+    set: { status: number };
+    request: Request;
+    body: any
+}) => {
+    try {
+        const headers = request.headers;
+        const token = readAuthTokenFromHeaders(headers);
+        
+        if (!token) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Request missing Authorization Data❌` };
+        }
+
+        const payload = await jwt.verify(token);
+        if (!payload) {
+            set.status = StatusCodes.UNAUTHORIZED;
+            return { statusCode: StatusCodes.UNAUTHORIZED, statusMessage: `Identity verification failed❌` };
+        }
+
+        // Validate admin access (rule=9)
+        const loginname = (payload as any).loginname;
+        if (loginname) {
+            const access = await mederror.getMedErrorAccess(loginname);
+            const rule = Array.isArray(access) && access.length > 0 ? Number(access[0]?.rule) : null;
+            if (rule !== 9) {
+                set.status = StatusCodes.FORBIDDEN;
+                return { statusCode: StatusCodes.FORBIDDEN, statusMessage: 'Admin access required' };
+            }
+        }
+
+        const model = new LikelihoodModel(DBSec);
+        const updatedCount = await model.updateLikelihoodCriteria(body);
+
+        set.status = StatusCodes.OK;
+        return { 
+            statusCode: StatusCodes.OK, 
+            message: "อัปเดตเกณฑ์ Likelihood สำเร็จ",
+            updatedCount
+        };
+    } catch (error) {
+        console.error("[MedErrorRoute] Error updateLikelihoodCriteria:", error);
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            error: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
+    }
+}, {
+    body: t.Object({
+        updated_by: t.Optional(t.String()),
+        items: t.Array(
+            t.Object({
+                id: t.Number(),
+                group_id: t.Number(),
+                level_score: t.Number(),
+                min_freq: t.Number(),
+                max_freq: t.Union([t.Number(), t.Null()]),
+            })
+        )
+    })
+});
+
+export default MedErrorRoute;
 
 

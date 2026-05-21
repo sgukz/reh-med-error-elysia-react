@@ -24,7 +24,7 @@ export const API_ROUTE = {
   PATIENT_INFO: `${API_BASE}/med-error/get-patient-info`,
   DASHBOARD_MEDERROR: `${API_BASE}/med-error/dashboard/mederror`,
   REPORT_MEDERROR: `${API_BASE}/med-error/reports`,
-  LIKELIHOOD: `${API_BASE}/likelihood`,
+  LIKELIHOOD: `${API_BASE}/med-error/likelihood`,
 };
 
 export const API_SECURITY = {
