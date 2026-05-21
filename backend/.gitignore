@@ -41,3 +41,6 @@ package-lock.json
 
 #docker 
 docker-compose-prod.yml
+
+/sql
+/scripts
