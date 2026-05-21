@@ -14,7 +14,7 @@
 
 **บังคับทำทุกครั้งที่มี code change** (user ขอชัดเจน):
 
-1. `backend/package.json` — bump version (minor ถ้าเพิ่ม feature, patch ถ้าแค่ fix/refactor)
+1. `backend/package.json` — bump version (ดู "เกณฑ์เลือก MINOR vs PATCH" ด้านล่าง)
 2. `frontend/package.json` — bump version ตาม scope ของการแก้ (ถ้าแก้แค่ backend ก็ไม่ต้อง bump frontend)
 3. `backend/CHANGELOG.md` — เพิ่ม entry ใหม่ด้านบน:
    ```
@@ -42,6 +42,25 @@
 - Bullet ต้อง **action-oriented** ("เพิ่ม endpoint X — return Y", "แก้ bug Z ด้วยการ ...") ไม่ใช่ "Endpoint X added"
 - มี Security section อย่างน้อย 2-3 บรรทัดอธิบาย validation/sanitization ที่ทำ
 - ภาษาผสมไทย-อังกฤษ OK — ตามที่โปรเจกต์ใช้
+
+**เกณฑ์เลือก MINOR (y) vs PATCH (z)** — ใช้ผิดบ่อย ผู้ใช้สั่งย้ำ 2026-05-21:
+
+**PATCH bump (z, เลขหลังสุด — เช่น `1.21.0` → `1.21.1`)** ✅ default สำหรับงานทั่วไป:
+- แก้ bug
+- ปรับ UI/UX ของหน้าที่มีอยู่แล้ว (style, layout, header, color, animation)
+- เพิ่ม filter/sort/search/คอลัมน์ในตารางที่มีอยู่แล้ว
+- ปรับ validation / error message
+- Refactor / cleanup ที่ไม่กระทบ behavior
+- เพิ่ม preset/shortcut/counter เล็ก ๆ
+
+**MINOR bump (y — เช่น `1.21.x` → `1.22.0`)** เฉพาะ feature ใหม่จริง ๆ:
+- หน้าใหม่ทั้งหน้า (เช่น `LikelihoodCriteriaPage`)
+- ReportSummary ใหม่ทั้ง section (เช่น `ReportSummary10` — Prescription/IPD Statistics)
+- Endpoint backend ใหม่ที่ frontend ใช้
+- ระบบ/feature ที่ผู้ใช้พูดถึงเป็นชื่อได้ (เช่น "Drug Pair Reports", "RCA Summary")
+- เปลี่ยน architecture / data flow / schema สำคัญ
+
+**Tie-breaker**: ถ้าไม่แน่ใจ → เลือก PATCH (conservative). ถาม: "ผู้ใช้เรียกงานนี้เป็นชื่อ feature ได้ไหม?" ถ้านึกชื่อไม่ออก → PATCH
 
 ---
 
