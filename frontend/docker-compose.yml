@@ -1,6 +1,6 @@
 services:
   rehMEDErrorApp:
-    image: sgukz/react-app-mederror:1.10.16
+    image: sgukz/react-app-mederror:1.22.1
     build:
       context: .
       dockerfile: Dockerfile
