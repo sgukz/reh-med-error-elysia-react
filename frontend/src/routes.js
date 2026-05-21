@@ -10,6 +10,7 @@ import OfficerPage from './pages/OfficerPage';
 import ErrorTypePage from './pages/ErrorTypePage'; 
 import AnalysisPage from './pages/AnalysisPage'; 
 import ReportPage from './pages/ReportPage'; 
+import LikelihoodCriteriaPage from './pages/LikelihoodCriteriaPage';
 
 export default function Router() {
   const routes = useRoutes([
@@ -55,6 +56,13 @@ export default function Router() {
       element: <DashboardLayout />,
       children: [
         { path: 'main', element: <ErrorTypePage /> },
+      ]
+    },
+    {
+      path: 'likelihood-criteria',
+      element: <DashboardLayout />,
+      children: [
+        { path: 'main', element: <LikelihoodCriteriaPage /> },
       ]
     },
     {

@@ -6,6 +6,8 @@ import { cors } from "@elysiajs/cors";
 import config from "./configs/config";
 // Route
 import AuthRoute from "./routes/AuthRoute";
+import ReportRoute from "./routes/ReportRoute";
+import { LikelihoodRoute } from "./routes/LikelihoodRoute";
 import MedErrorRoute from "./routes/MedErrorRoute";
 // Plugin
 import { DBMain, DBSec } from './plugins/db'
@@ -25,6 +27,8 @@ const app = new Elysia()
   }))
   .use(AuthRoute)
   .use(MedErrorRoute)
+  .use(ReportRoute)
+  .use(LikelihoodRoute)
   .get('/alive', () => ({
     statusCode: StatusCodes.OK,
     status: 'alive',

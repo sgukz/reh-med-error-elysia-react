@@ -291,13 +291,30 @@ export default class ReportModel {
         const db = this.db;
         const compare = Boolean(firstDateB && lastDateB);
 
+        // Determine group_id for Likelihood Criteria
+        // Group 1: 1 (Prescription)
+        // Group 2: 3, 5, 6 (Pre-Admin, Processing, Transcribing)
+        // Group 3: 2, 4 (Dispensing, Admin)
+        let groupId = 0;
+        if (numType === 1) groupId = 1;
+        else if ([3, 5, 6].includes(numType)) groupId = 2;
+        else if ([2, 4].includes(numType)) groupId = 3;
+
+        // Fetch criteria for the group
+        let criteriaList: any[] = [];
+        if (groupId > 0) {
+            criteriaList = await db('med_error_likelihood_criteria')
+                .where('group_id', groupId)
+                .orderBy('level_score', 'desc');
+        }
+
         const selectCols: any[] = [
             'etl.type_id',
             'etl.error_type',
             'etl.error_type_list',
             'etl.error_type_list_detail',
             'etl.impact_score',
-            'etl.likelihood_score',
+            // 'etl.likelihood_score' is no longer used directly from DB table
             db.raw(
                 `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_alert = 'High Alert Drugs' THEN 1 END) AS had_a`,
                 [firstDateA, lastDateA]
@@ -329,7 +346,7 @@ export default class ReportModel {
             );
         }
 
-        const query = db('med_error_type_list as etl')
+        const rows = await db('med_error_type_list as etl')
             .select(selectCols)
             .leftJoin('med_error as m', function () {
                 this.on('m.error_type', '=', 'etl.error_type')
@@ -342,12 +359,40 @@ export default class ReportModel {
                 'etl.error_type',
                 'etl.error_type_list',
                 'etl.error_type_list_detail',
-                'etl.impact_score',
-                'etl.likelihood_score'
+                'etl.impact_score'
             )
             .orderBy('etl.error_type_list');
 
-        return await query;
+        // Map dynamic likelihood score based on total_a
+        return rows.map((row: any) => {
+            const totalA = Number(row.total_a) || 0;
+            let likelihood = null;
+
+            if (criteriaList.length > 0) {
+                // Find matching criteria
+                for (const criteria of criteriaList) {
+                    const min = criteria.min_freq;
+                    const max = criteria.max_freq;
+
+                    if (max === null) {
+                        if (totalA >= min) {
+                            likelihood = criteria.level_score;
+                            break;
+                        }
+                    } else {
+                        if (totalA >= min && totalA <= max) {
+                            likelihood = criteria.level_score;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return {
+                ...row,
+                likelihood_score: likelihood // Inject the calculated likelihood back into the response
+            };
+        });
     }
 
     // Using Report Summary 8 

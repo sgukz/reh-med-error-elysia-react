@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-05-21
+
+### Added — ระบบจัดการและคำนวณเกณฑ์ Likelihood (Report 9)
+- เพิ่มตาราง `med_error_likelihood_criteria` สำหรับเก็บเกณฑ์ประเมินโอกาสเกิด
+- เพิ่ม API `GET /api/likelihood` และ `PUT /api/likelihood` สำหรับดึงและอัปเดตเกณฑ์
+- ปรับปรุง ReportModel (`getReportSummary9`) ให้คำนวณค่า Likelihood อัตโนมัติตามความถี่ที่เกิดขึ้นในช่วงเวลา (total_a) ผ่านตาราง criteria
+
+### Security
+- เพิ่ม Type validation (Zod) ใน endpoint `PUT /api/likelihood` ป้องกัน Payload injection
+- กำหนดสิทธิ์การแก้ไขเกณฑ์เป็น Rule 9 ผ่าน Frontend
+
 ## [1.9.0] - 2026-05-19
 
 ### Added — ReportSummary6 (สรุปอุบัติการณ์ที่ได้ RCA แล้ว)

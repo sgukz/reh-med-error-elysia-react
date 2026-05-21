@@ -34,6 +34,11 @@ const navAdmin = [
     icon: icon('list-task-svgrepo-com'),
   },
   {
+    title: 'เกณฑ์ Likelihood',
+    path: '/likelihood-criteria/main',
+    icon: icon('settings-2-outline'),
+  },
+  {
     title: 'รายการสาเหตุ',
     path: '/analysis/main',
     icon: icon('list-task-svgrepo-com'),

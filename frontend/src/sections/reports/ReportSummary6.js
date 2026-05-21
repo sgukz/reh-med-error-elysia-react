@@ -83,13 +83,13 @@ const startOfFiscalYear = () => {
 // ============================================================================
 const StyledHeadCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+    backgroundColor: theme.palette.primary.main,
     color: theme.palette.common.white,
+    borderColor: theme.palette.common.white,
     fontWeight: 700,
-    fontSize: 12.5,
+    fontSize: 13,
     padding: '10px 12px',
     whiteSpace: 'nowrap',
-    borderBottom: 'none',
     '& .MuiTableSortLabel-root, & .MuiTableSortLabel-root:hover, & .MuiTableSortLabel-root.Mui-active': {
       color: theme.palette.common.white,
     },
@@ -550,7 +550,7 @@ const ReportSummary6 = () => {
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
         <TextField
           size="small"
-          placeholder="ค้นหา (เหตุการณ์ / หน่วยงาน / RCA / ผู้บันทึก)"
+          placeholder="ค้นหา"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           sx={{

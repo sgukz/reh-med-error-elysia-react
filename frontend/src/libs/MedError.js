@@ -235,6 +235,21 @@ export const getReportSummary3 = buildReportSummary('summary3');
 export const getReportSummary5 = buildReportSummary('summary5');
 export const getReportSummary6 = buildReportSummary('summary6');
 export const getReportSummary7 = buildReportSummary('summary7');
+// ============================================================================
+// Likelihood Criteria API
+// ============================================================================
+export const getLikelihoodCriteria = (auth_token) => {
+  return axios.get(API_ROUTE.LIKELIHOOD, {
+    headers: { Authorization: `Bearer ${auth_token}` },
+  });
+};
+
+export const updateLikelihoodCriteria = (payload, auth_token) => {
+  return axios.put(API_ROUTE.LIKELIHOOD, payload, {
+    headers: { Authorization: `Bearer ${auth_token}` },
+  });
+};
+
 export const getReportSummary9 = buildReportSummary('summary9');
 export const getReportSummary10 = buildReportSummary('summary10');
 
