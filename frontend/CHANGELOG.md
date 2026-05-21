@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-05-21
+
+### Added — Glass header card propagation (UI consistency)
+- **DepartmentPage** — ปรับ header เป็น glass card + gradient teal text + icon (`eva:home-fill`) + sub-description ให้เหมือนหน้า Report
+- **OfficerPage** — ปรับ header เป็น glass card + icon (`eva:people-fill`) + sub-description
+- **AnalysisPage** — ปรับ header เป็น glass card + icon (`eva:search-fill`) + sub-description
+- **ErrorTypePage** — ปรับ header เป็น glass card + icon (`eva:layers-fill`) + sub-description
+- **MedErrorPage** — ปรับ header เป็น glass card สำหรับทั้ง 2 mode (รายการ / ฟอร์ม):
+  - mode รายการ: icon `eva:file-text-fill` + ปุ่ม "บันทึกข้อมูล Med Error"
+  - mode ฟอร์ม: icon `eva:edit-fill` + title สลับตาม `error_section` (โรงพยาบาลร้อยเอ็ด / กลุ่มงานเภสัชกรรม)
+- responsive: column บน xs, row บน md ขึ้นไป (`xs: 'column', md: 'row'`)
+- ทุกหน้าใช้ `guk-glass`, `guk-anim-fade-up`, `guk-gradient-text-teal` ตรงกับ ReportPage/LikelihoodCriteriaPage/DashboardAppPage
+
+### Security
+- UI presentation layer เท่านั้น — ไม่กระทบ data fetching / authorization / business rule
+- XSS-safe: ทุก text rendering ผ่าน React default escape (A03:2021 Injection)
+
 ## [1.20.1] - 2026-05-21
 
 ### Added — ReportSummary9: Likelihood chip color-coded

@@ -469,14 +469,44 @@ export default function ErrorTypePage() {
         <title>ข้อมูลรายละเอียดประเภท Error | Medication error</title>
       </Helmet>
       <Container maxWidth="true">
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-          <Typography variant="h4" gutterBottom>
-            ข้อมูลรายละเอียดประเภท Error
-          </Typography>
-          <Button onClick={handleClickOpenForm} variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
-            เพิ่มรายละเอียดประเภท Error
-          </Button>
-        </Stack>
+        <Box
+          className="guk-glass guk-anim-fade-up"
+          sx={{ mb: 3, borderRadius: '20px', p: { xs: 2, sm: 2.5 } }}
+        >
+          <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between" spacing={2}>
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(94,234,212,0.3), rgba(110,231,183,0.3))',
+                  border: '1px solid rgba(153, 246, 228, 0.7)',
+                }}
+              >
+                <Iconify icon="eva:layers-fill" width={24} sx={{ color: '#0d9488' }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="h5"
+                  className="guk-gradient-text-teal"
+                  sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}
+                >
+                  ข้อมูลรายละเอียดประเภท Error
+                </Typography>
+                <Typography sx={{ fontSize: 12.5, color: '#475569', mt: 0.5 }}>
+                  จัดการรายละเอียดประเภท Error ของ Medication error แต่ละหมวด
+                </Typography>
+              </Box>
+            </Box>
+            <Button onClick={handleClickOpenForm} variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
+              เพิ่มรายละเอียดประเภท Error
+            </Button>
+          </Stack>
+        </Box>
 
         {incompleteCount > 0 && (
           <Alert

@@ -403,14 +403,44 @@ export default function DepartmentPage() {
         <title>ข้อมูลหอผู้ป่วย / ห้องตรวจ | Medication error</title>
       </Helmet>
       <Container maxWidth={false} sx={{ mt: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-          <Typography variant="h4" gutterBottom>
-            ข้อมูลหอผู้ป่วย / ห้องตรวจ
-          </Typography>
-          <Button onClick={handleClickOpenForm} variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
-            เพิ่มข้อมูลหอผู้ป่วย / ห้องตรวจ
-          </Button>
-        </Stack>
+        <Box
+          className="guk-glass guk-anim-fade-up"
+          sx={{ mb: 3, borderRadius: '20px', p: { xs: 2, sm: 2.5 } }}
+        >
+          <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between" spacing={2}>
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(94,234,212,0.3), rgba(110,231,183,0.3))',
+                  border: '1px solid rgba(153, 246, 228, 0.7)',
+                }}
+              >
+                <Iconify icon="eva:home-fill" width={24} sx={{ color: '#0d9488' }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="h5"
+                  className="guk-gradient-text-teal"
+                  sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}
+                >
+                  ข้อมูลหอผู้ป่วย / ห้องตรวจ
+                </Typography>
+                <Typography sx={{ fontSize: 12.5, color: '#475569', mt: 0.5 }}>
+                  จัดการรายการหอผู้ป่วย / ห้องตรวจ ที่ใช้บันทึก Medication error
+                </Typography>
+              </Box>
+            </Box>
+            <Button onClick={handleClickOpenForm} variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
+              เพิ่มข้อมูลหอผู้ป่วย / ห้องตรวจ
+            </Button>
+          </Stack>
+        </Box>
         <Card>
           <UserListToolbar filterName={filterName} onFilterName={handleFilterByName} />
           <Scrollbar>
