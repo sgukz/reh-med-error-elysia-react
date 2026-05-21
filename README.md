@@ -12,7 +12,7 @@
 
 โปรเจกต์นี้แบ่งออกเป็น 2 ส่วนหลัก (Monorepo):
 
-1. **[Frontend](./frontend)** (`v1.17.0`): ระบบหน้าบ้านสำหรับผู้ใช้งานและผู้ดูแลระบบ
+1. **[Frontend](./frontend)** (`v1.17.1`): ระบบหน้าบ้านสำหรับผู้ใช้งานและผู้ดูแลระบบ
    - **Tech Stack**: React 18, Material UI (MUI v5), React Hook Form, Zod, ApexCharts
    - **Package Manager**: [Bun](https://bun.sh/)
 

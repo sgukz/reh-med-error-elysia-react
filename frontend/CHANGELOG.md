@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.1] - 2026-05-21
+
+### Fixed
+- แก้ไขปัญหา ESLint warning ใน `ReportSummary6` เรื่อง missing prop types validation โดยการนำเข้า `prop-types` และเพิ่ม validation ให้กับ `StatCard` และ `RcaDaysChip`
+
+### Security
+- เพิ่ม Type validation ของ props สำหรับ React components เพื่อป้องกัน runtime/rendering errors (OWASP A08:2021)
+
 ## [1.17.0] - 2026-05-19
 
 ### Added — ReportSummary6 (สรุปอุบัติการณ์ที่ได้ RCA แล้ว)

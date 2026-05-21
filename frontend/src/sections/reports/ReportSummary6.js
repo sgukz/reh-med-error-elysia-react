@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -124,6 +125,14 @@ const StatCard = ({ icon, color, label, value, sub }) => (
   </Card>
 );
 
+StatCard.propTypes = {
+  icon: PropTypes.string.isRequired,
+  color: PropTypes.string,
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  sub: PropTypes.string,
+};
+
 // แสดง chip ระยะเวลา RCA (สีตามเกณฑ์)
 const RcaDaysChip = ({ days }) => {
   if (days === null || days === undefined || !Number.isFinite(Number(days))) {
@@ -135,6 +144,10 @@ const RcaDaysChip = ({ days }) => {
   else if (n <= 30) color = 'warning';
   else color = 'error';
   return <Chip label={`${n} วัน`} size="small" color={color} sx={{ fontWeight: 600 }} />;
+};
+
+RcaDaysChip.propTypes = {
+  days: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };
 
 // ============================================================================
