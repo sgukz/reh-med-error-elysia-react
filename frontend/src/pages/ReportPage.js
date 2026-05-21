@@ -70,23 +70,14 @@ export default function ReportPage() {
                 >
                   <Tab label="แยกตามสถานที่เกิดเหตุ" value="1" />
                   <Tab label="หน่วยงานที่เกิดอุบัติการณ์" value="3" />
-                  <Tab 
+                  <Tab
                     label={
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <span>คู่ยาคลาดเคลื่อน</span>
                         <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
                       </Stack>
-                    } 
-                    value="4" 
-                  />
-                  <Tab
-                    label={
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <span>สรุปอุบัติการณ์ที่ได้ RCA แล้ว</span>
-                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
-                      </Stack>
                     }
-                    value="6"
+                    value="4"
                   />
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />
                   <Tab label="รายงานความคลาดเคลื่อน" value="8" />
@@ -107,6 +98,15 @@ export default function ReportPage() {
                       </Stack>
                     }
                     value="10"
+                  />
+                  <Tab
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <span>สรุปอุบัติการณ์ที่ได้ RCA แล้ว</span>
+                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
+                      </Stack>
+                    }
+                    value="6"
                   />
                 </TabList>
               </Box>

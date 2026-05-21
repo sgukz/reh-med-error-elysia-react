@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-05-21
+
+### Changed — ReportSummary6 UX/UI ปรับธีมและความสะดวก
+- **Header card** เปลี่ยนเป็น glass card (ตาม Dashboard) + gradient text teal + icon badge ทรงเดียวกับ Executive Summary
+- **Filter bar** แยก row ชัดเจน — Title/Export อยู่แถวบน, DatePicker + Error Type Dropdown อยู่แถวล่าง + คั่นด้วย Divider สี teal
+- **StatCard 6 ใบ** ปรับใหม่ — icon Avatar เป็น rounded 14px + สี gradient ตาม palette, ขอบ card มี border/shadow ตาม palette, hover lift effect, label เป็น uppercase caption สี secondary, ค่าแสดงเป็น bold สีตาม category
+- **Export Button** เปลี่ยนเป็น gradient teal ตามธีมหลัก + shadow glow
+- **Search bar** ปรับ border radius 12px + focus border สี teal + icon สี teal + Chip badge แสดงจำนวนรายการแทนข้อความ plain
+- **Table** ปรับ: header gradient teal (dark→main), body cell padding เพิ่มขึ้น, border-bottom สี softer, severity row bg เปลี่ยนเป็น alpha เบา ๆ, hover row เป็น teal lighter, Chip ทุกตัวเปลี่ยนเป็น borderRadius 8px
+- **Loading/Empty state** เพิ่ม icon inbox + center layout สวยขึ้น
+- **Paper wrapper** ปรับเป็น borderRadius 16px + subtle shadow ตามมาตรฐาน MUI v5
+- **Pagination** เพิ่ม border-top separator + font-size ปรับให้อ่านง่าย
+- **Tab ใน ReportPage** ย้าย "สรุปอุบัติการณ์ที่ได้ RCA แล้ว" ไปอยู่ท้ายสุด (tab สุดท้าย) ตามที่ user ปรับเอง
+
+### Security
+- ไม่เปลี่ยน logic การดึงข้อมูล / validate / filter — ปรับเฉพาะ UI presentation layer
+- ยังคง XSS-safe rendering (React default escape, ไม่ใช้ dangerouslySetInnerHTML)
+
 ## [1.17.1] - 2026-05-21
 
 ### Fixed

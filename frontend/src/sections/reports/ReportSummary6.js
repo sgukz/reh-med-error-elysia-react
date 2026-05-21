@@ -30,6 +30,7 @@ import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import Avatar from '@mui/material/Avatar';
 import InputAdornment from '@mui/material/InputAdornment';
+import Divider from '@mui/material/Divider';
 import { styled, alpha } from '@mui/material/styles';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -56,15 +57,15 @@ const ERROR_TYPES = [
 ];
 
 const SEVERITY_COLORS = {
-  A: { bg: '#e8f5e9', chipColor: 'success', label: 'A' },
-  B: { bg: '#e8f5e9', chipColor: 'success', label: 'B' },
-  C: { bg: '#e8f5e9', chipColor: 'success', label: 'C' },
-  D: { bg: '#e8f5e9', chipColor: 'success', label: 'D' },
-  E: { bg: '#fff8e1', chipColor: 'warning', label: 'E' },
-  F: { bg: '#fff8e1', chipColor: 'warning', label: 'F' },
-  G: { bg: '#ffebee', chipColor: 'error', label: 'G' },
-  H: { bg: '#ffebee', chipColor: 'error', label: 'H' },
-  I: { bg: '#ffebee', chipColor: 'error', label: 'I' },
+  A: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'A' },
+  B: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'B' },
+  C: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'C' },
+  D: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'D' },
+  E: { bg: 'rgba(255, 193, 7, 0.08)', chipColor: 'warning', label: 'E' },
+  F: { bg: 'rgba(255, 193, 7, 0.08)', chipColor: 'warning', label: 'F' },
+  G: { bg: 'rgba(255, 72, 66, 0.06)', chipColor: 'error', label: 'G' },
+  H: { bg: 'rgba(255, 72, 66, 0.06)', chipColor: 'error', label: 'H' },
+  I: { bg: 'rgba(255, 72, 66, 0.06)', chipColor: 'error', label: 'I' },
 };
 
 const HAD_LABEL = 'High Alert Drugs';
@@ -78,16 +79,17 @@ const startOfFiscalYear = () => {
 };
 
 // ============================================================================
-// Styled
+// Styled — ใช้โทน teal ตามธีมหลัก
 // ============================================================================
 const StyledHeadCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.main,
+    background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
     color: theme.palette.common.white,
     fontWeight: 700,
     fontSize: 12.5,
-    padding: '8px 10px',
+    padding: '10px 12px',
     whiteSpace: 'nowrap',
+    borderBottom: 'none',
     '& .MuiTableSortLabel-root, & .MuiTableSortLabel-root:hover, & .MuiTableSortLabel-root.Mui-active': {
       color: theme.palette.common.white,
     },
@@ -98,32 +100,68 @@ const StyledHeadCell = styled(TableCell)(({ theme }) => ({
 }));
 
 const BodyCell = styled(TableCell)(() => ({
-  fontSize: 12,
-  padding: '6px 10px',
+  fontSize: 12.5,
+  padding: '8px 12px',
   verticalAlign: 'top',
+  borderBottom: '1px solid rgba(145, 158, 171, 0.12)',
 }));
 
 // ============================================================================
-// Sub-components
+// Sub-components — StatCard ปรับใหม่ให้โทน teal
 // ============================================================================
-const StatCard = ({ icon, color, label, value, sub }) => (
-  <Card sx={{ height: '100%', boxShadow: 2 }}>
-    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2 }}>
-      <Avatar sx={{ bgcolor: (t) => alpha(t.palette[color]?.main || t.palette.primary.main, 0.15), color: `${color}.main`, width: 48, height: 48 }}>
-        <Iconify icon={icon} width={24} />
-      </Avatar>
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography variant="body2" color="text.secondary" noWrap>{label}</Typography>
-        <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2, mt: 0.25 }} noWrap title={String(value ?? '')}>
-          {value}
-        </Typography>
-        {sub && (
-          <Typography variant="caption" color="text.secondary" noWrap title={sub}>{sub}</Typography>
-        )}
-      </Box>
-    </CardContent>
-  </Card>
-);
+const STAT_CARD_CONFIGS = {
+  primary: { gradient: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', iconBg: 'rgba(13, 148, 136, 0.12)', iconColor: '#0d9488' },
+  error: { gradient: 'linear-gradient(135deg, #B72136 0%, #FF4842 100%)', iconBg: 'rgba(255, 72, 66, 0.12)', iconColor: '#FF4842' },
+  warning: { gradient: 'linear-gradient(135deg, #B78103 0%, #FFC107 100%)', iconBg: 'rgba(255, 193, 7, 0.12)', iconColor: '#B78103' },
+  info: { gradient: 'linear-gradient(135deg, #0C53B7 0%, #1890FF 100%)', iconBg: 'rgba(24, 144, 255, 0.12)', iconColor: '#1890FF' },
+  secondary: { gradient: 'linear-gradient(135deg, #1939B7 0%, #3366FF 100%)', iconBg: 'rgba(51, 102, 255, 0.12)', iconColor: '#3366FF' },
+};
+
+const StatCard = ({ icon, color, label, value, sub }) => {
+  const config = STAT_CARD_CONFIGS[color] || STAT_CARD_CONFIGS.primary;
+  return (
+    <Card
+      sx={{
+        height: '100%',
+        borderRadius: '16px',
+        border: '1px solid',
+        borderColor: alpha(config.iconColor, 0.15),
+        boxShadow: `0 2px 12px 0 ${alpha(config.iconColor, 0.08)}`,
+        transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 24px 0 ${alpha(config.iconColor, 0.16)}`,
+        },
+      }}
+    >
+      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2.5, px: 2.5 }}>
+        <Avatar
+          sx={{
+            bgcolor: config.iconBg,
+            color: config.iconColor,
+            width: 52,
+            height: 52,
+            borderRadius: '14px',
+          }}
+          variant="rounded"
+        >
+          <Iconify icon={icon} width={26} />
+        </Avatar>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: '0.7rem', letterSpacing: '0.02em', textTransform: 'uppercase', fontWeight: 600 }}>
+            {label}
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, mt: 0.25, color: config.iconColor }} noWrap title={String(value ?? '')}>
+            {value}
+          </Typography>
+          {sub && (
+            <Typography variant="caption" color="text.secondary" noWrap title={sub} sx={{ fontSize: '0.7rem' }}>{sub}</Typography>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+};
 
 StatCard.propTypes = {
   icon: PropTypes.string.isRequired,
@@ -136,14 +174,14 @@ StatCard.propTypes = {
 // แสดง chip ระยะเวลา RCA (สีตามเกณฑ์)
 const RcaDaysChip = ({ days }) => {
   if (days === null || days === undefined || !Number.isFinite(Number(days))) {
-    return <Chip label="-" size="small" variant="outlined" />;
+    return <Chip label="—" size="small" variant="outlined" sx={{ borderRadius: '8px', fontSize: 11 }} />;
   }
   const n = Number(days);
   let color = 'default';
   if (n <= 7) color = 'success';
   else if (n <= 30) color = 'warning';
   else color = 'error';
-  return <Chip label={`${n} วัน`} size="small" color={color} sx={{ fontWeight: 600 }} />;
+  return <Chip label={`${n} วัน`} size="small" color={color} sx={{ fontWeight: 600, borderRadius: '8px', fontSize: 11 }} />;
 };
 
 RcaDaysChip.propTypes = {
@@ -154,23 +192,23 @@ RcaDaysChip.propTypes = {
 // Main component
 // ============================================================================
 const COLUMNS = [
-  { key: 'idx', label: 'ลำดับ', sortable: false, width: 60 },
-  { key: 'error_date', label: 'วันที่เกิดเหตุ', sortable: true, width: 120 },
-  { key: 'error_time', label: 'เวลา', sortable: true, width: 80 },
+  { key: 'idx', label: 'ลำดับ', sortable: false, width: 56 },
+  { key: 'error_date', label: 'วันที่เกิดเหตุ', sortable: true, width: 115 },
+  { key: 'error_time', label: 'เวลา', sortable: true, width: 70 },
   { key: 'error_ward_name', label: 'สถานที่เกิดเหตุ', sortable: true, width: 160 },
   { key: 'error_event', label: 'เหตุการณ์', sortable: true, width: 220 },
-  { key: 'error_level', label: 'ระดับความรุนแรง', sortable: true, width: 110 },
-  { key: 'error_type_name', label: 'ประเภท Error', sortable: true, width: 160 },
+  { key: 'error_level', label: 'ระดับความรุนแรง', sortable: true, width: 100 },
+  { key: 'error_type_name', label: 'ประเภท Error', sortable: true, width: 150 },
   { key: 'error_type_detail', label: 'รายละเอียด Error', sortable: false, width: 200 },
   { key: 'error_analysis', label: 'วิเคราะห์สาเหตุ', sortable: false, width: 180 },
-  { key: 'error_alert', label: 'HAD', sortable: true, width: 110 },
+  { key: 'error_alert', label: 'HAD', sortable: true, width: 100 },
   { key: 'error_clear', label: 'การแก้ไขเบื้องต้น', sortable: false, width: 200 },
   { key: 'error_doctor', label: 'แพทย์ผู้สั่ง', sortable: true, width: 140 },
   { key: 'rca_text', label: 'รายละเอียด RCA', sortable: false, width: 220 },
-  { key: 'rca_by', label: 'RCA โดย', sortable: true, width: 140 },
-  { key: 'updated_rca', label: 'วันที่ RCA', sortable: true, width: 140 },
-  { key: 'rca_days', label: 'ระยะเวลา (วัน)', sortable: true, width: 120 },
-  { key: 'error_user_name', label: 'ผู้บันทึก', sortable: true, width: 140 },
+  { key: 'rca_by', label: 'RCA โดย', sortable: true, width: 130 },
+  { key: 'updated_rca', label: 'วันที่ RCA', sortable: true, width: 130 },
+  { key: 'rca_days', label: 'ระยะเวลา (วัน)', sortable: true, width: 110 },
+  { key: 'error_user_name', label: 'ผู้บันทึก', sortable: true, width: 130 },
 ];
 
 const ReportSummary6 = () => {
@@ -241,7 +279,7 @@ const ReportSummary6 = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Refire เมื่อเปลี่ยน filter (debounce-less; แต่ user เปลี่ยนค่าทีละครั้ง ไม่หนัก)
+  // Refire เมื่อเปลี่ยน filter
   const triggerLoad = (nextFirst, nextLast, nextType) => {
     if (!token) return;
     if (!nextFirst || !nextLast) return;
@@ -369,51 +407,112 @@ const ReportSummary6 = () => {
   // ============================================================================
   return (
     <Box>
-      {/* Filter bar */}
-      <Card sx={{ mb: 2, boxShadow: 2 }}>
-        <CardContent>
+      {/* ==================== Header Card (Glass — ตาม Dashboard) ==================== */}
+      <Box
+        className="guk-glass guk-anim-fade-up"
+        sx={{
+          mb: 3,
+          borderRadius: '20px',
+          p: { xs: 2, sm: 2.5 },
+        }}
+      >
+        <Stack spacing={2}>
+          {/* Row 1: Title + Export */}
+          <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(94,234,212,0.3), rgba(110,231,183,0.3))',
+                  border: '1px solid rgba(153, 246, 228, 0.7)',
+                }}
+              >
+                <Iconify icon="eva:checkmark-circle-2-fill" width={24} sx={{ color: '#0d9488' }} />
+              </Box>
+              <Box>
+                <Typography
+                  variant="h5"
+                  className="guk-gradient-text-teal"
+                  sx={{
+                    fontWeight: 700,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  สรุปอุบัติการณ์ที่ได้ RCA แล้ว
+                </Typography>
+                <Typography sx={{ fontSize: 12, color: '#475569', mt: 0.25 }}>
+                  {/* แสดงเฉพาะรายการที่ <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>is_rca = &quot;Y&quot;</Box> */}
+                </Typography>
+              </Box>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:file-text-fill" />}
+              onClick={handleExportExcel}
+              disabled={isLoading || data.length === 0}
+              sx={{
+                background: data.length > 0 ? 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)' : undefined,
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 600,
+                boxShadow: data.length > 0 ? '0 4px 14px -4px rgba(13, 148, 136, 0.4)' : 'none',
+                '&:hover': {
+                  background: data.length > 0 ? 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)' : undefined,
+                },
+              }}
+            >
+              Export Excel
+            </Button>
+          </Stack>
+
+          <Divider sx={{ borderColor: 'rgba(153, 246, 228, 0.3)' }} />
+
+          {/* Row 2: Filters */}
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
-            <Stack direction="column" sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="h6">สรุปอุบัติการณ์ที่ได้ RCA แล้ว</Typography>
-              <Typography variant="body2" color="text.secondary">
-                แสดงเฉพาะรายการที่ <Box component="span" sx={{ fontWeight: 700 }}>is_rca = &quot;Y&quot;</Box>
-              </Typography>
-            </Stack>
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
-              <DatePicker
-                label="วันที่เริ่ม"
-                value={firstDate}
-                onChange={handleFirstDateChange}
-                inputFormat="d MMMM yyyy"
-                disableMaskedInput
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    sx={{ minWidth: 160 }}
-                    onClick={params.inputProps.onClick}
-                    InputProps={{ ...params.InputProps, readOnly: true }}
-                  />
-                )}
-              />
-              <DatePicker
-                label="ถึงวันที่"
-                value={lastDate}
-                onChange={handleLastDateChange}
-                inputFormat="d MMMM yyyy"
-                disableMaskedInput
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    sx={{ minWidth: 160 }}
-                    onClick={params.inputProps.onClick}
-                    InputProps={{ ...params.InputProps, readOnly: true }}
-                  />
-                )}
-              />
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <DatePicker
+                  label="วันที่เริ่ม"
+                  value={firstDate}
+                  onChange={handleFirstDateChange}
+                  inputFormat="d MMMM yyyy"
+                  disableMaskedInput
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      sx={{ minWidth: 170 }}
+                      onClick={params.inputProps.onClick}
+                      InputProps={{ ...params.InputProps, readOnly: true }}
+                    />
+                  )}
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>ถึง</Typography>
+                <DatePicker
+                  label="ถึงวันที่"
+                  value={lastDate}
+                  onChange={handleLastDateChange}
+                  inputFormat="d MMMM yyyy"
+                  disableMaskedInput
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      sx={{ minWidth: 170 }}
+                      onClick={params.inputProps.onClick}
+                      InputProps={{ ...params.InputProps, readOnly: true }}
+                    />
+                  )}
+                />
+              </Stack>
             </LocalizationProvider>
-            <FormControl size="small" sx={{ minWidth: 180 }}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
               <InputLabel id="error-type-label">ประเภท Error</InputLabel>
               <Select labelId="error-type-label" label="ประเภท Error" value={errorType} onChange={handleErrorTypeChange}>
                 {ERROR_TYPES.map((t) => (
@@ -421,21 +520,12 @@ const ReportSummary6 = () => {
                 ))}
               </Select>
             </FormControl>
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<Iconify icon="eva:file-text-fill" />}
-              onClick={handleExportExcel}
-              disabled={isLoading || data.length === 0}
-            >
-              Export Excel
-            </Button>
           </Stack>
-        </CardContent>
-      </Card>
+        </Stack>
+      </Box>
 
-      {/* Summary cards */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
+      {/* ==================== Summary Cards ==================== */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard icon="eva:clipboard-fill" color="primary" label="จำนวน RCA ทั้งหมด" value={summary.total.toLocaleString()} />
         </Grid>
@@ -456,29 +546,56 @@ const ReportSummary6 = () => {
         </Grid>
       </Grid>
 
-      {/* Search */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+      {/* ==================== Search bar ==================== */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
         <TextField
           size="small"
           placeholder="ค้นหา (เหตุการณ์ / หน่วยงาน / RCA / ผู้บันทึก)"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-          sx={{ width: 360, maxWidth: '100%' }}
+          sx={{
+            width: 400,
+            maxWidth: '100%',
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '12px',
+              backgroundColor: '#fff',
+              '&:hover fieldset': { borderColor: '#5eead4' },
+              '&.Mui-focused fieldset': { borderColor: '#0d9488' },
+            },
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <Iconify icon="eva:search-fill" width={18} />
+                <Iconify icon="eva:search-fill" width={20} sx={{ color: '#0d9488' }} />
               </InputAdornment>
             ),
           }}
         />
-        <Typography variant="caption" color="text.secondary">
-          {isLoading ? 'กำลังโหลดข้อมูล...' : `แสดง ${sorted.length.toLocaleString()} รายการ`}
-        </Typography>
+        <Chip
+          icon={<Iconify icon="eva:layers-fill" width={16} />}
+          label={isLoading ? 'กำลังโหลด...' : `${sorted.length.toLocaleString()} รายการ`}
+          size="small"
+          variant="outlined"
+          sx={{
+            borderRadius: '10px',
+            borderColor: 'rgba(13, 148, 136, 0.3)',
+            color: '#0d9488',
+            fontWeight: 600,
+            fontSize: '0.75rem',
+            '& .MuiChip-icon': { color: '#14b8a6' },
+          }}
+        />
       </Stack>
 
-      {/* Table */}
-      <Paper sx={{ boxShadow: 2 }}>
+      {/* ==================== Table ==================== */}
+      <Paper
+        sx={{
+          borderRadius: '16px',
+          overflow: 'hidden',
+          border: '1px solid rgba(145, 158, 171, 0.12)',
+          boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.2), 0 12px 24px -4px rgba(145, 158, 171, 0.12)',
+        }}
+      >
         <Scrollbar>
           <TableContainer>
             <Table size="small" stickyHeader>
@@ -502,16 +619,21 @@ const ReportSummary6 = () => {
               <TableBody>
                 {isLoading && (
                   <TableRow>
-                    <BodyCell colSpan={COLUMNS.length} align="center" sx={{ py: 4 }}>
-                      <CircularProgress size={22} sx={{ mr: 1 }} />
-                      <Typography component="span" variant="body2">กำลังโหลดข้อมูล...</Typography>
+                    <BodyCell colSpan={COLUMNS.length} align="center" sx={{ py: 6 }}>
+                      <Stack alignItems="center" spacing={1.5}>
+                        <CircularProgress size={28} sx={{ color: '#0d9488' }} />
+                        <Typography variant="body2" color="text.secondary">กำลังโหลดข้อมูล...</Typography>
+                      </Stack>
                     </BodyCell>
                   </TableRow>
                 )}
                 {!isLoading && paged.length === 0 && (
                   <TableRow>
-                    <BodyCell colSpan={COLUMNS.length} align="center" sx={{ py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">ไม่พบข้อมูลในช่วงเวลาที่เลือก</Typography>
+                    <BodyCell colSpan={COLUMNS.length} align="center" sx={{ py: 6 }}>
+                      <Stack alignItems="center" spacing={1}>
+                        <Iconify icon="eva:inbox-fill" width={48} sx={{ color: '#C4CDD5' }} />
+                        <Typography variant="body2" color="text.secondary">ไม่พบข้อมูลในช่วงเวลาที่เลือก</Typography>
+                      </Stack>
                     </BodyCell>
                   </TableRow>
                 )}
@@ -519,8 +641,15 @@ const ReportSummary6 = () => {
                   const sev = SEVERITY_COLORS[String(r.error_level || '').toUpperCase()] || null;
                   const isHad = r.error_alert === HAD_LABEL;
                   return (
-                    <TableRow key={`${r.error_id}-${i}`} sx={{ backgroundColor: sev?.bg || 'inherit', '&:hover': { backgroundColor: (t) => t.palette.action.hover } }}>
-                      <BodyCell>{page * rowsPerPage + i + 1}</BodyCell>
+                    <TableRow
+                      key={`${r.error_id}-${i}`}
+                      sx={{
+                        backgroundColor: sev?.bg || 'inherit',
+                        transition: 'background-color 0.15s ease',
+                        '&:hover': { backgroundColor: (t) => alpha(t.palette.primary.lighter, 0.35) },
+                      }}
+                    >
+                      <BodyCell sx={{ color: 'text.secondary', fontWeight: 500 }}>{page * rowsPerPage + i + 1}</BodyCell>
                       <BodyCell>{formatDateTime(r.error_date, 1)}</BodyCell>
                       <BodyCell>{r.error_time || ''}</BodyCell>
                       <BodyCell>{r.error_ward_name || ''}</BodyCell>
@@ -533,10 +662,10 @@ const ReportSummary6 = () => {
                       </BodyCell>
                       <BodyCell>
                         {sev ? (
-                          <Chip label={r.error_level} size="small" color={sev.chipColor} sx={{ fontWeight: 700 }} />
+                          <Chip label={r.error_level} size="small" color={sev.chipColor} sx={{ fontWeight: 700, borderRadius: '8px', minWidth: 32 }} />
                         ) : (r.error_level || '-')}
                       </BodyCell>
-                      <BodyCell>{r.error_type_name || ''}</BodyCell>
+                      <BodyCell sx={{ fontSize: 11.5 }}>{r.error_type_name || ''}</BodyCell>
                       <BodyCell sx={{ maxWidth: 240 }}>
                         <Tooltip title={r.error_type_detail || ''} arrow placement="top">
                           <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>
@@ -557,7 +686,7 @@ const ReportSummary6 = () => {
                           size="small"
                           color={isHad ? 'warning' : 'default'}
                           variant={isHad ? 'filled' : 'outlined'}
-                          sx={{ fontWeight: 600 }}
+                          sx={{ fontWeight: 600, borderRadius: '8px', fontSize: 11 }}
                         />
                       </BodyCell>
                       <BodyCell sx={{ maxWidth: 240 }}>
@@ -595,6 +724,12 @@ const ReportSummary6 = () => {
           onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10) || 25); setPage(0); }}
           rowsPerPageOptions={[10, 25, 50, 100]}
           labelRowsPerPage="แถวต่อหน้า"
+          sx={{
+            borderTop: '1px solid rgba(145, 158, 171, 0.12)',
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              fontSize: '0.8rem',
+            },
+          }}
         />
       </Paper>
     </Box>
