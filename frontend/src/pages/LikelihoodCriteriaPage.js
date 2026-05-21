@@ -266,7 +266,7 @@ export default function LikelihoodCriteriaPage() {
                       <TableHead>
                         <TableRow>
                           <StyledHeadCell align="center" width="20%">ระดับคะแนน</StyledHeadCell>
-                          <StyledHeadCell align="center" width="40%">ความถี่ขั้นต่ำ (>=)</StyledHeadCell>
+                          <StyledHeadCell align="center" width="40%">ความถี่ขั้นต่ำ (&gt;=)</StyledHeadCell>
                           <StyledHeadCell align="center" width="40%">ความถี่สูงสุด (ถึง)</StyledHeadCell>
                         </TableRow>
                       </TableHead>
