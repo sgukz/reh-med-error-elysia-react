@@ -7,10 +7,11 @@
 - **Medication Error Reporting**: บันทึกข้อมูลความคลาดเคลื่อนทางยาอย่างละเอียด (วันที่, เวลา, สถานที่, ประเภท Error, ระดับความรุนแรง)
 - **Dashboard & Analytics**: แสดงผลข้อมูลสรุปสำหรับผู้บริหาร (Executive Summary) และกราฟแสดงแนวโน้ม
 - **Drug Pair Reports (v1.13.0+)**: รายงานคู่ยาคลาดเคลื่อนแยก "จัดคลาดเคลื่อน" และ "คีย์คลาดเคลื่อน" พร้อมจำนวนอุบัติการณ์เรียงจากมาก → น้อย
-- **Error Detail Report — Summary 9 (v1.15.0+)**: รายงานแยกรายละเอียด Error ตาม subtype พร้อม HAD/Non-HAD, **Impact + Likelihood + Level color-coded**, รองรับ **เปรียบเทียบ 2 ช่วงเวลา (Δ%)** และ Export Excel
+- **Error Detail Report — Summary 9 (v1.15.0+, v1.20.0)**: รายงานแยกรายละเอียด Error ตาม subtype พร้อม HAD/Non-HAD, **Impact (manual) + Likelihood (AUTO badge — คำนวณจากความถี่ตามเกณฑ์) + Level color-coded**, รองรับ **เปรียบเทียบ 2 ช่วงเวลา (Δ%)** และ Export Excel
 - **Prescription/IPD Statistics — Summary 10 (v1.16.0+)**: สถิติจำนวนใบสั่งยา (OPD) / วันนอน (IPD) — 4 ตาราง + อัตราต่อ 1,000, Admin (rule=9) กรอกข้อมูลปริมาณรายเดือนได้ใน TABLE 0, Export Excel 4 sheets
-- **RCA Summary Report — Summary 6 (v1.18.0)**: สรุปอุบัติการณ์ที่ได้ RCA แล้ว — glass header card (teal theme), 6 summary cards พร้อม hover effect, ตาราง 17 คอลัมน์ มี sort/search/pagination, สีแถวตาม severity, Chip ระยะเวลา RCA, Tooltip บนคอลัมน์ยาว, Export Excel 2 sheets
-- **Master Data Management**: จัดการข้อมูลพื้นฐาน เช่น หอผู้ป่วย (Ward), ประเภท Error พร้อม **คะแนน Impact + Likelihood (1-5 ต่อตัว)** สำหรับคำนวณ Risk Level, และการวิเคราะห์สาเหตุ (RCA)
+- **RCA Summary Report — Summary 6 (v1.18.0, v1.20.0 add quick presets)**: สรุปอุบัติการณ์ที่ได้ RCA แล้ว — glass header card (teal theme), subtitle แสดงช่วง+ประเภทปัจจุบัน, **Quick date presets** (7 วัน / 30 วัน / เดือนนี้ / เดือนก่อน / ปีงบประมาณ), 6 summary cards, ตาราง 17 คอลัมน์ มี sort/search/pagination, สีแถวตาม severity, Chip ระยะเวลา RCA, Tooltip บนคอลัมน์ยาว, Export Excel 2 sheets
+- **Likelihood Criteria Manager (v1.19.0, v1.20.0 rewrite UX)**: หน้าจัดการเกณฑ์ความถี่ → Likelihood — **Tabs 3 กลุ่ม** (Prescription / Processing-Pre-Admin-Transcribing / Dispensing-Admin), **Visual Range Bar** color-coded ต่อ level, **ScorePill EN+TH** label (Frequent/Likely/Possible/Unlikely/Rare/Never), **Validation visual** (gap/overlap/missing/invalid) พร้อม badge นับ issue ที่ tab title — Admin (rule=9) เท่านั้น
+- **Master Data Management**: จัดการข้อมูลพื้นฐาน เช่น หอผู้ป่วย (Ward), ประเภท Error พร้อม **คะแนน Impact (1-5 ต่อตัว)** สำหรับคำนวณ Risk Level — *Likelihood ไม่ต้องตั้งต่อรายการแล้ว (v1.20.0) ระบบคำนวณจาก "เกณฑ์ Likelihood"*, และการวิเคราะห์สาเหตุ (RCA)
 - **Authentication & Authorization**: ระบบจัดการสิทธิ์ผู้ใช้งาน (User & Admin roles) — **HTTP-only cookie (v1.13.0+)** ลดความเสี่ยง XSS
 - **LINE OA Integration**: รองรับการแจ้งเตือนและการตอบกลับผ่าน LINE Official Account
 - **Export Data**: รองรับการส่งออกข้อมูลเพื่อนำไปวิเคราะห์ต่อ

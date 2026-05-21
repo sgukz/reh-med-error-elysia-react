@@ -237,7 +237,8 @@ const ReportSummary9 = () => {
 
   const totalsDeltaPct = isCompareResult ? calcDeltaPct(totalsRow.totalA, totalsRow.totalB) : null;
 
-  const incompleteRowCount = enrichedRows.filter((r) => r.level === null).length;
+  // นับเฉพาะแถวที่ขาด Impact (Likelihood เป็น auto จากเกณฑ์ ไม่ต้องเตือน)
+  const incompleteImpactCount = enrichedRows.filter((r) => r.impact === null).length;
 
   // Filter handlers
   const handleFirstA = (newDate) => {
@@ -334,7 +335,14 @@ const ReportSummary9 = () => {
       <Stack direction="column">
         <Typography variant="h6">รายงานแยกรายละเอียด Error</Typography>
         <Typography variant="body2" color="text.secondary">
-          แสดงรายการ subtype ของประเภท Error ที่เลือก พร้อม HAD/Non-HAD, Impact, Likelihood และ Level (Impact + Likelihood)
+          แสดงรายการ subtype ของประเภท Error ที่เลือก พร้อม HAD/Non-HAD, Impact (กำหนดต่อรายการ), Likelihood
+          <Typography
+            component="span"
+            sx={{ ml: 0.5, px: 0.75, py: 0.1, borderRadius: '6px', backgroundColor: 'rgba(13,148,136,0.12)', color: '#0d9488', fontSize: 11, fontWeight: 700 }}
+          >
+            Auto
+          </Typography>
+          {' '}และ Level (Impact + Likelihood)
         </Typography>
       </Stack>
 
@@ -408,10 +416,14 @@ const ReportSummary9 = () => {
         </LocalizationProvider>
       </Stack>
 
-      {incompleteRowCount > 0 && (
+      {incompleteImpactCount > 0 && (
         <Alert severity="warning" sx={{ mb: 2 }} icon={<Iconify icon="eva:alert-triangle-outline" />}>
-          มี {incompleteRowCount} รายการที่ยังไม่ได้ระบุ Impact หรือ Likelihood ครบ → คอลัมน์ Level จะแสดง "—". กรุณาไปที่หน้า{' '}
-          <b>"ข้อมูลรายละเอียดประเภท Error"</b> เพื่อกำหนดคะแนน
+          มี {incompleteImpactCount} รายการที่ยังไม่ได้ระบุ <b>Impact</b> → คอลัมน์ Level จะแสดง &quot;—&quot;.
+          กรุณาไปที่หน้า <b>&quot;ข้อมูลรายละเอียดประเภท Error&quot;</b> เพื่อกำหนดคะแนน Impact
+          <br />
+          <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary' }}>
+            * Likelihood คำนวณอัตโนมัติจากจำนวนครั้ง (ช่วง A) ตามเกณฑ์ที่ตั้งไว้ในหน้า <b>&quot;เกณฑ์ Likelihood&quot;</b>
+          </Typography>
         </Alert>
       )}
 
@@ -465,7 +477,23 @@ const ReportSummary9 = () => {
                   Impact
                 </StyledTableCell>
                 <StyledTableCell rowSpan={2} align="center">
-                  Likelihood
+                  <Stack alignItems="center" spacing={0.25}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>Likelihood</Typography>
+                    <Typography
+                      sx={{
+                        fontSize: 9.5,
+                        px: 0.5,
+                        py: 0.05,
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(255,255,255,0.25)',
+                        color: '#fff',
+                        fontWeight: 700,
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      AUTO
+                    </Typography>
+                  </Stack>
                 </StyledTableCell>
                 <StyledTableCell rowSpan={2} align="center">
                   Level

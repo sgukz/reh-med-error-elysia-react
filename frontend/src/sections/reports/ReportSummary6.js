@@ -31,6 +31,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Avatar from '@mui/material/Avatar';
 import InputAdornment from '@mui/material/InputAdornment';
 import Divider from '@mui/material/Divider';
+import ButtonGroup from '@mui/material/ButtonGroup';
 import { styled, alpha } from '@mui/material/styles';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -77,6 +78,15 @@ const startOfFiscalYear = () => {
   const ceYear = month >= 10 ? now.year() : now.year() - 1;
   return dayjs(`${ceYear}-10-01`);
 };
+
+// Quick date-range presets (ลด click — เลือกช่วงเวลาที่ใช้บ่อย)
+const DATE_PRESETS = [
+  { key: '7d', label: '7 วัน', range: () => [dayjs().subtract(6, 'day'), dayjs()] },
+  { key: '30d', label: '30 วัน', range: () => [dayjs().subtract(29, 'day'), dayjs()] },
+  { key: 'tm', label: 'เดือนนี้', range: () => [dayjs().startOf('month'), dayjs()] },
+  { key: 'lm', label: 'เดือนก่อน', range: () => [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+  { key: 'fy', label: 'ปีงบประมาณ', range: () => [startOfFiscalYear(), dayjs()] },
+];
 
 // ============================================================================
 // Styled — ใช้โทน teal ตามธีมหลัก
@@ -307,6 +317,23 @@ const ReportSummary6 = () => {
     triggerLoad(firstDate, lastDate, v);
   };
 
+  const applyPreset = (presetKey) => {
+    const preset = DATE_PRESETS.find((p) => p.key === presetKey);
+    if (!preset) return;
+    const [d1, d2] = preset.range();
+    setFirstDate(d1);
+    setLastDate(d2);
+    setPage(0);
+    triggerLoad(d1, d2, errorType);
+  };
+
+  // ป้ายช่วงเวลาที่กำลังแสดง (สำหรับ subtitle ใต้หัวข้อ)
+  const filterSummary = useMemo(() => {
+    const typeName = ERROR_TYPES.find((t) => t.id === errorType)?.name || 'ทั้งหมด';
+    const dateRange = `${formatDateTime(formatDateEN(firstDate), 1)} – ${formatDateTime(formatDateEN(lastDate), 1)}`;
+    return { typeName, dateRange };
+  }, [errorType, firstDate, lastDate]);
+
   // ============================================================================
   // Client-side filter (search) + sort
   // ============================================================================
@@ -446,8 +473,10 @@ const ReportSummary6 = () => {
                 >
                   สรุปอุบัติการณ์ที่ได้ RCA แล้ว
                 </Typography>
-                <Typography sx={{ fontSize: 12, color: '#475569', mt: 0.25 }}>
-                  {/* แสดงเฉพาะรายการที่ <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>is_rca = &quot;Y&quot;</Box> */}
+                <Typography sx={{ fontSize: 12.5, color: '#475569', mt: 0.5 }}>
+                  ช่วง <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>{filterSummary.dateRange}</Box>
+                  {' · '}ประเภท{' '}
+                  <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>{filterSummary.typeName}</Box>
                 </Typography>
               </Box>
             </Box>
@@ -472,6 +501,38 @@ const ReportSummary6 = () => {
           </Stack>
 
           <Divider sx={{ borderColor: 'rgba(153, 246, 228, 0.3)' }} />
+
+          {/* Row 1.5: Quick presets */}
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mr: 0.5 }}>
+              ช่วงเวลายอดนิยม:
+            </Typography>
+            <ButtonGroup
+              size="small"
+              variant="outlined"
+              sx={{
+                '& .MuiButton-root': {
+                  textTransform: 'none',
+                  borderColor: 'rgba(13, 148, 136, 0.3)',
+                  color: '#0d9488',
+                  fontWeight: 600,
+                  fontSize: 12,
+                  px: 1.25,
+                  py: 0.25,
+                  '&:hover': {
+                    backgroundColor: 'rgba(20, 184, 166, 0.08)',
+                    borderColor: '#0d9488',
+                  },
+                },
+              }}
+            >
+              {DATE_PRESETS.map((p) => (
+                <Button key={p.key} onClick={() => applyPreset(p.key)}>
+                  {p.label}
+                </Button>
+              ))}
+            </ButtonGroup>
+          </Stack>
 
           {/* Row 2: Filters */}
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>

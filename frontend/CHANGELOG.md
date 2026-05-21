@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2026-05-21
+
+### Added — UX/UI Likelihood criteria + propagate auto-likelihood ทุกหน้า
+- **LikelihoodCriteriaPage**: rewrite ใหม่ทั้งหน้า
+  - Header glass card + gradient teal + จำนวน issue badge + ปุ่ม Save gradient
+  - เปลี่ยน layout จาก 3 cards เป็น **Tabs 3 กลุ่ม** (Prescription / Processing-Pre-Admin-Transcribing / Dispensing-Admin) — หน้าสะอาด สลับกลุ่มไว ไม่ต้อง scroll ยาว
+  - แต่ละ tab มี **Visual Range Bar** แสดงช่วง min–max ของแต่ละ level (color-coded ตามคะแนน) + tooltip ชี้ช่วง
+  - **ScorePill** แสดงคะแนน + label EN (Frequent/Likely/Possible/Unlikely/Rare/Never) + label ไทย — ผู้ใช้เข้าใจระดับได้ทันที
+  - **Validation visual feedback** — ตรวจ gap (ช่วงหาย), overlap (ช่วงทับ), missing (ยังไม่กรอก), invalid (min > max หรือ Level 5 มี max) → แสดง Alert พร้อมรายการ issue + Chip ติดที่แถวที่เกิดปัญหา + ปิดปุ่ม save ถ้ามี issue
+  - ช่อง min/max มี endAdornment "ครั้ง" + Level 0 ล็อกเป็น disabled + Level 5 แสดง chip "∞ ไม่จำกัด" แทน input
+  - Tab title มี badge แดงนับจำนวน issue ของกลุ่มนั้น ถ้ามี
+- **ErrorTypePage**: นำ Likelihood ออก (Impact คงอยู่)
+  - ลบ column "Likelihood" + popover แก้ score + FormControl ใน dialog + field ใน schema/defaultValues
+  - alert "ยังไม่ได้กำหนด" เปลี่ยนเป็นพูดถึง Impact อย่างเดียว + แจ้งว่า Likelihood คำนวณอัตโนมัติจากความถี่ในรายงาน
+  - FormHelperText อธิบายว่า Likelihood = auto-computed จากหน้า "เกณฑ์ Likelihood"
+  - colSpan empty/notfound TableCell ลดจาก 6 → 5
+- **ReportSummary9**: ปรับ messaging ให้สื่อว่า Likelihood เป็น auto
+  - alert เตือนเฉพาะแถวที่ขาด **Impact** (ไม่ใช่ Likelihood) — บอกให้ไปหน้า "ข้อมูลรายละเอียดประเภท Error"
+  - หัวคอลัมน์ Likelihood เพิ่ม badge "AUTO" (สื่อว่าระบบคำนวณให้)
+  - Subtitle อธิบายว่า Likelihood Auto + ลิงก์โยงไปหน้า "เกณฑ์ Likelihood"
+- **ReportSummary6 (RCA)**: เพิ่ม Quick date presets + restore subtitle
+  - Subtitle ใต้หัวข้อแสดงช่วงเวลาที่กำลังดู + ประเภท Error (เคยเป็น comment ว่าง)
+  - แถบปุ่มลัด "ช่วงเวลายอดนิยม": 7 วัน / 30 วัน / เดือนนี้ / เดือนก่อน / ปีงบประมาณ — กดครั้งเดียวยิง filter ทันที
+  - ปุ่มสี teal palette + hover lift + border subtle ตาม theme หลัก
+
+### Changed
+- หน้า "ข้อมูลรายละเอียดประเภท Error" Admin ไม่ต้องตั้ง Likelihood ต่อรายการอีกแล้ว — ใช้ตั้งครั้งเดียวที่ "เกณฑ์ Likelihood" แล้วระบบคำนวณให้ทุกรายงาน
+
+### Security
+- XSS-safe rendering (React default escape) — input min/max sanitize ด้วย `parseInt + Math.max(0, ...)` ก่อน setState (กัน NaN/negative ก่อนส่ง backend)
+- Backend `normalizeScore(undefined) === null` ทำให้การไม่ส่ง likelihood_score จาก frontend ไม่ทำ validation fail
+- Tag-only console.error (`[LikelihoodCriteria] load error`) — ไม่ leak error object/SQL
+- ห้าม admin role !== 9 เข้าหน้า → redirect /dashboard
+
 ## [1.19.1] - 2026-05-21
 
 ### Changed

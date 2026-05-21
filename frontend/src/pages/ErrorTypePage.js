@@ -105,13 +105,9 @@ const errorTypeListSchema = z.object({
     .union([z.number().int().min(1).max(5), z.null()])
     .optional()
     .nullable(),
-  likelihood_score: z
-    .union([z.number().int().min(1).max(5), z.null()])
-    .optional()
-    .nullable(),
 });
 
-// สี Chip ของ Impact/Likelihood: 1-2 เขียว, 3 เหลือง, 4 ส้ม, 5 แดง
+// สี Chip ของ Impact: 1-2 เขียว, 3 เหลือง, 4 ส้ม, 5 แดง
 const impactChipColor = (score) => {
   if (score === 1 || score === 2) return 'success';
   if (score === 3) return 'warning';
@@ -119,15 +115,13 @@ const impactChipColor = (score) => {
   if (score === 5) return 'error';
   return 'default';
 };
-const likelihoodChipColor = impactChipColor;
 
 const color = red[500];
 
 const TABLE_HEAD_ERROR_TYPE = [
   { id: 'error_type_name', label: 'ประเภท', alignRight: false, alignHead: 'left' },
   { id: 'error_type_list_detail', label: 'รายละเอียด Error', alignRight: false, alignHead: 'left' },
-  { id: 'impact_score', label: (<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>Impact <Chip label="New" color="error" size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 'bold' }} /></span>), alignRight: false, alignHead: 'center' },
-  { id: 'likelihood_score', label: (<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>Likelihood <Chip label="New" color="error" size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 'bold' }} /></span>), alignRight: false, alignHead: 'center' },
+  { id: 'impact_score', label: 'Impact', alignRight: false, alignHead: 'center' },
   { id: 'is_active', label: 'สถานะ', alignRight: false, alignHead: 'center' },
   { id: '', label: 'จัดการ', alignHead: 'center' },
 ];
@@ -200,7 +194,6 @@ export default function ErrorTypePage() {
       is_active: 'Y',
       type_id: 0,
       impact_score: null,
-      likelihood_score: null,
     },
   });
 
@@ -212,11 +205,9 @@ export default function ErrorTypePage() {
     sec: '',
   });
 
-  // Inline Impact / Likelihood Editor (ใช้ logic ร่วมกัน — แค่ตั้ง field ไหนที่กำลังแก้)
+  // Inline Impact Editor
   const [impactAnchor, setImpactAnchor] = useState(null);
   const [impactEditRow, setImpactEditRow] = useState(null);
-  const [likelihoodAnchor, setLikelihoodAnchor] = useState(null);
-  const [likelihoodEditRow, setLikelihoodEditRow] = useState(null);
 
   const handleOpenImpact = (event, row) => {
     setImpactAnchor(event.currentTarget);
@@ -228,51 +219,29 @@ export default function ErrorTypePage() {
     setImpactEditRow(null);
   };
 
-  const handleOpenLikelihood = (event, row) => {
-    setLikelihoodAnchor(event.currentTarget);
-    setLikelihoodEditRow(row);
-  };
-
-  const handleCloseLikelihood = () => {
-    setLikelihoodAnchor(null);
-    setLikelihoodEditRow(null);
-  };
-
-  // ใช้ร่วมกันทั้ง Impact และ Likelihood — preserve อีกฟิลด์เสมอ
-  const saveScoreField = async (row, fieldName, newScore, label) => {
-    if (!row) return;
+  const handleSaveImpact = async (score) => {
+    if (!impactEditRow) return;
     try {
       const payload = {
-        error_type: row.error_type,
-        error_type_list: row.error_type_list,
-        error_type_list_detail: row.error_type_list_detail,
-        is_active: row.is_active,
-        type_id: row.type_id,
-        impact_score: row.impact_score ?? null,
-        likelihood_score: row.likelihood_score ?? null,
-        [fieldName]: newScore,
+        error_type: impactEditRow.error_type,
+        error_type_list: impactEditRow.error_type_list,
+        error_type_list_detail: impactEditRow.error_type_list_detail,
+        is_active: impactEditRow.is_active,
+        type_id: impactEditRow.type_id,
+        impact_score: score,
       };
       const res = await errorTypeListCreate(payload, token);
       const { statusCode } = res.data;
       if (statusCode === 200) {
-        Toast.fire({ icon: 'success', title: `อัปเดต ${label} เรียบร้อย` });
+        Toast.fire({ icon: 'success', title: 'อัปเดต Impact เรียบร้อย' });
         await loadMedErrorType(token);
       } else {
-        Toast.fire({ icon: 'error', title: `ไม่สามารถอัปเดต ${label} ได้` });
+        Toast.fire({ icon: 'error', title: 'ไม่สามารถอัปเดต Impact ได้' });
       }
     } catch (error) {
-      handleCatchAxios(error, fieldName);
+      handleCatchAxios(error, 'impact_score');
     }
-  };
-
-  const handleSaveImpact = async (score) => {
-    await saveScoreField(impactEditRow, 'impact_score', score, 'Impact');
     handleCloseImpact();
-  };
-
-  const handleSaveLikelihood = async (score) => {
-    await saveScoreField(likelihoodEditRow, 'likelihood_score', score, 'Likelihood');
-    handleCloseLikelihood();
   };
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -364,10 +333,6 @@ export default function ErrorTypePage() {
           itemErrorType.impact_score === null || itemErrorType.impact_score === undefined
             ? null
             : Number(itemErrorType.impact_score),
-        likelihood_score:
-          itemErrorType.likelihood_score === null || itemErrorType.likelihood_score === undefined
-            ? null
-            : Number(itemErrorType.likelihood_score),
       };
       reset(formEditData);
     }
@@ -482,12 +447,9 @@ export default function ErrorTypePage() {
     checkVerifyToken();
   }, [navigate]);
 
-  // ตรวจรายการที่ยังไม่มี Impact หรือ Likelihood (ต้องระบุก่อนใช้ในรายงานคำนวณ Risk)
-  const isIncompleteRow = (r) =>
-    r.impact_score === null ||
-    r.impact_score === undefined ||
-    r.likelihood_score === null ||
-    r.likelihood_score === undefined;
+  // ตรวจรายการที่ยังไม่มี Impact (ต้องระบุก่อนใช้ในรายงานคำนวณ Risk)
+  // หมายเหตุ: Likelihood คำนวณอัตโนมัติจากเกณฑ์ความถี่ในรายงาน — ไม่ต้องกำหนดต่อรายการที่นี่อีกแล้ว
+  const isIncompleteRow = (r) => r.impact_score === null || r.impact_score === undefined;
   const incompleteCount = medErrorType.filter((r) => r.is_active === 'Y' && isIncompleteRow(r)).length;
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
 
@@ -542,9 +504,9 @@ export default function ErrorTypePage() {
             }
           >
             <AlertTitle sx={{ fontWeight: 700 }}>
-              ยังมี {incompleteCount} รายการที่ใช้งานอยู่และยังไม่ได้กำหนด Impact / Likelihood ครบ
+              ยังมี {incompleteCount} รายการที่ใช้งานอยู่และยังไม่ได้กำหนด Impact
             </AlertTitle>
-            กรุณาคลิกที่ Chip "—" ในตาราง เพื่อกำหนดคะแนน เพื่อให้รายงาน "แยกรายละเอียด Error" คำนวณ Level ได้ครบทุกแถว
+            กรุณาคลิกที่ Chip "—" ในคอลัมน์ Impact เพื่อกำหนดคะแนน — Likelihood จะถูกคำนวณอัตโนมัติจากความถี่ของอุบัติการณ์ในช่วงเวลาที่เลือก (ตั้งค่าได้ที่หน้า "เกณฑ์ Likelihood")
           </Alert>
         )}
 
@@ -562,7 +524,7 @@ export default function ErrorTypePage() {
                 />
                 <TableBody>
                   {filteredErrorType.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { type_id, error_type_name, error_type_list, error_type_list_detail, is_active, impact_score, likelihood_score } = row;
+                    const { type_id, error_type_name, error_type_list, error_type_list_detail, is_active, impact_score } = row;
 
                     return (
                         <TableRow key={type_id} hover style={{ cursor: 'pointer' }} tabIndex={-1}>
@@ -589,32 +551,6 @@ export default function ErrorTypePage() {
                                     size="small"
                                     label={impact_score}
                                     color={impactChipColor(Number(impact_score))}
-                                  />
-                                )}
-                              </Box>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="คลิกเพื่อแก้ไข Likelihood" arrow>
-                              <Box
-                                onClick={(e) => handleOpenLikelihood(e, row)}
-                                sx={{ cursor: 'pointer', display: 'inline-flex', '&:hover': { opacity: 0.7 } }}
-                              >
-                                {likelihood_score === null || likelihood_score === undefined ? (
-                                  <Chip
-                                    sx={{ fontWeight: 600, cursor: 'pointer' }}
-                                    size="small"
-                                    label="ยังไม่ระบุ"
-                                    color="warning"
-                                    variant="outlined"
-                                    icon={<Iconify icon="eva:alert-triangle-outline" width={14} />}
-                                  />
-                                ) : (
-                                  <Chip
-                                    sx={{ color: '#FFFFFF', fontWeight: 600, cursor: 'pointer' }}
-                                    size="small"
-                                    label={likelihood_score}
-                                    color={likelihoodChipColor(Number(likelihood_score))}
                                   />
                                 )}
                               </Box>
@@ -653,14 +589,14 @@ export default function ErrorTypePage() {
                   })}
                   {emptyRowsMedError > 0 && (
                     <TableRow style={{ height: 53 * emptyRowsMedError }}>
-                      <TableCell colSpan={6} />
+                      <TableCell colSpan={5} />
                     </TableRow>
                   )}
                 </TableBody>
                 {isNotFound && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={6} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -683,7 +619,7 @@ export default function ErrorTypePage() {
                 {medErrorType.length === 0 && (
                   <TableBody>
                     <TableRow>
-                      <TableCell align="center" colSpan={6} sx={{ py: 3 }}>
+                      <TableCell align="center" colSpan={5} sx={{ py: 3 }}>
                         <Paper
                           sx={{
                             textAlign: 'center',
@@ -789,56 +725,6 @@ export default function ErrorTypePage() {
         </Button>
       </Popover>
 
-      {/* Inline Likelihood Score Editor */}
-      <Popover
-        open={Boolean(likelihoodAnchor)}
-        anchorEl={likelihoodAnchor}
-        onClose={handleCloseLikelihood}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-        PaperProps={{
-          sx: { p: 1.5, borderRadius: 2, minWidth: 220 },
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ mb: 1, textAlign: 'center', color: 'text.secondary' }}>
-          เลือก Likelihood Score
-        </Typography>
-        <Stack direction="row" spacing={0.5} justifyContent="center">
-          {[1, 2, 3, 4, 5].map((score) => (
-            <Chip
-              key={score}
-              label={score}
-              size="medium"
-              color={likelihoodChipColor(score)}
-              onClick={() => handleSaveLikelihood(score)}
-              sx={{
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                minWidth: 36,
-                '&:hover': { transform: 'scale(1.15)', boxShadow: 2 },
-                transition: 'transform 0.15s',
-                ...(likelihoodEditRow?.likelihood_score === score && {
-                  outline: '2px solid',
-                  outlineOffset: 1,
-                }),
-              }}
-            />
-          ))}
-        </Stack>
-        <Divider sx={{ my: 1 }} />
-        <Button
-          fullWidth
-          size="small"
-          color="inherit"
-          onClick={() => handleSaveLikelihood(null)}
-          startIcon={<Iconify icon="eva:close-circle-outline" />}
-          sx={{ color: 'text.secondary' }}
-        >
-          ล้างค่า
-        </Button>
-      </Popover>
       <Dialog
         open={Boolean(isOpenForm)}
         onClose={handleCloseForm}
@@ -962,37 +848,9 @@ export default function ErrorTypePage() {
                     </Select>
                   )}
                 />
-                <FormHelperText>ใช้ในการประเมินความเสี่ยง (Impact + Likelihood) ในรายงานรายละเอียด Error</FormHelperText>
-              </FormControl>
-
-              <FormControl fullWidth error={!!errors.likelihood_score}>
-                <FormLabel id="likelihood_score_label">คะแนน Likelihood (1-5)</FormLabel>
-                <Controller
-                  name="likelihood_score"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      {...field}
-                      labelId="likelihood_score_label"
-                      label="คะแนน Likelihood"
-                      value={field.value ?? ''}
-                      onChange={(event) => {
-                        const v = event.target.value;
-                        field.onChange(v === '' ? null : Number(v));
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>— ไม่ระบุ —</em>
-                      </MenuItem>
-                      <MenuItem value={1}>1 — น้อยมาก</MenuItem>
-                      <MenuItem value={2}>2 — น้อย</MenuItem>
-                      <MenuItem value={3}>3 — ปานกลาง</MenuItem>
-                      <MenuItem value={4}>4 — มาก</MenuItem>
-                      <MenuItem value={5}>5 — มากที่สุด</MenuItem>
-                    </Select>
-                  )}
-                />
-                <FormHelperText>โอกาสที่จะเกิดความคลาดเคลื่อนชนิดนี้ (Level = Impact + Likelihood)</FormHelperText>
+                <FormHelperText>
+                  ใช้คำนวณ Level (Impact + Likelihood) — Likelihood คำนวณอัตโนมัติจากความถี่ของอุบัติการณ์ในช่วงเวลาที่เลือก (ตั้งค่าได้ที่หน้า "เกณฑ์ Likelihood")
+                </FormHelperText>
               </FormControl>
 
               <FormControl fullWidth error={!!errors.is_active}>
