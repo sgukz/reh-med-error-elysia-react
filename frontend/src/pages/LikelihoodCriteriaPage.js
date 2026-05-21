@@ -211,7 +211,7 @@ export default function LikelihoodCriteriaPage() {
       <Helmet>
         <title>จัดการเกณฑ์ Likelihood | Medication error</title>
       </Helmet>
-      <Container maxWidth="lg">
+      <Container maxWidth="true">
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
           <Box>
             <Typography variant="h4" gutterBottom sx={{ color: 'primary.dark' }}>

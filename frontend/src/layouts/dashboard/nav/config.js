@@ -36,7 +36,7 @@ const navAdmin = [
   {
     title: 'เกณฑ์ Likelihood',
     path: '/likelihood-criteria/main',
-    icon: icon('settings-2-outline'),
+    icon: icon('ic_analytics'),
   },
   {
     title: 'รายการสาเหตุ',
