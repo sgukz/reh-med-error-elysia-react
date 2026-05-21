@@ -14,7 +14,7 @@
 - **Master Data Management**: จัดการข้อมูลพื้นฐาน เช่น หอผู้ป่วย (Ward), ประเภท Error พร้อม **คะแนน Impact (1-5 ต่อตัว)** สำหรับคำนวณ Risk Level — *Likelihood ไม่ต้องตั้งต่อรายการแล้ว (v1.20.0) ระบบคำนวณจาก "เกณฑ์ Likelihood"*, และการวิเคราะห์สาเหตุ (RCA)
 - **Unified Glass Header (v1.21.0)**: ทุกหน้าหลัก (Department / Officer / Analysis / ErrorType / MedError) ใช้ header card glass + gradient teal text + icon เฉพาะหน้า + sub-description responsive (column→row) ให้สอดคล้องกับ Report / LikelihoodCriteria / Dashboard
 - **Master-data Filters (v1.22.0)**: Department / Officer / ErrorType มี Select filter พร้อม count ใน option (ประเภท / สถานะ / Impact) + ปุ่ม clear-filter + counter "แสดง X จาก Y" — Pagination label ภาษาไทย, count ใช้จำนวนหลัง filter เพื่อ paginate ถูกต้อง
-- **Authentication & Authorization**: ระบบจัดการสิทธิ์ผู้ใช้งาน (User & Admin roles) — **HTTP-only cookie (v1.13.0+)** ลดความเสี่ยง XSS
+- **Authentication & Authorization**: ระบบจัดการสิทธิ์ผู้ใช้งาน (User & Admin roles) — **HTTP-only cookie (v1.13.0+)** ลดความเสี่ยง XSS, **Logout effective (v1.22.1)** เรียก `POST /auth/logout` ล้าง cookie จริงทั้ง 2 จุด (Header + NotificationsPopover)
 - **LINE OA Integration**: รองรับการแจ้งเตือนและการตอบกลับผ่าน LINE Official Account
 - **Export Data**: รองรับการส่งออกข้อมูลเพื่อนำไปวิเคราะห์ต่อ
 

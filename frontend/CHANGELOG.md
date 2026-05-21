@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.1] - 2026-05-21
+
+### Fixed — Logout ไม่ล้าง HTTP-only cookie จริง
+- **Header logout button** ([frontend/src/layouts/dashboard/header/index.js](frontend/src/layouts/dashboard/header/index.js))
+- **NotificationsPopover logout button** ([frontend/src/layouts/dashboard/header/NotificationsPopover.js](frontend/src/layouts/dashboard/header/NotificationsPopover.js))
+- Root cause: หลัง migrate มา HTTP-only cookie (v1.13.0+) ปุ่ม logout ทั้ง 2 จุดยังเรียก `localStorage.removeItem('access_token')` + `navigate('/login')` เท่านั้น — ไม่ได้ยิง `POST /auth/logout` ทำให้ cookie ฝั่ง backend ค้าง → กด back / เข้า URL dashboard ตรง ๆ ยังเข้าได้ → ผู้ใช้รายงานว่า "logout ไม่ออก"
+- Fix: เปลี่ยน `handleConfirmLogout` ให้ `await useAuth().logout()` ก่อน navigate — context จะเรียก `apiLogout()` → backend `clearAuthCookie()` ล้าง cookie จริง พร้อมเคลียร์ `accessToken`/`user` ใน memory state
+
+### Security
+- A07:2021 Identification & Authentication Failures — `/auth/logout` ทำงาน effective แล้ว (`Max-Age=0` ที่ backend `clearAuthCookie` + reset client state)
+- ไม่แก้ logic ฝั่ง backend (`AuthRoute.ts /logout`) — control ทำงานถูกอยู่แล้ว แค่ client ไม่ได้เรียก
+
 ## [1.22.0] - 2026-05-21
 
 ### Added — Filter + table UX (Department / Officer / ErrorType)

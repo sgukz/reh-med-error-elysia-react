@@ -23,6 +23,8 @@ import {
 import { fToNow } from '../../../utils/formatTime';
 // components
 import Iconify from '../../../components/iconify';
+// auth
+import { useAuth } from '../../../contexts/AuthContext';
 
 NotificationsPopover.propTypes = {
   users: PropTypes.array,
@@ -30,13 +32,16 @@ NotificationsPopover.propTypes = {
 
 export default function NotificationsPopover({ users }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isLogout, setIsLogout] = useState(false);
   const handleLogout = () => {
     setIsLogout(true);
   };
 
-  const handleConfirmLogout = () => {
-    localStorage.removeItem('access_token');
+  const handleConfirmLogout = async () => {
+    // เรียก logout() ของ AuthContext เพื่อให้ backend ล้าง HTTP-only cookie จริง ๆ
+    await logout();
+    setIsLogout(false);
     navigate('/login', { replace: true });
   };
 

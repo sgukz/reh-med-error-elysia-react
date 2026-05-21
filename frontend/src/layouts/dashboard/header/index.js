@@ -6,6 +6,8 @@ import { styled } from '@mui/material/styles';
 import { Box, Stack, AppBar, Toolbar, IconButton, Typography, Link, Avatar, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 // components
 import Iconify from '../../../components/iconify';
+// auth
+import { useAuth } from '../../../contexts/AuthContext';
 
 // ----------------------------------------------------------------------
 
@@ -47,14 +49,18 @@ Header.propTypes = {
 
 export default function Header({ onOpenNav, openNav, user }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isLogout, setIsLogout] = useState(false);
 
   const handleLogout = () => {
     setIsLogout(true);
   };
 
-  const handleConfirmLogout = () => {
-    localStorage.removeItem('access_token');
+  const handleConfirmLogout = async () => {
+    // เรียก logout() ของ AuthContext เพื่อให้ backend ล้าง HTTP-only cookie จริง ๆ
+    // (ก่อนหน้านี้ลบเฉพาะ localStorage ซึ่งไม่มีผลกับระบบ cookie-based)
+    await logout();
+    setIsLogout(false);
     navigate('/login', { replace: true });
   };
 
