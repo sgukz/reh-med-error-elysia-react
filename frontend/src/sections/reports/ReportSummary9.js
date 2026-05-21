@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import _ from 'lodash';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import * as XLSX from 'xlsx';
 
 import Box from '@mui/material/Box';
@@ -20,7 +21,9 @@ import TableRow from '@mui/material/TableRow';
 import CircularProgress from '@mui/material/CircularProgress';
 import Autocomplete from '@mui/material/Autocomplete';
 import Alert from '@mui/material/Alert';
-import { styled } from '@mui/material/styles';
+import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
+import { styled, alpha } from '@mui/material/styles';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -46,6 +49,49 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
     fontSize: 12.5,
   },
 }));
+
+// สี + label ของ Likelihood — ตรงกับ LikelihoodCriteriaPage
+const LIKELIHOOD_META = {
+  5: { label: 'Frequent', th: 'เกิดบ่อยมาก', color: '#dc2626' },
+  4: { label: 'Likely', th: 'เกิดบ่อย', color: '#ea580c' },
+  3: { label: 'Possible', th: 'อาจเกิด', color: '#f59e0b' },
+  2: { label: 'Unlikely', th: 'ไม่ค่อยเกิด', color: '#65a30d' },
+  1: { label: 'Rare', th: 'เกิดน้อย', color: '#16a34a' },
+  0: { label: 'Never', th: 'ไม่เกิดเลย', color: '#64748b' },
+};
+
+const LikelihoodChip = ({ score }) => {
+  if (score === null || score === undefined || Number.isNaN(score)) {
+    return (
+      <Chip
+        size="small"
+        label="—"
+        variant="outlined"
+        sx={{ borderRadius: '8px', fontWeight: 600, color: 'text.disabled', borderColor: 'divider' }}
+      />
+    );
+  }
+  const meta = LIKELIHOOD_META[score] || { label: `${score}`, th: '', color: '#64748b' };
+  return (
+    <Tooltip title={`${meta.label}${meta.th ? ` — ${meta.th}` : ''}`} arrow>
+      <Chip
+        size="small"
+        label={score}
+        sx={{
+          fontWeight: 800,
+          fontSize: 12,
+          borderRadius: '8px',
+          minWidth: 32,
+          color: '#fff',
+          backgroundColor: meta.color,
+          boxShadow: `0 2px 6px -2px ${alpha(meta.color, 0.6)}`,
+          '&:hover': { backgroundColor: meta.color, filter: 'brightness(1.05)' },
+        }}
+      />
+    </Tooltip>
+  );
+};
+LikelihoodChip.propTypes = { score: PropTypes.number };
 
 // สีของ Level cell (Impact + Likelihood) — อิงจากภาพอ้างอิง
 const levelCellStyle = (level) => {
@@ -549,7 +595,9 @@ const ReportSummary9 = () => {
                         </>
                       )}
                       <TableCell align="center">{r.impact ?? '—'}</TableCell>
-                      <TableCell align="center">{r.likelihood ?? '—'}</TableCell>
+                      <TableCell align="center">
+                        <LikelihoodChip score={r.likelihood} />
+                      </TableCell>
                       <TableCell align="center" sx={levelCellStyle(r.level)}>
                         {r.level ?? '—'}
                       </TableCell>
