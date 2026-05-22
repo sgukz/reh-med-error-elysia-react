@@ -36,6 +36,7 @@
 5. `README.md` (root) — อัพเดทเลข version ของ frontend/backend + endpoint list ถ้ามี endpoint ใหม่
 6. `backend/README.md` — อัพเดท Features bullet + Endpoints list (ถ้ามี endpoint ใหม่)
 7. `frontend/README.md` — อัพเดท Features bullet (ใส่เวอร์ชันที่เพิ่ม feature เข้า)
+8. `backend/docker-compose.yml` และ `frontend/docker-compose.yml` — อัพเดทเลข version ตรง `image: ...:<version>` ให้ตรงกับที่ bump ใน `package.json` เสมอ
 
 **Convention**:
 - Date = วันนี้ (อ่านจาก system context, แปลง relative dates → absolute)
@@ -256,6 +257,7 @@ git push origin main
 [ ] 1.5 README.md (root) version updated
 [ ] 1.6 backend/README.md features/endpoints updated
 [ ] 1.7 frontend/README.md features updated
+[ ] 1.8 backend/docker-compose.yml และ frontend/docker-compose.yml image version updated
 
 [ ] 2.1 tsc / eslint ผ่าน
 [ ] 2.1 manual scan: ไม่มี console.log / TODO / secrets / null deref
