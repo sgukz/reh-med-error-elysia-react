@@ -57,16 +57,20 @@ const ERROR_TYPES = [
   { id: 6, name: 'Transcribing Error' },
 ];
 
+// สีระดับความรุนแรง — ไล่ตามระดับอันตราย
+// A-D: ไม่เป็นอันตราย (โทนเขียว-ฟ้า)
+// E-F: อันตรายชั่วคราว (โทนส้ม-เหลือง)
+// G-I: อันตรายถาวร/เสียชีวิต (โทนแดง-แดงเข้ม)
 const SEVERITY_COLORS = {
-  A: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'A' },
-  B: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'B' },
-  C: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'C' },
-  D: { bg: 'rgba(34, 197, 94, 0.06)', chipColor: 'success', label: 'D' },
-  E: { bg: 'rgba(255, 193, 7, 0.08)', chipColor: 'warning', label: 'E' },
-  F: { bg: 'rgba(255, 193, 7, 0.08)', chipColor: 'warning', label: 'F' },
-  G: { bg: 'rgba(255, 72, 66, 0.06)', chipColor: 'error', label: 'G' },
-  H: { bg: 'rgba(255, 72, 66, 0.06)', chipColor: 'error', label: 'H' },
-  I: { bg: 'rgba(255, 72, 66, 0.06)', chipColor: 'error', label: 'I' },
+  A: { bg: 'rgba(148, 163, 184, 0.06)', label: 'A', chipSx: { bgcolor: '#94a3b8', color: '#fff' }, desc: 'ไม่มีความคลาดเคลื่อน' },
+  B: { bg: 'rgba(34, 197, 94, 0.06)',   label: 'B', chipSx: { bgcolor: '#22c55e', color: '#fff' }, desc: 'ไม่ถึงตัวผู้ป่วย' },
+  C: { bg: 'rgba(16, 185, 129, 0.06)',  label: 'C', chipSx: { bgcolor: '#10b981', color: '#fff' }, desc: 'ถึงผู้ป่วย ไม่อันตราย' },
+  D: { bg: 'rgba(6, 182, 212, 0.06)',   label: 'D', chipSx: { bgcolor: '#06b6d4', color: '#fff' }, desc: 'ต้องติดตามเพิ่ม' },
+  E: { bg: 'rgba(245, 158, 11, 0.10)',  label: 'E', chipSx: { bgcolor: '#f59e0b', color: '#fff' }, desc: 'อันตรายชั่วคราว ต้องรักษา' },
+  F: { bg: 'rgba(234, 88, 12, 0.10)',   label: 'F', chipSx: { bgcolor: '#ea580c', color: '#fff' }, desc: 'ต้องนอน รพ. / ยืดเวลารักษา' },
+  G: { bg: 'rgba(239, 68, 68, 0.08)',   label: 'G', chipSx: { bgcolor: '#ef4444', color: '#fff' }, desc: 'อันตรายถาวร' },
+  H: { bg: 'rgba(220, 38, 38, 0.10)',   label: 'H', chipSx: { bgcolor: '#dc2626', color: '#fff' }, desc: 'เกือบเสียชีวิต' },
+  I: { bg: 'rgba(127, 29, 29, 0.14)',   label: 'I', chipSx: { bgcolor: '#7f1d1d', color: '#fff' }, desc: 'เสียชีวิต' },
 };
 
 const HAD_LABEL = 'High Alert Drugs';
@@ -129,10 +133,14 @@ const STAT_CARD_CONFIGS = {
 
 const StatCard = ({ icon, color, label, value, sub }) => {
   const config = STAT_CARD_CONFIGS[color] || STAT_CARD_CONFIGS.primary;
+  // ตรวจว่า value ยาวหรือไม่ — ถ้ายาวจะลดขนาด font
+  const valueStr = String(value ?? '');
+  const isLongValue = valueStr.length > 10;
   return (
     <Card
       sx={{
         height: '100%',
+        minHeight: 110,
         borderRadius: '16px',
         border: '1px solid',
         borderColor: alpha(config.iconColor, 0.15),
@@ -144,28 +152,59 @@ const StatCard = ({ icon, color, label, value, sub }) => {
         },
       }}
     >
-      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2.5, px: 2.5 }}>
+      <CardContent sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, py: 2, px: 2 }}>
         <Avatar
           sx={{
             bgcolor: config.iconBg,
             color: config.iconColor,
-            width: 52,
-            height: 52,
-            borderRadius: '14px',
+            width: 46,
+            height: 46,
+            borderRadius: '12px',
+            flexShrink: 0,
           }}
           variant="rounded"
         >
-          <Iconify icon={icon} width={26} />
+          <Iconify icon={icon} width={24} />
         </Avatar>
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: '0.7rem', letterSpacing: '0.02em', textTransform: 'uppercase', fontWeight: 600 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              fontSize: '0.68rem',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
+              fontWeight: 600,
+              lineHeight: 1.3,
+              display: 'block',
+              mb: 0.5,
+            }}
+          >
             {label}
           </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, mt: 0.25, color: config.iconColor }} noWrap title={String(value ?? '')}>
-            {value}
-          </Typography>
+          <Tooltip title={valueStr} arrow placement="top" disableHoverListener={!isLongValue}>
+            <Typography
+              variant={isLongValue ? 'subtitle1' : 'h5'}
+              sx={{
+                fontWeight: 800,
+                lineHeight: 1.25,
+                color: config.iconColor,
+                wordBreak: 'break-word',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                ...(isLongValue && { fontSize: '0.85rem' }),
+              }}
+            >
+              {value}
+            </Typography>
+          </Tooltip>
           {sub && (
-            <Typography variant="caption" color="text.secondary" noWrap title={sub} sx={{ fontSize: '0.7rem' }}>{sub}</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', lineHeight: 1.3, display: 'block', mt: 0.25 }}>
+              {sub}
+            </Typography>
           )}
         </Box>
       </CardContent>
@@ -187,11 +226,20 @@ const RcaDaysChip = ({ days }) => {
     return <Chip label="—" size="small" variant="outlined" sx={{ borderRadius: '8px', fontSize: 11 }} />;
   }
   const n = Number(days);
-  let color = 'default';
-  if (n <= 7) color = 'success';
-  else if (n <= 30) color = 'warning';
-  else color = 'error';
-  return <Chip label={`${n} วัน`} size="small" color={color} sx={{ fontWeight: 600, borderRadius: '8px', fontSize: 11 }} />;
+  // สีตามเกณฑ์: ≤3 เขียวเข้ม, ≤7 เขียว, ≤14 เหลือง, ≤30 ส้ม, >30 แดง
+  let chipSx = { fontWeight: 600, borderRadius: '8px', fontSize: 11 };
+  if (n <= 3) {
+    chipSx = { ...chipSx, bgcolor: '#059669', color: '#fff' };
+  } else if (n <= 7) {
+    chipSx = { ...chipSx, bgcolor: '#10b981', color: '#fff' };
+  } else if (n <= 14) {
+    chipSx = { ...chipSx, bgcolor: '#f59e0b', color: '#fff' };
+  } else if (n <= 30) {
+    chipSx = { ...chipSx, bgcolor: '#f97316', color: '#fff' };
+  } else {
+    chipSx = { ...chipSx, bgcolor: '#ef4444', color: '#fff' };
+  }
+  return <Chip label={`${n} วัน`} size="small" sx={chipSx} />;
 };
 
 RcaDaysChip.propTypes = {
@@ -701,11 +749,17 @@ const ReportSummary6 = () => {
                 {!isLoading && paged.map((r, i) => {
                   const sev = SEVERITY_COLORS[String(r.error_level || '').toUpperCase()] || null;
                   const isHad = r.error_alert === HAD_LABEL;
+                  // แยกสีพื้นหลัง: HAD = แดง (ตาม chip New), Non-HAD = ฟ้าอ่อน, ซ้อนกับ severity
+                  const hadBg = isHad ? 'rgba(255, 72, 66, 0.06)' : 'rgba(59, 130, 246, 0.03)';
+                  const rowBg = sev?.bg || hadBg;
+                  // เส้นซ้ายแสดง HAD status
+                  const leftBorder = isHad ? '3px solid #FF4842' : '3px solid transparent';
                   return (
                     <TableRow
                       key={`${r.error_id}-${i}`}
                       sx={{
-                        backgroundColor: sev?.bg || 'inherit',
+                        backgroundColor: rowBg,
+                        borderLeft: leftBorder,
                         transition: 'background-color 0.15s ease',
                         '&:hover': { backgroundColor: (t) => alpha(t.palette.primary.lighter, 0.35) },
                       }}
@@ -723,7 +777,9 @@ const ReportSummary6 = () => {
                       </BodyCell>
                       <BodyCell>
                         {sev ? (
-                          <Chip label={r.error_level} size="small" color={sev.chipColor} sx={{ fontWeight: 700, borderRadius: '8px', minWidth: 32 }} />
+                          <Tooltip title={`${r.error_level}: ${sev.desc}`} arrow placement="top">
+                            <Chip label={r.error_level} size="small" sx={{ fontWeight: 700, borderRadius: '8px', minWidth: 32, ...sev.chipSx }} />
+                          </Tooltip>
                         ) : (r.error_level || '-')}
                       </BodyCell>
                       <BodyCell sx={{ fontSize: 11.5 }}>{r.error_type_name || ''}</BodyCell>
@@ -745,9 +801,15 @@ const ReportSummary6 = () => {
                         <Chip
                           label={isHad ? 'HAD' : 'Non-HAD'}
                           size="small"
-                          color={isHad ? 'warning' : 'default'}
-                          variant={isHad ? 'filled' : 'outlined'}
-                          sx={{ fontWeight: 600, borderRadius: '8px', fontSize: 11 }}
+                          variant="filled"
+                          sx={{
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            fontSize: 11,
+                            ...(isHad
+                              ? { bgcolor: '#FF4842', color: '#fff' }
+                              : { bgcolor: 'rgba(100, 116, 139, 0.12)', color: '#475569' }),
+                          }}
                         />
                       </BodyCell>
                       <BodyCell sx={{ maxWidth: 240 }}>

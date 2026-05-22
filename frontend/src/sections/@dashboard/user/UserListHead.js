@@ -13,6 +13,7 @@ const StyledTableCell = styled(TableCell)(() => ({
     fontWeight: 600,
     fontSize: '15px',
     borderBottom: 'none',
+    whiteSpace: 'nowrap',
   },
   [`&.${tableCellClasses.body}`]: {
     fontFamily: '"Prompt", sans-serif',
@@ -58,7 +59,7 @@ export default function UserListHead({
             key={headCell.id}
             align={headCell.alignHead !== undefined ? headCell.alignHead : "center"}
             sortDirection={orderBy === headCell.id ? order : false}
-            width='auto'
+            sx={{ minWidth: headCell.minWidth || 'auto' }}
           >
             <TableSortLabel
               hideSortIcon

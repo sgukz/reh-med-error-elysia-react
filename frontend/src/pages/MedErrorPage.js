@@ -32,6 +32,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Chip from '@mui/material/Chip';
+import Checkbox from '@mui/material/Checkbox';
+
 
 // Start Form Register & Update
 import dayjs from 'dayjs';
@@ -53,7 +55,9 @@ import { red } from '@mui/material/colors';
 import LoadingButton from '@mui/lab/LoadingButton';
 // End Form Register & Update
 
-import { styled } from '@mui/material/styles';
+import { styled, alpha } from '@mui/material/styles';
+
+
 
 // Sweetalert
 import Swal from 'sweetalert2';
@@ -63,7 +67,7 @@ import withReactContent from 'sweetalert2-react-content';
 import { MedErrorLevel } from '../data/DataMedError';
 // components
 import Iconify from '../components/iconify';
-import Scrollbar from '../components/scrollbar';
+
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 
@@ -88,6 +92,25 @@ import {
 // utils
 import { formatDateTime } from '../utils/formatTime';
 import { AdapterDateFnsTH } from '../utils/AdapterDateFnsTH';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+// สีระดับความรุนแรง — ไล่ตามระดับอันตราย (เหมือน ReportSummary6)
+const SEVERITY_COLORS = {
+  A: { bg: 'rgba(148, 163, 184, 0.06)', chipSx: { bgcolor: '#94a3b8', color: '#fff' }, desc: 'ไม่มีความคลาดเคลื่อน' },
+  B: { bg: 'rgba(34, 197, 94, 0.06)', chipSx: { bgcolor: '#22c55e', color: '#fff' }, desc: 'ไม่ถึงตัวผู้ป่วย' },
+  C: { bg: 'rgba(16, 185, 129, 0.06)', chipSx: { bgcolor: '#10b981', color: '#fff' }, desc: 'ถึงผู้ป่วย ไม่อันตราย' },
+  D: { bg: 'rgba(6, 182, 212, 0.06)', chipSx: { bgcolor: '#06b6d4', color: '#fff' }, desc: 'ต้องติดตามเพิ่ม' },
+  E: { bg: 'rgba(245, 158, 11, 0.10)', chipSx: { bgcolor: '#f59e0b', color: '#fff' }, desc: 'อันตรายชั่วคราว ต้องรักษา' },
+  F: { bg: 'rgba(234, 88, 12, 0.10)', chipSx: { bgcolor: '#ea580c', color: '#fff' }, desc: 'ต้องนอน รพ. / ยืดเวลารักษา' },
+  G: { bg: 'rgba(239, 68, 68, 0.08)', chipSx: { bgcolor: '#ef4444', color: '#fff' }, desc: 'อันตรายถาวร' },
+  H: { bg: 'rgba(220, 38, 38, 0.10)', chipSx: { bgcolor: '#dc2626', color: '#fff' }, desc: 'เกือบเสียชีวิต' },
+  I: { bg: 'rgba(127, 29, 29, 0.14)', chipSx: { bgcolor: '#7f1d1d', color: '#fff' }, desc: 'เสียชีวิต' },
+};
+
+const HAD_LABEL = 'High Alert Drugs';
 
 const colorRed = red[500];
 
@@ -189,20 +212,20 @@ function popKeys(obj, keys) {
 }
 
 const TABLE_HEAD_MEDERROR = [
-  { id: 'error_section', label: 'แบบฟอร์ม', alignRight: false, alignHead: 'center' },
-  { id: 'error_date', label: 'วัน/เดือน/ปี ที่เกิดเหตุการณ์', alignRight: false, alignHead: 'center' },
-  { id: 'error_time', label: 'เวลาที่พบเหตุการณ์', alignRight: false, alignHead: 'center' },
-  { id: 'error_ward_name', label: 'สถานที่เกิดเหตุ/พบเหตุ', alignRight: false, alignHead: 'center' },
-  { id: 'error_event', label: 'เหตุการณ์ที่พบ', alignRight: false, alignHead: 'center' },
-  { id: 'error_level', label: 'ระดับความรุนแรง', alignRight: false, alignHead: 'center' },
-  { id: 'error_clear', label: 'การแก้ไขปัญหาเบื้องต้น', alignRight: false, alignHead: 'center' },
-  { id: 'error_analysis', label: 'วิเคราะห์สาเหตุ', alignRight: false, alignHead: 'center' },
-  { id: 'error_doctor', label: 'แพทย์ผู้สั่งยา', alignRight: false, alignHead: 'center' },
-  { id: 'error_type_name', label: 'ประเภทของ Error', alignRight: false, alignHead: 'center' },
-  { id: 'error_type_detail', label: 'รายละเอียด Error', alignRight: false, alignHead: 'center' },
-  { id: 'error_alert', label: 'เหตุการณ์ที่พบความคลาดเคลื่อน', alignRight: false, alignHead: 'center' },
-  { id: 'error_user_name', label: 'ผู้บันทึก', alignRight: false, alignHead: 'center' },
-  { id: '', label: 'จัดการ' },
+  { id: 'error_section', label: 'แบบฟอร์ม', alignRight: false, alignHead: 'center', minWidth: 90 },
+  { id: 'error_date', label: 'วัน/เดือน/ปี ที่เกิดเหตุการณ์', alignRight: false, alignHead: 'center', minWidth: 180 },
+  { id: 'error_time', label: 'เวลาที่พบเหตุการณ์', alignRight: false, alignHead: 'center', minWidth: 140 },
+  { id: 'error_ward_name', label: 'สถานที่เกิดเหตุ/พบเหตุ', alignRight: false, alignHead: 'center', minWidth: 180 },
+  { id: 'error_event', label: 'เหตุการณ์ที่พบ', alignRight: false, alignHead: 'center', minWidth: 220 },
+  { id: 'error_level', label: 'ระดับความรุนแรง', alignRight: false, alignHead: 'center', minWidth: 130 },
+  { id: 'error_clear', label: 'การแก้ไขปัญหาเบื้องต้น', alignRight: false, alignHead: 'center', minWidth: 180 },
+  { id: 'error_analysis', label: 'วิเคราะห์สาเหตุ', alignRight: false, alignHead: 'center', minWidth: 160 },
+  { id: 'error_doctor', label: 'แพทย์ผู้สั่งยา', alignRight: false, alignHead: 'center', minWidth: 140 },
+  { id: 'error_type_name', label: 'ประเภทของ Error', alignRight: false, alignHead: 'center', minWidth: 150 },
+  { id: 'error_type_detail', label: 'รายละเอียด Error', alignRight: false, alignHead: 'center', minWidth: 160 },
+  { id: 'error_alert', label: 'เหตุการณ์ที่พบความคลาดเคลื่อน', alignRight: false, alignHead: 'center', minWidth: 220 },
+  { id: 'error_user_name', label: 'ผู้บันทึก', alignRight: false, alignHead: 'center', minWidth: 140 },
+  { id: '', label: 'จัดการ', minWidth: 100 },
 ];
 
 function descendingComparator(a, b, orderBy) {
@@ -349,7 +372,30 @@ export default function MedErrorPage() {
     dateEnd: formatDate(dayjs()), // วันนี้
   });
 
+  const [filterDeps, setFilterDeps] = useState([]);
+  const [filterType, setFilterType] = useState(null);
+  const [filterLevels, setFilterLevels] = useState([]);
+  const [filterAlert, setFilterAlert] = useState('ALL');
+
   const [sections, setSection] = useState('');
+
+  // Dual Scrollbar Refs
+  const topScrollRef = useRef(null);
+  const bottomScrollRef = useRef(null);
+  const [tableWidth, setTableWidth] = useState(2200);
+
+  const handleTopScroll = (e) => {
+    if (bottomScrollRef.current) {
+      bottomScrollRef.current.scrollLeft = e.target.scrollLeft;
+    }
+  };
+
+  const handleBottomScroll = (e) => {
+    if (topScrollRef.current) {
+      topScrollRef.current.scrollLeft = e.target.scrollLeft;
+    }
+  };
+
 
   // Patient Info
   const [patientInfo, setPatientInfo] = useState([]);
@@ -997,6 +1043,10 @@ export default function MedErrorPage() {
       dateStart: formatDate(dayjs().startOf('month')),
       dateEnd: formatDate(dayjs()),
     });
+    setFilterDeps([]);
+    setFilterType(null);
+    setFilterLevels([]);
+    setFilterAlert('ALL');
 
     loadMedError(token, userLoginName, true); // ignoreDate = true
   };
@@ -1260,10 +1310,34 @@ export default function MedErrorPage() {
 
   const emptyRowsMedError = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - medErrorData.length) : 0;
 
-  const filteredMedError = useMemo(
-    () => applySortFilter(medErrorData, getComparator(order, orderBy), filterName),
-    [medErrorData, order, orderBy, filterName]
-  );
+  const filteredMedError = useMemo(() => {
+    let result = medErrorData;
+    if (filterDeps.length > 0) {
+      const depNames = filterDeps.map((d) => d.med_error_depname);
+      result = result.filter((item) => depNames.includes(item.error_ward_name));
+    }
+    if (filterType) {
+      result = result.filter((item) => item.error_type_name === filterType.error_type_name);
+    }
+    if (filterLevels.length > 0) {
+      const levels = filterLevels.map((l) => l.med_error_level_code);
+      result = result.filter((item) => levels.includes(item.error_level));
+    }
+    if (filterAlert && filterAlert !== 'ALL') {
+      const alertVal = filterAlert === 'HAD' ? HAD_LABEL : 'ไม่ใช่ High Alert Drugs';
+      result = result.filter((item) => item.error_alert === alertVal);
+    }
+    return applySortFilter(result, getComparator(order, orderBy), filterName);
+  }, [medErrorData, order, orderBy, filterName, filterDeps, filterType, filterLevels, filterAlert]);
+
+  useEffect(() => {
+    if (bottomScrollRef.current) {
+      const actualWidth = bottomScrollRef.current.scrollWidth;
+      if (actualWidth > 0 && actualWidth !== tableWidth) {
+        setTableWidth(actualWidth);
+      }
+    }
+  }, [medErrorData, filteredMedError, tableWidth]);
 
   const isNotFound = !filteredMedError.length && !!filterName;
 
@@ -2068,7 +2142,7 @@ export default function MedErrorPage() {
                                           String(item.error_key_person_id) ===
                                           String(
                                             selectedTranscribingPerson?.error_key_person_id ||
-                                              selectedTranscribingPerson
+                                            selectedTranscribingPerson
                                           )
                                       ) || null
                                     }
@@ -2223,6 +2297,73 @@ export default function MedErrorPage() {
               dateStart={dateFilter.dateStart}
               dateEnd={dateFilter.dateEnd}
             />
+            <Box sx={{ px: 3, pb: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Autocomplete
+                    multiple
+                    size="small"
+                    options={department}
+                    getOptionLabel={(option) => option.med_error_depname}
+                    value={filterDeps}
+                    onChange={(e, value) => setFilterDeps(value)}
+                    renderInput={(params) => <TextField {...params} label="สถานที่เกิดเหตุ" />}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Autocomplete
+                    size="small"
+                    options={medErrorType}
+                    getOptionLabel={(option) => option.error_type_name}
+                    value={filterType}
+                    onChange={(e, value) => setFilterType(value)}
+                    renderInput={(params) => <TextField {...params} label="ประเภท Error" />}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Autocomplete
+                    multiple
+                    disableCloseOnSelect
+                    size="small"
+                    options={MedErrorLevel}
+                    getOptionLabel={(option) => option.med_error_level_code}
+                    isOptionEqualToValue={(option, value) => option.med_error_level_code === value.med_error_level_code}
+                    value={filterLevels}
+                    onChange={(e, value) => setFilterLevels(value)}
+                    renderOption={(props, option, { selected }) => {
+                      const sev = SEVERITY_COLORS[option.med_error_level_code];
+                      return (
+                        <li {...props}>
+                          <Checkbox checked={selected} size="small" sx={{ mr: 0.5 }} />
+                          <Chip label={option.med_error_level_code} size="small" sx={{ mr: 1, fontWeight: 700, borderRadius: '8px', minWidth: 28, ...sev?.chipSx }} />
+                          <Typography variant="body2" sx={{ fontSize: 12.5 }}>{sev?.desc || option.med_error_level_code}</Typography>
+                        </li>
+                      );
+                    }}
+                    renderInput={(params) => <TextField {...params} variant="outlined" label="ระดับความรุนแรง" placeholder="เลือกได้หลายระดับ" />}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="alert-filter-label">ความคลาดเคลื่อน (HAD)</InputLabel>
+                    <Select
+                      labelId="alert-filter-label"
+                      value={filterAlert}
+                      label="ความคลาดเคลื่อน (HAD)"
+                      onChange={(e) => setFilterAlert(e.target.value)}
+                    >
+                      <MenuItem value="ALL">ทั้งหมด</MenuItem>
+                      <MenuItem value="HAD" sx={{ color: '#FF4842', fontWeight: 600 }}>
+                        High Alert Drugs (HAD)
+                      </MenuItem>
+                      <MenuItem value="NON-HAD" sx={{ color: '#00B8D9', fontWeight: 600 }}>
+                        ไม่ใช่ High Alert Drugs (Non-HAD)
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Box>
             <Grid container spacing={1} sx={{ paddingLeft: '24px' }}>
               <Grid item xs={12} sm={12} md={12} lg={12}>
                 <Stack direction="row" alignItems="center" justifyContent="flex-start" mb={2}>
@@ -2272,9 +2413,19 @@ export default function MedErrorPage() {
               <CircularProgress color="inherit" sx={{ mr: 1 }} />
               <Typography variant="body1">{'กำลังโหลดข้อมูล...'}</Typography>
             </Backdrop>
-            <Scrollbar>
-              <TableContainer component={Paper}>
-                <Table stickyHeader>
+            <Box
+              ref={topScrollRef}
+              onScroll={handleTopScroll}
+              sx={{ overflowX: 'auto', width: '100%', mb: 1 }}
+            >
+              <Box sx={{ height: '1px', width: `${tableWidth}px` }} />
+            </Box>
+            <TableContainer 
+              ref={bottomScrollRef}
+              onScroll={handleBottomScroll}
+              sx={{ minWidth: 800, overflowX: 'auto' }}
+            >
+              <Table>
                   <UserListHead
                     order={order}
                     orderBy={orderBy}
@@ -2303,168 +2454,199 @@ export default function MedErrorPage() {
                       } = row;
 
                       const canManage = canManageRow(row);
+                      const sev = SEVERITY_COLORS[String(error_level || '').toUpperCase()] || null;
+                      const isHad = error_alert === HAD_LABEL;
+                      const hadBg = isHad ? 'rgba(255, 72, 66, 0.06)' : 'rgba(59, 130, 246, 0.03)';
+                      const rowBg = sev?.bg || hadBg;
+                      const leftBorder = isHad ? '3px solid #FF4842' : '3px solid transparent';
+
                       return (
-                        <Tooltip title="ดูเพิ่มเติม" key={error_id}>
-                          <TableRow hover style={{ cursor: 'pointer' }} tabIndex={-1}>
-                            <TableCell align="center" onClick={(e) => handleClickOpenModal(e, error_id)}>
-                              <Button
-                                color={is_rca === 'Y' ? 'success' : undefined}
-                                startIcon={is_rca === 'Y' ? <Iconify icon="eva:checkmark-circle-outline" /> : undefined}
-                              >
-                                {error_section !== '' ? (error_section === 1 ? ' รพ.ร้อยเอ็ด' : ' เภสัชกรรม') : ''}
-                              </Button>
-                            </TableCell>
-                            <TableCell align="center" onClick={(e) => handleClickOpenModal(e, error_id)}>
-                              {error_date !== '' ? formatDateTime(error_date, 1) : ''}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
-                              }}
+                        <TableRow
+                          hover
+                          style={{ cursor: 'pointer' }}
+                          tabIndex={-1}
+                          key={error_id}
+                          sx={{
+                            backgroundColor: rowBg,
+                            borderLeft: leftBorder,
+                            transition: 'background-color 0.15s ease',
+                            '&:hover': { backgroundColor: (t) => alpha(t.palette.primary.lighter, 0.35) },
+                          }}
+                        >
+                          <TableCell align="center" onClick={(e) => handleClickOpenModal(e, error_id)}>
+                            <Button
+                              color={is_rca === 'Y' ? 'success' : undefined}
+                              startIcon={is_rca === 'Y' ? <Iconify icon="eva:checkmark-circle-outline" /> : undefined}
                             >
-                              {error_time}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
+                              {error_section !== '' ? (error_section === 1 ? ' รพ.ร้อยเอ็ด' : ' เภสัชกรรม') : ''}
+                            </Button>
+                          </TableCell>
+                          <TableCell align="center" onClick={(e) => handleClickOpenModal(e, error_id)}>
+                            {error_date !== '' ? formatDateTime(error_date, 1) : ''}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            {error_time}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            {error_ward_name}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '300px',
+                            }}
+                          >
+                            {error_event}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '100px',
+                            }}
+                          >
+                            {sev ? (
+                              <Tooltip title={`${error_level}: ${sev.desc}`} arrow placement="top">
+                                <Chip label={error_level} size="small" sx={{ fontWeight: 700, borderRadius: '8px', minWidth: 32, ...sev.chipSx }} />
+                              </Tooltip>
+                            ) : (error_level || '-')}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '300px',
+                            }}
+                          >
+                            {error_clear}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            {error_analysis}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            {error_doctor}
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            {error_type_name}
+                          </TableCell>
+                          <TableCell
+                            align="left"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            {error_type_detail}
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            <Chip
+                              label={isHad ? 'HAD' : 'Non-HAD'}
+                              size="small"
+                              variant="filled"
+                              sx={{
+                                fontWeight: 600,
+                                borderRadius: '8px',
+                                fontSize: 11,
+                                ...(isHad
+                                  ? { bgcolor: '#FF4842', color: '#fff' }
+                                  : { bgcolor: 'rgba(100, 116, 139, 0.12)', color: '#475569' }),
                               }}
-                            >
-                              {error_ward_name}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '300px',
-                              }}
-                            >
-                              {error_event}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '100px',
-                              }}
-                            >
-                              {error_level}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '300px',
-                              }}
-                            >
-                              {error_clear}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
-                              }}
-                            >
-                              {error_analysis}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
-                              }}
-                            >
-                              {error_doctor}
-                            </TableCell>
-                            <TableCell
-                              align="center"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
-                              }}
-                            >
-                              {error_type_name}
-                            </TableCell>
-                            <TableCell
-                              align="left"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
-                              }}
-                            >
-                              {error_type_detail}
-                            </TableCell>
-                            <TableCell
-                              align="center"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
-                              }}
-                            >
-                              {error_alert}
-                            </TableCell>
-                            <TableCell
-                              align="center"
-                              onClick={(e) => handleClickOpenModal(e, error_id)}
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '200px',
-                              }}
-                            >
-                              {error_user_name}
-                            </TableCell>
-                            
-                            <TableCell align="right">
-                              {canManage && (
-                                <Tooltip title="จัดการ">
-                                  <IconButton
-                                    size="large"
-                                    color="info"
-                                    onClick={(event) => handleOpenMenu(event, error_id)}
-                                  >
-                                    <Iconify icon={'eva:settings-2-outline'} />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        </Tooltip>
+                            />
+                          </TableCell>
+                          <TableCell
+                            align="center"
+                            onClick={(e) => handleClickOpenModal(e, error_id)}
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '200px',
+                            }}
+                          >
+                            {error_user_name}
+                          </TableCell>
+
+                          <TableCell align="right">
+                            {canManage && (
+                              <Tooltip title="จัดการ">
+                                <IconButton
+                                  size="large"
+                                  color="info"
+                                  onClick={(event) => handleOpenMenu(event, error_id)}
+                                >
+                                  <Iconify icon={'eva:settings-2-outline'} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
                     {emptyRowsMedError > 0 && (
@@ -2513,7 +2695,6 @@ export default function MedErrorPage() {
                   )}
                 </Table>
               </TableContainer>
-            </Scrollbar>
 
             <TablePagination
               rowsPerPageOptions={[5, 10, 25, 100]}
@@ -2783,9 +2964,8 @@ export default function MedErrorPage() {
                                   <Typography variant="body2">
                                     {error_processing_right !== '' ? error_processing_right : '-'}
                                   </Typography>
-                                  <Typography variant="body2">{`จำนวนยา:  ${
-                                    error_processing_right_unit !== '' ? error_processing_right_unit : '-'
-                                  }`}</Typography>
+                                  <Typography variant="body2">{`จำนวนยา:  ${error_processing_right_unit !== '' ? error_processing_right_unit : '-'
+                                    }`}</Typography>
                                 </Item>
                               </Grid>
                               <Grid item xs={6} md={6}>
@@ -2794,9 +2974,8 @@ export default function MedErrorPage() {
                                   <Typography variant="body2">
                                     {error_processing_wrong !== '' ? error_processing_wrong : '-'}
                                   </Typography>
-                                  <Typography variant="body2">{`จำนวนที่จัดผิด:  ${
-                                    error_processing_wrong_unit !== '' ? error_processing_wrong_unit : '-'
-                                  }`}</Typography>
+                                  <Typography variant="body2">{`จำนวนที่จัดผิด:  ${error_processing_wrong_unit !== '' ? error_processing_wrong_unit : '-'
+                                    }`}</Typography>
                                 </Item>
                               </Grid>
                             </Grid>
@@ -2823,9 +3002,8 @@ export default function MedErrorPage() {
                                   <Typography variant="body2">
                                     {error_transcribing_right !== '' ? error_transcribing_right : '-'}
                                   </Typography>
-                                  <Typography variant="body2">{`จำนวนยา:  ${
-                                    error_transcribing_right_unit !== '' ? error_transcribing_right_unit : '-'
-                                  }`}</Typography>
+                                  <Typography variant="body2">{`จำนวนยา:  ${error_transcribing_right_unit !== '' ? error_transcribing_right_unit : '-'
+                                    }`}</Typography>
                                 </Item>
                               </Grid>
                               <Grid item xs={6} md={6}>
@@ -2834,9 +3012,8 @@ export default function MedErrorPage() {
                                   <Typography variant="body2">
                                     {error_transcribing_wrong !== '' ? error_transcribing_wrong : '-'}
                                   </Typography>
-                                  <Typography variant="body2">{`จำนวนที่จัดผิด:  ${
-                                    error_transcribing_wrong_unit !== '' ? error_transcribing_wrong_unit : '-'
-                                  }`}</Typography>
+                                  <Typography variant="body2">{`จำนวนที่จัดผิด:  ${error_transcribing_wrong_unit !== '' ? error_transcribing_wrong_unit : '-'
+                                    }`}</Typography>
                                 </Item>
                               </Grid>
                             </Grid>
