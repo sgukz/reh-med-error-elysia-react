@@ -1771,7 +1771,8 @@ MedErrorRoute.put('/likelihood', async ({
         items: t.Array(
             t.Object({
                 id: t.Number(),
-                group_id: t.Number(),
+                error_type: t.Number(),
+                group_id: t.Optional(t.Number()),
                 level_score: t.Number(),
                 min_freq: t.Number(),
                 max_freq: t.Union([t.Number(), t.Null()]),

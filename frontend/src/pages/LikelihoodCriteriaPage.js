@@ -59,32 +59,53 @@ const Toast = MySwal.mixin({
 // ============================================================================
 // Constants
 // ============================================================================
-const GROUP_CONFIG = {
+// แยกเกณฑ์ Likelihood เป็น 6 ตารางตามประเภท Error (error_type 1-6)
+const ERROR_TYPE_CONFIG = {
   1: {
-    title: 'Group 1',
-    short: 'Prescription error',
-    detail: 'ประเภทที่ 1 (Prescription)',
-    iconBg: 'rgba(13, 148, 136, 0.12)',
+    title: 'ประเภทที่ 1',
+    short: 'Prescription',
+    detail: 'การสั่งใช้ยา',
     iconColor: '#0d9488',
     gradient: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
   },
   2: {
-    title: 'Group 2',
-    short: 'Processing / Pre-Admin / Transcribing',
-    detail: 'ประเภทที่ 3, 5, 6',
-    iconBg: 'rgba(34, 197, 94, 0.12)',
-    iconColor: '#16a34a',
-    gradient: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
-  },
-  3: {
-    title: 'Group 3',
-    short: 'Dispensing / Administration error',
-    detail: 'ประเภทที่ 2, 4',
-    iconBg: 'rgba(245, 158, 11, 0.12)',
+    title: 'ประเภทที่ 2',
+    short: 'Dispensing',
+    detail: 'การจ่ายยา',
     iconColor: '#d97706',
     gradient: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
   },
+  3: {
+    title: 'ประเภทที่ 3',
+    short: 'Pre-Administration',
+    detail: 'ก่อนให้ยา',
+    iconColor: '#2563eb',
+    gradient: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+  },
+  4: {
+    title: 'ประเภทที่ 4',
+    short: 'Administration',
+    detail: 'การให้ยา',
+    iconColor: '#7c3aed',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+  },
+  5: {
+    title: 'ประเภทที่ 5',
+    short: 'Processing',
+    detail: 'การคีย์ / จัดเตรียม',
+    iconColor: '#16a34a',
+    gradient: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
+  },
+  6: {
+    title: 'ประเภทที่ 6',
+    short: 'Transcribing',
+    detail: 'การคัดลอกคำสั่ง',
+    iconColor: '#db2777',
+    gradient: 'linear-gradient(135deg, #db2777 0%, #ec4899 100%)',
+  },
 };
+
+const ERROR_TYPE_IDS = [1, 2, 3, 4, 5, 6];
 
 // score → label / color
 const SCORE_META = {
@@ -527,7 +548,7 @@ export default function LikelihoodCriteriaPage() {
       const res = await getLikelihoodCriteria(authToken);
       if (res.data.statusCode === 200) {
         const list = res.data.dataList || [];
-        const grouped = _.groupBy(list, 'group_id');
+        const grouped = _.groupBy(list, 'error_type');
         Object.keys(grouped).forEach((key) => {
           grouped[key].sort((a, b) => b.level_score - a.level_score);
         });
@@ -543,29 +564,29 @@ export default function LikelihoodCriteriaPage() {
     }
   };
 
-  const handleInputChange = (groupId, index, field, value) => {
+  const handleInputChange = (errorType, index, field, value) => {
     setCriteriaMap((prev) => {
       const nextMap = { ...prev };
-      const groupArray = [...nextMap[groupId]];
-      const item = { ...groupArray[index] };
+      const typeArray = [...nextMap[errorType]];
+      const item = { ...typeArray[index] };
       if (value === '') {
         item[field] = null;
       } else {
         const n = parseInt(value, 10);
         item[field] = Number.isFinite(n) ? Math.max(0, n) : null;
       }
-      groupArray[index] = item;
-      nextMap[groupId] = groupArray;
+      typeArray[index] = item;
+      nextMap[errorType] = typeArray;
       return nextMap;
     });
   };
 
-  // ===== Aggregate issues across all groups =====
+  // ===== Aggregate issues across all error types =====
   const allIssues = useMemo(() => {
     const result = {};
-    [1, 2, 3].forEach((gid) => {
-      const items = criteriaMap[gid] || [];
-      result[gid] = validateRanges(items);
+    ERROR_TYPE_IDS.forEach((tid) => {
+      const items = criteriaMap[tid] || [];
+      result[tid] = validateRanges(items);
     });
     return result;
   }, [criteriaMap]);
@@ -720,7 +741,9 @@ export default function LikelihoodCriteriaPage() {
             <Tabs
               value={activeTab}
               onChange={(_e, v) => setActiveTab(v)}
-              variant="fullWidth"
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsOnMobile
               sx={{
                 borderBottom: '1px solid rgba(145, 158, 171, 0.16)',
                 backgroundColor: 'rgba(240, 253, 250, 0.5)',
@@ -730,19 +753,20 @@ export default function LikelihoodCriteriaPage() {
                   fontSize: 14,
                   py: 1.5,
                   minHeight: 64,
+                  minWidth: 168,
                   color: 'text.secondary',
                 },
                 '& .Mui-selected': { color: '#0d9488 !important' },
                 '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0', backgroundColor: '#0d9488' },
               }}
             >
-              {[1, 2, 3].map((gid) => {
-                const cfg = GROUP_CONFIG[gid];
-                const issueCount = (allIssues[gid] || []).length;
+              {ERROR_TYPE_IDS.map((tid) => {
+                const cfg = ERROR_TYPE_CONFIG[tid];
+                const issueCount = (allIssues[tid] || []).length;
                 return (
                   <Tab
-                    key={gid}
-                    value={gid}
+                    key={tid}
+                    value={tid}
                     icon={
                       <Box
                         sx={{
@@ -759,7 +783,7 @@ export default function LikelihoodCriteriaPage() {
                           flexShrink: 0,
                         }}
                       >
-                        {gid}
+                        {tid}
                       </Box>
                     }
                     iconPosition="start"
@@ -767,10 +791,10 @@ export default function LikelihoodCriteriaPage() {
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <Box sx={{ textAlign: 'left' }}>
                           <Typography sx={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.2 }}>
-                            {cfg.title}: {cfg.short}
+                            {cfg.short}
                           </Typography>
                           <Typography sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-                            {cfg.detail}
+                            {cfg.title} · {cfg.detail}
                           </Typography>
                         </Box>
                         {issueCount > 0 && (

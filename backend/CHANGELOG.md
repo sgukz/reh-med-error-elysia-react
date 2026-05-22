@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-05-22
+
+### Added — แยกเกณฑ์ Likelihood เป็น 6 ตารางตามประเภท Error
+- เพิ่มคอลัมน์ `error_type` (1-6) ในตาราง `med_error_likelihood_criteria` แทนการ map ผ่าน 3 กลุ่ม (`group_id`) — แต่ละประเภท Error มีเกณฑ์ความถี่ของตัวเองแยกอิสระ
+- migration `2026-05-22_split_likelihood_criteria_by_error_type.sql` + runner — ขยายค่าจาก 3 กลุ่มเดิมเป็น 6 ประเภท (สืบทอดค่าเดิม: group1→type1, group3→type2&4, group2→type3&5&6) แบบ idempotent
+- `ReportModel.getReportSummary9` — ดึงเกณฑ์ด้วย `where('error_type', numType)` ตรง ๆ ไม่ต้อง map กลุ่มอีกต่อไป (คำนวณ Likelihood ต่อประเภทแม่นยำขึ้น)
+- `LikelihoodModel.getLikelihoodCriteria` — เรียงผลด้วย `error_type` asc, `level_score` desc
+
+### Security
+- A03:2021 Injection — `PUT /med-error/likelihood` body schema เพิ่ม `error_type: t.Number()` ผ่าน Elysia type validation; ทุก query ใช้ knex query builder (parameterized) ไม่มี string-concat
+- A04:2021 Insecure Design — `numType` ใช้ค่าที่ผ่าน `FIELD_MAP[numType]` (จำกัด 1-6) ก่อน query criteria
+- A08:2021 Software & Data Integrity — migration idempotent (`ADD COLUMN/KEY IF NOT EXISTS` + `INSERT IGNORE` ด้วย unique key `(error_type, level_score)`); คง `group_id` เดิมไว้เพื่อ rollback
+
 ## [1.10.1] - 2026-05-21
 
 ### Refactored

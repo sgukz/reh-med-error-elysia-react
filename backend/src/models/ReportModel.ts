@@ -291,22 +291,11 @@ export default class ReportModel {
         const db = this.db;
         const compare = Boolean(firstDateB && lastDateB);
 
-        // Determine group_id for Likelihood Criteria
-        // Group 1: 1 (Prescription)
-        // Group 2: 3, 5, 6 (Pre-Admin, Processing, Transcribing)
-        // Group 3: 2, 4 (Dispensing, Admin)
-        let groupId = 0;
-        if (numType === 1) groupId = 1;
-        else if ([3, 5, 6].includes(numType)) groupId = 2;
-        else if ([2, 4].includes(numType)) groupId = 3;
-
-        // Fetch criteria for the group
-        let criteriaList: any[] = [];
-        if (groupId > 0) {
-            criteriaList = await db('med_error_likelihood_criteria')
-                .where('group_id', groupId)
-                .orderBy('level_score', 'desc');
-        }
+        // Fetch Likelihood Criteria แยกตามประเภท Error โดยตรง (error_type 1-6)
+        // เดิม map เป็น 3 กลุ่ม — ตอนนี้แต่ละประเภทมีเกณฑ์ของตัวเอง
+        const criteriaList: any[] = await db('med_error_likelihood_criteria')
+            .where('error_type', numType)
+            .orderBy('level_score', 'desc');
 
         const selectCols: any[] = [
             'etl.type_id',

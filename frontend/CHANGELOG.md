@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2026-05-22
+
+### Added — หน้าจัดการเกณฑ์ Likelihood แยกตามประเภท Error (6 ตาราง)
+- **LikelihoodCriteriaPage** ([frontend/src/pages/LikelihoodCriteriaPage.js](frontend/src/pages/LikelihoodCriteriaPage.js))
+  - เปลี่ยนจาก 3 แท็บ (Group) เป็น **6 แท็บตามประเภท Error** (Prescription / Dispensing / Pre-Administration / Administration / Processing / Transcribing) — แต่ละประเภทมีเกณฑ์ความถี่ของตัวเอง
+  - `ERROR_TYPE_CONFIG` (6 สี/gradient แยกประเภท) แทน `GROUP_CONFIG`; group ข้อมูลด้วย `error_type` แทน `group_id`
+  - Tabs เป็น `variant="scrollable"` + scroll buttons รองรับ 6 แท็บบนจอแคบ; label กระชับ (ชื่อ EN + ประเภทที่ N + คำอธิบายไทย)
+  - validation ช่วงคะแนน (gap/overlap/missing) + visual range bar + บันทึกรวมทุกประเภทในปุ่มเดียว ทำงานครบ 6 ประเภท
+
+### Security
+- A03:2021 Injection — render ผ่าน React (escape อัตโนมัติ) ไม่มี `dangerouslySetInnerHTML`
+- ค่าที่กรอกผ่าน `Math.max(0, n)` กันค่าลบ/NaN ก่อนส่ง backend (เช็คซ้ำที่ backend อีกชั้น)
+
 ## [1.22.1] - 2026-05-21
 
 ### Fixed — Logout ไม่ล้าง HTTP-only cookie จริง

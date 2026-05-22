@@ -10,7 +10,7 @@ export default class LikelihoodModel {
 
     async getLikelihoodCriteria() {
         return await this.db('med_error_likelihood_criteria')
-            .orderBy('group_id', 'asc')
+            .orderBy('error_type', 'asc')
             .orderBy('level_score', 'desc');
     }
 
