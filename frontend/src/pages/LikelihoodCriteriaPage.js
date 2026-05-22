@@ -743,7 +743,6 @@ export default function LikelihoodCriteriaPage() {
               onChange={(_e, v) => setActiveTab(v)}
               variant="scrollable"
               scrollButtons="auto"
-              allowScrollButtonsOnMobile
               sx={{
                 borderBottom: '1px solid rgba(145, 158, 171, 0.16)',
                 backgroundColor: 'rgba(240, 253, 250, 0.5)',

@@ -2331,9 +2331,11 @@ export default function MedErrorPage() {
                     value={filterLevels}
                     onChange={(e, value) => setFilterLevels(value)}
                     renderOption={(props, option, { selected }) => {
+                      // eslint-disable-next-line react/prop-types
+                      const { key, ...optionProps } = props;
                       const sev = SEVERITY_COLORS[option.med_error_level_code];
                       return (
-                        <li {...props}>
+                        <li key={key} {...optionProps}>
                           <Checkbox checked={selected} size="small" sx={{ mr: 0.5 }} />
                           <Chip label={option.med_error_level_code} size="small" sx={{ mr: 1, fontWeight: 700, borderRadius: '8px', minWidth: 28, ...sev?.chipSx }} />
                           <Typography variant="body2" sx={{ fontSize: 12.5 }}>{sev?.desc || option.med_error_level_code}</Typography>

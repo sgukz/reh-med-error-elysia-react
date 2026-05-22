@@ -514,14 +514,18 @@ const ReportSummary8 = () => {
                   isOptionEqualToValue={(option, value) => option.med_error_depcode === value.med_error_depcode}
                   loading={loading}
                   size="small"
-                  renderOption={(props, option, { selected }) => (
-                    <li {...props}>
-                      <FormControlLabel
-                        control={<Checkbox checked={selected} size="small" />}
-                        label={<ListItemText primary={option.med_error_depname} primaryTypographyProps={{ fontSize: 13 }} />}
-                      />
-                    </li>
-                  )}
+                  renderOption={(props, option, { selected }) => {
+                    // eslint-disable-next-line react/prop-types
+                    const { key, ...optionProps } = props;
+                    return (
+                      <li key={key} {...optionProps}>
+                        <FormControlLabel
+                          control={<Checkbox checked={selected} size="small" />}
+                          label={<ListItemText primary={option.med_error_depname} primaryTypographyProps={{ fontSize: 13 }} />}
+                        />
+                      </li>
+                    );
+                  }}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -549,11 +553,15 @@ const ReportSummary8 = () => {
                   getOptionLabel={(option) => (option ? option.error_type_name : '')}
                   isOptionEqualToValue={(option, value) => (value ? option.error_type === value.error_type : false)}
                   size="small"
-                  renderOption={(props, option) => (
-                    <li {...props}>
-                      <ListItemText primary={option.error_type_name} primaryTypographyProps={{ fontSize: 13 }} />
-                    </li>
-                  )}
+                  renderOption={(props, option) => {
+                    // eslint-disable-next-line react/prop-types
+                    const { key, ...optionProps } = props;
+                    return (
+                      <li key={key} {...optionProps}>
+                        <ListItemText primary={option.error_type_name} primaryTypographyProps={{ fontSize: 13 }} />
+                      </li>
+                    );
+                  }}
                   renderInput={(params) => (
                     <TextField {...params} variant="outlined" label="ประเภท Error" placeholder="ทั้งหมด" />
                   )}
@@ -572,9 +580,11 @@ const ReportSummary8 = () => {
                   isOptionEqualToValue={(option, value) => option.med_error_level_code === value.med_error_level_code}
                   size="small"
                   renderOption={(props, option, { selected }) => {
+                    // eslint-disable-next-line react/prop-types
+                    const { key, ...optionProps } = props;
                     const sev = SEVERITY_COLORS[option.med_error_level_code];
                     return (
-                      <li {...props}>
+                      <li key={key} {...optionProps}>
                         <Checkbox checked={selected} size="small" sx={{ mr: 0.5 }} />
                         <Chip label={option.med_error_level_code} size="small" sx={{ mr: 1, fontWeight: 700, borderRadius: '8px', minWidth: 28, ...sev?.chipSx }} />
                         <Typography variant="body2" sx={{ fontSize: 12.5 }}>{sev?.desc || option.med_error_level_code}</Typography>

@@ -1,4 +1,10 @@
-﻿# Changelog
+# Changelog
+
+## [1.23.4] - 2026-05-22
+
+### Fixed
+- แก้ไขปัญหา Warning ใน Console เกี่ยวกับ React Key prop spread (`<li {...props}>`) ใน component `Autocomplete` ที่ใช้งานในหน้าข้อมูล Medication error และหน้ารายงานต่างๆ (ReportSummary 2, 3, 8) โดยทำการแยก `key` ออกจาก `props` ก่อนส่งต่อ
+- เพิ่ม `// eslint-disable-next-line react/prop-types` เพื่อข้ามการตรวจจับ prop types validation ของตัวแปร `key` ที่แยกออกมา
 
 ## [1.23.3] - 2026-05-22
 

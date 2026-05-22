@@ -261,14 +261,18 @@ const ReportSummary3 = () => {
                 isOptionEqualToValue={(option, value) => option.med_error_depcode === value.med_error_depcode}
                 loading={loading}
                 size="small"
-                renderOption={(props, option, { selected }) => (
-                  <li {...props}>
-                    <FormControlLabel
-                      control={<Checkbox checked={selected} />}
-                      label={<ListItemText primary={option.med_error_depname} />}
-                    />
-                  </li>
-                )}
+                renderOption={(props, option, { selected }) => {
+                  // eslint-disable-next-line react/prop-types
+                  const { key, ...optionProps } = props;
+                  return (
+                    <li key={key} {...optionProps}>
+                      <FormControlLabel
+                        control={<Checkbox checked={selected} />}
+                        label={<ListItemText primary={option.med_error_depname} />}
+                      />
+                    </li>
+                  );
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}

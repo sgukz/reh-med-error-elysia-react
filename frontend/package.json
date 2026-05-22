@@ -1,6 +1,6 @@
 {
   "name": "reh-med-error",
-  "version": "1.23.3",
+  "version": "1.23.4",
   "private": false,
   "scripts": {
     "start": "react-scripts start",
