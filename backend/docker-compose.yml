@@ -1,6 +1,6 @@
 services:
   rehAPIMedError:
-    image: sgukz/api-med-error-prod:1.11.0
+    image: sgukz/api-med-error-prod:1.11.1
     build:
       context: .
       dockerfile: ./Dockerfile

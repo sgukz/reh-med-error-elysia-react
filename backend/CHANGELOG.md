@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2026-05-22
+
+### Fixed
+- แก้ปัญหาการ Bind port 8003 ซ้ำซ้อนตอน deploy โดยปรับปรุง `rebuild.sh` ให้ค้นหาและปิด Docker container หรือโปรเซส Host (node/bun) ที่แย่งใช้พอร์ตดังกล่าวก่อนทำการสตาร์ท container ใหม่
+
+### Security
+- A04:2021 — ปิดช่องว่างของการแย่งใช้งานพอร์ต (Denial of Service) จากโปรเซสหรือคอนเทนเนอร์ที่ค้างอยู่เพื่อให้แน่ใจว่าระบบจะพร้อมใช้งานทันทีหลังจาก deploy
+
 ## [1.11.0] - 2026-05-22
 
 ### Added — แยกเกณฑ์ Likelihood เป็น 6 ตารางตามประเภท Error

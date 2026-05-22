@@ -16,7 +16,7 @@
    - **Tech Stack**: React 18, Material UI (MUI v5), React Hook Form, Zod, ApexCharts
    - **Package Manager**: [Bun](https://bun.sh/)
 
-2. **[Backend](./backend)** (`v1.11.0`): ระบบ API สำหรับจัดการข้อมูล
+2. **[Backend](./backend)** (`v1.11.1`): ระบบ API สำหรับจัดการข้อมูล
    - **Tech Stack**: [ElysiaJS](https://elysiajs.com/), TypeScript, MariaDB/MySQL (Knex)
    - **Runtime/Package Manager**: [Bun](https://bun.sh/)
 

@@ -42,6 +42,42 @@ echo "🐳 [3/3] กำลังรัน Docker Compose Build..."
 # ย้ายเข้าไปที่โฟลเดอร์ปลายทางก่อนรันคำสั่ง Docker
 cd "$DEST_DIR" || { echo "❌ ไม่สามารถเข้าไปที่โฟลเดอร์ $DEST_DIR ได้"; exit 1; }
 
+# โหลดค่าตัวแปรสภาวะแวดล้อมจาก .env เพื่อหาค่า PORT ที่ใช้งาน
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+# ตรวจสอบและแก้ไขปัญหาพอร์ตชนกัน (Port Already Allocated)
+PORT_TO_CHECK=${PORT:-8003}
+echo "🔍 ตรวจสอบพอร์ต $PORT_TO_CHECK..."
+
+# 3.1 ตรวจสอบและจัดการ Docker Container ที่ใช้พอร์ตนี้
+CONFLICTING_CONTAINERS=$(docker ps -a --filter "publish=$PORT_TO_CHECK" -q)
+if [ -n "$CONFLICTING_CONTAINERS" ]; then
+    echo "⚠️ พบ Docker container ที่ใช้งานพอร์ต $PORT_TO_CHECK (ID: $CONFLICTING_CONTAINERS)"
+    echo "🛑 กำลังหยุดและลบคอนเทนเนอร์เพื่อเคลียร์พอร์ต..."
+    docker stop $CONFLICTING_CONTAINERS 2>/dev/null || true
+    docker rm -f $CONFLICTING_CONTAINERS 2>/dev/null || true
+    sleep 2 # รอให้ระบบเครือข่ายเคลียร์พอร์ต
+fi
+
+# 3.2 ตรวจสอบโปรเซสบน Host เครื่องหลัก
+if command -v ss >/dev/null 2>&1; then
+    HOST_PID=$(ss -lptn "sport = :$PORT_TO_CHECK" | grep -o 'pid=[0-9]*' | cut -d= -f2)
+    if [ -n "$HOST_PID" ]; then
+        echo "⚠️ พบโปรเซสบน Host (PID: $HOST_PID) กำลังใช้งานพอร์ต $PORT_TO_CHECK"
+        ps -fp "$HOST_PID" 2>/dev/null || true
+        PROCESS_NAME=$(ps -p "$HOST_PID" -o comm= 2>/dev/null)
+        if [[ "$PROCESS_NAME" == *"node"* || "$PROCESS_NAME" == *"bun"* ]]; then
+            echo "🛑 กำลังหยุดโปรเซส $PROCESS_NAME (PID: $HOST_PID) บน Host เพื่อป้องกันการแย่งพอร์ต..."
+            kill -9 "$HOST_PID" 2>/dev/null || true
+            sleep 1
+        fi
+    fi
+fi
+
+docker compose down
+
 docker compose up -d --build
 
 echo "🎉 กระบวนการ Deploy เสร็จสมบูรณ์!"
