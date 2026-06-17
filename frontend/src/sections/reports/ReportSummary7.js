@@ -99,8 +99,10 @@ const ReportSummary7 = () => {
     setTimeout(() => {
       if (statusCode === 200 && !_.isEmpty(reportList)) {
         setDataReport(reportList);
-        setIsLoading(false);
+      } else {
+        setDataReport([]);
       }
+      setIsLoading(false);
     }, 1500);
   };
 

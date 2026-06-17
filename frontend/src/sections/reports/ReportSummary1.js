@@ -100,8 +100,10 @@ const ReportSummary1 = () => {
     setTimeout(() => {
       if (statusCode === 200 && !_.isEmpty(reportList)) {
         setDataReport(reportList);
-        setIsLoading(false);
+      } else {
+        setDataReport([]);
       }
+      setIsLoading(false);
     }, 1500);
   };
 
@@ -251,7 +253,7 @@ const ReportSummary1 = () => {
                     </TableCell>
                   </TableRow>
                 </TableBody>
-              ) : (
+              ) : dataReport.length > 0 ? (
                 <TableBody>
                   {dataReport.map((_report, index) => (
                     <StyledTableRow key={index}>
@@ -283,6 +285,14 @@ const ReportSummary1 = () => {
                       <TableCell align="center">{_report.non_had_i}</TableCell>
                     </StyledTableRow>
                   ))}
+                </TableBody>
+              ) : (
+                <TableBody>
+                  <TableRow>
+                    <TableCell align="center" colSpan={22}>
+                      <Typography variant="body1">{'ไม่พบข้อมูล'}</Typography>
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               )}
             </Table>
