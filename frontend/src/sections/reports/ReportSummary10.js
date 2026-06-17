@@ -386,8 +386,10 @@ const ReportSummary10 = () => {
     const sectionsForC = [
       { title: 'IPD (Non-HAD) อัตรา/1,000 วันนอน', wardGroup: 'IPD', alertField: 'nonHad', volumeField: 'ipd' },
       { title: 'IPD-HAD อัตรา/1,000 วันนอน', wardGroup: 'IPD', alertField: 'had', volumeField: 'ipd' },
+      { title: 'รวม IPD (HAD + Non-HAD) อัตรา/1,000 วันนอน', wardGroup: 'IPD', alertField: 'total', volumeField: 'ipd' },
       { title: 'OPD (Non-HAD) อัตรา/1,000 ใบสั่งยา', wardGroup: 'OPD', alertField: 'nonHad', volumeField: 'opd' },
       { title: 'OPD-HAD อัตรา/1,000 ใบสั่งยา', wardGroup: 'OPD', alertField: 'had', volumeField: 'opd' },
+      { title: 'รวม OPD (HAD + Non-HAD) อัตรา/1,000 ใบสั่งยา', wardGroup: 'OPD', alertField: 'total', volumeField: 'opd' },
     ];
     const sheetC = [];
     sectionsForC.forEach((sec) => {
@@ -550,8 +552,10 @@ const ReportSummary10 = () => {
     const sections = [
       { title: 'IPD (Non-HAD) — อัตราต่อ 1,000 วันนอน', wardGroup: 'IPD', alertField: 'nonHad', volumeField: 'ipd' },
       { title: 'IPD-HAD — อัตราต่อ 1,000 วันนอน', wardGroup: 'IPD', alertField: 'had', volumeField: 'ipd' },
+      { title: 'รวม IPD (HAD + Non-HAD) — อัตราต่อ 1,000 วันนอน', wardGroup: 'IPD', alertField: 'total', volumeField: 'ipd' },
       { title: 'OPD (Non-HAD) — อัตราต่อ 1,000 ใบสั่งยา', wardGroup: 'OPD', alertField: 'nonHad', volumeField: 'opd' },
       { title: 'OPD-HAD — อัตราต่อ 1,000 ใบสั่งยา', wardGroup: 'OPD', alertField: 'had', volumeField: 'opd' },
+      { title: 'รวม OPD (HAD + Non-HAD) — อัตราต่อ 1,000 ใบสั่งยา', wardGroup: 'OPD', alertField: 'total', volumeField: 'opd' },
     ];
     return sections.map((sec) => {
       const agg = aggregates[sec.wardGroup];

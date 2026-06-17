@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.24.1] - 2026-06-17
+
+### Added
+- เพิ่มการแสดงผลสี (Coloring) และการแทรกรูปภาพ (Image) ในไฟล์ Excel ที่ส่งออกจากหน้ารายงานแยกรายละเอียด Error (Report 9) โดยใช้ไลบรารี `exceljs`
+
+## [1.24.0] - 2026-06-17
+
+### Added
+- เพิ่มการแสดงผลตาราง "รวม IPD" และ "รวม OPD" ใน TABLE C บนหน้ารายงานสถิติจำนวนใบสั่งยา/วันนอน (Report 10) รวมถึงใน Excel Export
+- เพิ่มตาราง Risk Assessment Matrix ท้ายตารางบนหน้ารายงานแยกรายละเอียด Error (Report 9) รวมถึงใน Excel Export
+
+### Changed
+- ปรับสูตรคำนวณ Level ความเสี่ยงบนหน้ารายงานแยกรายละเอียด Error (Report 9) จากบวกเป็นคูณ (Impact × Likelihood) 
+- ปรับปรุงสีของ Level ให้สอดคล้องกับพิกัดในตาราง Risk Assessment Matrix (Low=เขียว, Medium=เหลือง, High=แดง)
+
 ## [1.23.6] - 2026-06-17
 
 ### Fixed
