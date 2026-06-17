@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.23.6] - 2026-06-17
+
+### Fixed
+- แก้ไข React Warning "Each child in a list should have a unique 'key' prop" ในหน้า ReportSummary3 โดยเปลี่ยนจากการใช้ Fragment เปล่า (`<>`) เป็น `<Fragment key={index}>`
+
 ## [1.23.5] - 2026-06-17
 
 ### Fixed

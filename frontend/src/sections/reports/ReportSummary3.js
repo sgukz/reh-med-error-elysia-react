@@ -395,8 +395,8 @@ const ReportSummary3 = () => {
                   )}
                   {dataReport.length > 0 &&
                     dataReport.map((_report, index) => (
-                      <>
-                        <StyledTableRow key={index}>
+                      <Fragment key={index}>
+                        <StyledTableRow>
                           <StyledTableCell2 idx={index}>
                             {_report?.med_error_depname}
                             <IconButton
@@ -595,7 +595,7 @@ const ReportSummary3 = () => {
                             </TableCell>
                           )}
                         </StyledTableRow>
-                      </>
+                      </Fragment>
                     ))}
                 </TableBody>
               )}
