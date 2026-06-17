@@ -42,7 +42,7 @@ import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
 import { getReportSummary6 } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
-import { formatDateTime, formatDateEN } from '../../utils/formatTime';
+import { formatDateTime, formatDateEN , formatDateRange} from '../../utils/formatTime';
 
 // ============================================================================
 // Constants
@@ -378,7 +378,7 @@ const ReportSummary6 = () => {
   // ป้ายช่วงเวลาที่กำลังแสดง (สำหรับ subtitle ใต้หัวข้อ)
   const filterSummary = useMemo(() => {
     const typeName = ERROR_TYPES.find((t) => t.id === errorType)?.name || 'ทั้งหมด';
-    const dateRange = `${formatDateTime(formatDateEN(firstDate), 1)} – ${formatDateTime(formatDateEN(lastDate), 1)}`;
+    const dateRange = formatDateRange(firstDate, lastDate);
     return { typeName, dateRange };
   }, [errorType, firstDate, lastDate]);
 
@@ -438,7 +438,7 @@ const ReportSummary6 = () => {
     // Sheet 1: สรุป
     const sheet1 = [
       ['สรุปอุบัติการณ์ที่ได้ RCA แล้ว'],
-      [`ช่วงวันที่: ${formatDateEN(firstDate)} ถึง ${formatDateEN(lastDate)}`],
+      [`${formatDateRange(firstDate, lastDate)}`],
       [`ประเภท Error: ${ERROR_TYPES.find((t) => t.id === errorType)?.name || 'ทั้งหมด'}`],
       [],
       ['รายการ', 'ค่า'],

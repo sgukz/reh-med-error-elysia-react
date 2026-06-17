@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import _ from 'lodash';
 // @mui
-import { useTheme, styled } from '@mui/material/styles';
+import { useTheme, styled, alpha } from '@mui/material/styles';
 
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Card from '@mui/material/Card';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
@@ -22,13 +23,13 @@ import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
+
 
 // DataPickerRange
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { th } from 'date-fns/locale';
-import dayjs from 'dayjs';
+
 
 // sections
 import { AppCurrentVisits, AppWidgetSummary } from '../sections/@dashboard/app';
@@ -37,6 +38,7 @@ import { AppCurrentVisits, AppWidgetSummary } from '../sections/@dashboard/app';
 import { verifyToken } from '../libs/Auth';
 // Lib MedError
 import { getSummaryFromMedError } from '../libs/MedError';
+import { formatDateRange } from '../utils/formatTime';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -84,30 +86,6 @@ function formatDate(date) {
   return `${formatDate.getFullYear()}-${toTwoDigits(formatDate.getMonth() + 1)}-${toTwoDigits(formatDate.getDate())}`;
 }
 
-function formatDateTHString(dateInput) {
-  const thaiMonths = [
-    'มกราคม',
-    'กุมภาพันธ์',
-    'มีนาคม',
-    'เมษายน',
-    'พฤษภาคม',
-    'มิถุนายน',
-    'กรกฎาคม',
-    'สิงหาคม',
-    'กันยายน',
-    'ตุลาคม',
-    'พฤศจิกายน',
-    'ธันวาคม',
-  ];
-  const date = dayjs(dateInput);
-
-  const day = date.date();
-  const monthName = thaiMonths[date.month()]; // index 0-11
-  const buddhistYear = date.year() + 543;
-
-  return `${day} ${monthName} ${buddhistYear}`;
-}
-
 const monthObj = [
   { labelMonth: 'มกราคม', firstDate: '01-01' },
   { labelMonth: 'กุมภาพันธ์', firstDate: '02-01' },
@@ -122,6 +100,20 @@ const monthObj = [
   { labelMonth: 'พฤศจิกายน', firstDate: '11-01' },
   { labelMonth: 'ธันวาคม', firstDate: '12-01' },
 ];
+
+
+// สีระดับความรุนแรง
+const SEVERITY_COLORS = {
+  A: { bg: 'rgba(148, 163, 184, 0.06)', chipSx: { bgcolor: '#94a3b8', color: '#fff' } },
+  B: { bg: 'rgba(34, 197, 94, 0.06)', chipSx: { bgcolor: '#22c55e', color: '#fff' } },
+  C: { bg: 'rgba(16, 185, 129, 0.06)', chipSx: { bgcolor: '#10b981', color: '#fff' } },
+  D: { bg: 'rgba(6, 182, 212, 0.06)', chipSx: { bgcolor: '#06b6d4', color: '#fff' } },
+  E: { bg: 'rgba(245, 158, 11, 0.10)', chipSx: { bgcolor: '#f59e0b', color: '#fff' } },
+  F: { bg: 'rgba(234, 88, 12, 0.10)', chipSx: { bgcolor: '#ea580c', color: '#fff' } },
+  G: { bg: 'rgba(239, 68, 68, 0.08)', chipSx: { bgcolor: '#ef4444', color: '#fff' } },
+  H: { bg: 'rgba(220, 38, 38, 0.10)', chipSx: { bgcolor: '#dc2626', color: '#fff' } },
+  I: { bg: 'rgba(127, 29, 29, 0.14)', chipSx: { bgcolor: '#7f1d1d', color: '#fff' } },
+};
 
 const columns = [
   {
@@ -173,6 +165,32 @@ export default function DashboardAppPage() {
     new Date(today.getFullYear(), today.getMonth(), 1) // วันที่ 1 ของเดือนนี้
   );
   const [lastDate, setLastDate] = useState(today);
+
+  const stats = useMemo(() => {
+    let totalErrors = 0;
+    let totalHad = 0;
+    let totalSevere = 0;
+
+    (rowLabels || []).forEach(row => {
+      if (row.error_level !== 'Total') {
+        const rowTotal = Number(row.total_all || 0);
+        totalErrors += rowTotal;
+
+        totalHad += Number(row.prescription_had || 0) + 
+                    Number(row.processing_had || 0) + 
+                    Number(row.dispensing_had || 0) + 
+                    Number(row.preadmin_had || 0) + 
+                    Number(row.admin_had || 0);
+
+        if (['E', 'F', 'G', 'H', 'I'].includes(row.error_level)) {
+          totalSevere += rowTotal;
+        }
+      }
+    });
+
+    return { totalErrors, totalHad, totalSevere };
+  }, [rowLabels]);
+
 
   const loadDashboardResult = useCallback(async (auth_token, monthAndYear) => {
     try {
@@ -394,34 +412,47 @@ export default function DashboardAppPage() {
             </Box>
           </Stack>
         </Box>
-        <Grid container spacing={3}>
+        
           <Grid container spacing={3}>
             <Grid item xs={12} sm={12} md={12}>
               <Box display="flex" alignItems="center" sx={{ pt: 3, pl: 3 }}>
-                <Typography variant="h6">จำนวน Medication Error</Typography>
+                <Typography variant="h6">ภาพรวมอุบัติการณ์ความคลาดเคลื่อนทางยา (Executive Summary)</Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={3} md={3}>
+            
+            <Grid item xs={12} sm={4} md={4}>
               <AppWidgetSummary
-                title="รายการ"
-                total={_.isEmpty(resultDashboard) ? 0 : resultDashboard[0].total}
+                title="อุบัติการณ์ทั้งหมด (รายการ)"
+                total={stats.totalErrors}
                 icon={'ant-design:fund-filled'}
+                color="info"
               />
             </Grid>
-            <Grid item xs={12} sm={9} md={9}>
+            <Grid item xs={12} sm={4} md={4}>
+              <AppWidgetSummary
+                title="กลุ่มยา High Alert Drugs (รายการ)"
+                total={stats.totalHad}
+                icon={'ant-design:alert-filled'}
+                color="warning"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4} md={4}>
+              <AppWidgetSummary
+                title="ความรุนแรงระดับ E-I (รายการ)"
+                total={stats.totalSevere}
+                icon={'ant-design:warning-filled'}
+                color="error"
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={12} md={12}>
               <AppCurrentVisits
-                title={`ข้อมูลวันที่ ${
-                  monthAndYearCurrent?.firstDate === monthAndYearCurrent?.lastDate
-                    ? formatDateTHString(monthAndYearCurrent?.firstDate)
-                    : `${formatDateTHString(monthAndYearCurrent?.firstDate)} - ${formatDateTHString(
-                        monthAndYearCurrent?.lastDate
-                      )}`
-                }`}
+                title={`สัดส่วนประเภทความคลาดเคลื่อน ${formatDateRange(monthAndYearCurrent?.firstDate, monthAndYearCurrent?.lastDate)}`}
                 chartData={_.isEmpty(resultDashboard) ? [] : resultDashboard[0].data}
                 chartColors={chartColors}
               />
             </Grid>
-          </Grid>
+          
 
           <Grid item xs={12} md={12} lg={12}>
             <Card>
@@ -429,247 +460,98 @@ export default function DashboardAppPage() {
                 <Stack direction={'column'}>
                   <Typography variant="h6">ตารางจำนวน Medication Error แยกตามความรุนแรง</Typography>
                   <Typography variant="body1" style={{ fontSize: 14 }}>
-                    {`ข้อมูลวันที่ ${
-                      monthAndYearCurrent?.firstDate === monthAndYearCurrent?.lastDate
-                        ? formatDateTHString(monthAndYearCurrent?.firstDate)
-                        : `${formatDateTHString(monthAndYearCurrent?.firstDate)} - ${formatDateTHString(
-                            monthAndYearCurrent?.lastDate
-                          )}`
-                    }`}
-                  </Typography>
+  {`ข้อมูล${formatDateRange(monthAndYearCurrent?.firstDate, monthAndYearCurrent?.lastDate)}`}
+</Typography>
                 </Stack>
               </Box>
-              <TableContainer component={Paper}>
-                <Table>
-                  {/* Table Header */}
+              <TableContainer sx={{ 
+                bgcolor: 'background.paper', 
+                boxShadow: (theme) => theme.customShadows.z8,
+                borderRadius: 2,
+                overflow: 'hidden',
+                border: (theme) => `1px solid ${theme.palette.divider}`
+              }}>
+                <Table sx={{ minWidth: 800 }}>
                   <TableHead>
-                    <TableRow>
-                      <StyledTableCell align="center" rowSpan={2}>
-                        ประเภท
+                    <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
+                      <StyledTableCell align="center" rowSpan={2} sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
+                        Level
                       </StyledTableCell>
                       {columns.map((col, index) => (
-                        <StyledTableCell key={index} align="center" colSpan={col.subColumns.length}>
+                        <StyledTableCell key={index} align="center" colSpan={col.subColumns.length} sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
                           {col.category}
                         </StyledTableCell>
                       ))}
-                      <StyledTableCell rowSpan={2}>Total</StyledTableCell>
+                      <StyledTableCell rowSpan={2} sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, bgcolor: (theme) => alpha(theme.palette.primary.dark, 0.8), color: '#fff !important' }}>Total</StyledTableCell>
                     </TableRow>
-                    <TableRow>
+                    <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) }}>
                       {columns.flatMap((col) =>
                         col.subColumns.map((sub, subIndex) => (
-                          <StyledTableCell key={`${col.category}-${subIndex}`} align="center">
+                          <StyledTableCell key={`${col.category}-${subIndex}`} align="center" sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, borderRight: subIndex === col.subColumns.length - 1 ? (theme) => `1px solid ${theme.palette.divider}` : 'none' }}>
                             {sub}
                           </StyledTableCell>
                         ))
                       )}
                     </TableRow>
                   </TableHead>
-
-                  {/* Table Body */}
                   <TableBody>
                     {(rowLabels || []).map((row, rowIndex) => {
-                      const label = row;
-                      return (
-                        <TableRow key={label?.error_level ?? rowIndex} sx={{ border: '1px solid #000' }}>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: 'bold' }}>
-                              {label?.error_level}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.prescription_had}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.prescription_nonhad}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: 'bold' }}>
-                              {label?.prescription_total}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.processing_had}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.processing_nonhad}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: 'bold' }}>
-                              {label?.processing_total}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.dispensing_had}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.dispensing_nonhad}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: 'bold' }}>
-                              {label?.dispensing_total}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.preadmin_had}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.preadmin_nonhad}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.preadmin_total}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.admin_had}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: rowIndex === 9 ? 'bold' : 'normal' }}>
-                              {label?.admin_nonhad}
-                            </Typography>
-                          </TableCell>
-                          <TableCell
-                            align="center"
-                            style={{
-                              backgroundColor: rowIndex === 9 ? theme.palette.primary.dark : theme.palette.common.white,
-                              color: rowIndex === 9 ? theme.palette.common.white : theme.palette.common.dark,
-                              border: '1px solid #000',
-                            }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: 'bold' }}>
-                              {label?.admin_total}
-                            </Typography>
-                          </TableCell>
+                      const isTotalRow = rowIndex === 9 || row?.error_level === 'Total';
+                      const sev = SEVERITY_COLORS[row?.error_level] || null;
+                      
+                      const cellStyle = {
+                        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                        py: 1.5,
+                      };
+                      
+                      const borderRightStyle = {
+                        ...cellStyle,
+                        borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+                      };
 
-                          <TableCell
-                            align="center"
-                            style={{ backgroundColor: theme.palette.primary.dark, color: theme.palette.common.white }}
-                          >
-                            <Typography variant="body1" style={{ fontWeight: 'bold' }}>
-                              {label?.total_all}
+                      const rowBg = isTotalRow ? (theme) => theme.palette.primary.dark : (sev ? sev.bg : 'transparent');
+                      const textColor = isTotalRow ? '#fff' : 'text.primary';
+
+                      return (
+                        <TableRow 
+                          hover={!isTotalRow}
+                          key={row?.error_level ?? rowIndex} 
+                          sx={{ 
+                            bgcolor: rowBg,
+                            transition: 'background-color 0.2s',
+                          }}
+                        >
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor }}>
+                            {isTotalRow ? (
+                              <Typography variant="subtitle1" fontWeight="bold">Total</Typography>
+                            ) : (
+                              <Chip label={row?.error_level} size="small" sx={{ fontWeight: 700, borderRadius: '8px', minWidth: 32, ...(sev?.chipSx || {}) }} />
+                            )}
+                          </TableCell>
+                          
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.prescription_had}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.prescription_nonhad}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.prescription_total}</TableCell>
+                          
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.processing_had}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.processing_nonhad}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.processing_total}</TableCell>
+                          
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.dispensing_had}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.dispensing_nonhad}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.dispensing_total}</TableCell>
+                          
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.preadmin_had}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.preadmin_nonhad}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.preadmin_total}</TableCell>
+                          
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.admin_had}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.admin_nonhad}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.admin_total}</TableCell>
+
+                          <TableCell align="center" sx={{ ...cellStyle, bgcolor: isTotalRow ? 'transparent' : (theme) => alpha(theme.palette.primary.main, 0.1), color: textColor }}>
+                            <Typography variant="subtitle2" fontWeight="bold">
+                              {row?.total_all}
                             </Typography>
                           </TableCell>
                         </TableRow>

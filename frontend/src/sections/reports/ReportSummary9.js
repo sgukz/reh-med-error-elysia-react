@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import _ from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -25,6 +25,7 @@ import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import { styled, alpha } from '@mui/material/styles';
+import { keyframes } from '@emotion/react';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -35,7 +36,7 @@ import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
 import { getReportSummary9 } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
-import { formatDateTime, formatDateEN } from '../../utils/formatTime';
+import { formatDateEN , formatDateRange} from '../../utils/formatTime';
 import { MedErrorTypeAll } from '../../data/DataMedError';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -102,17 +103,47 @@ const RISK_MATRIX = {
   1: { 1: 'Low', 2: 'Low', 3: 'Low', 4: 'Medium', 5: 'Medium' },
 };
 
+const getPulseAnim = (color) => keyframes`
+  0% { transform: scale(1); box-shadow: 0 0 0 0 ${alpha(color, 0.8)}; }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+`;
+
 // สีของ Level cell (Impact * Likelihood) ตาม Risk Matrix
-const getRiskLevelColor = (impact, likelihood) => {
-  if (!impact || !likelihood) return { backgroundColor: '#f5f5f5', color: '#9e9e9e' };
-  const risk = RISK_MATRIX[likelihood]?.[impact];
-  if (risk === 'Low') return { backgroundColor: '#4caf50', color: '#fff', fontWeight: 700 }; // green
-  if (risk === 'Medium') return { backgroundColor: '#ffeb3b', color: '#424242', fontWeight: 700 }; // yellow
-  if (risk === 'High') return { backgroundColor: '#f44336', color: '#fff', fontWeight: 800 }; // red
-  return { backgroundColor: '#f5f5f5', color: '#9e9e9e' };
+const getRiskLevelColor = (impact, likelihood, isHighlighted) => {
+  let style = { backgroundColor: '#f5f5f5', color: '#9e9e9e' };
+  let baseColor = '#9e9e9e';
+
+  if (impact && likelihood) {
+    const risk = RISK_MATRIX[likelihood]?.[impact];
+    if (risk === 'Low') {
+      baseColor = '#4caf50';
+      style = { backgroundColor: baseColor, color: '#fff', fontWeight: 700 };
+    }
+    if (risk === 'Medium') {
+      baseColor = '#ffeb3b';
+      style = { backgroundColor: baseColor, color: '#424242', fontWeight: 700 };
+    }
+    if (risk === 'High') {
+      baseColor = '#f44336';
+      style = { backgroundColor: baseColor, color: '#fff', fontWeight: 800 };
+    }
+  }
+  
+  if (isHighlighted) {
+    const borderColor = baseColor === '#9e9e9e' ? '#000' : baseColor;
+    return {
+      ...style,
+      animation: `${getPulseAnim(baseColor)} 1s infinite`,
+      border: `3px solid ${borderColor} !important`,
+      position: 'relative',
+      zIndex: 10,
+    };
+  }
+  return style;
 };
 
-const LevelChip = ({ impact, likelihood, level }) => {
+const LevelChip = ({ impact, likelihood, level, onClick }) => {
   if (level === null || level === undefined || Number.isNaN(level)) {
     return (
       <Chip
@@ -130,10 +161,11 @@ const LevelChip = ({ impact, likelihood, level }) => {
   if (risk === 'High') color = '#f44336';
 
   return (
-    <Tooltip title={`Risk Level: ${risk}`} arrow>
+    <Tooltip title={`Risk Level: ${risk} (คลิกเพื่อดูใน Matrix)`} arrow>
       <Chip
         size="small"
         label={level}
+        onClick={onClick}
         sx={{
           fontWeight: 800,
           fontSize: 12,
@@ -142,7 +174,9 @@ const LevelChip = ({ impact, likelihood, level }) => {
           color: risk === 'Medium' ? '#424242' : '#fff',
           backgroundColor: color,
           boxShadow: `0 2px 6px -2px ${alpha(color, 0.6)}`,
-          '&:hover': { backgroundColor: color, filter: 'brightness(1.05)' },
+          cursor: onClick ? 'pointer' : 'default',
+          '&:hover': { backgroundColor: color, filter: 'brightness(1.05)', transform: onClick ? 'scale(1.1)' : 'none' },
+          transition: 'all 0.2s',
         }}
       />
     </Tooltip>
@@ -152,11 +186,16 @@ LevelChip.propTypes = {
   impact: PropTypes.number,
   likelihood: PropTypes.number,
   level: PropTypes.number,
+  onClick: PropTypes.func,
 };
 
-const RiskAssessmentMatrix = () => {
+const RiskAssessmentMatrix = ({ highlightedRisk, matrixRef }) => {
+  const isMatch = (impact, likelihood) => {
+    return highlightedRisk?.impact === impact && highlightedRisk?.likelihood === likelihood;
+  };
+
   return (
-    <Box sx={{ mt: 4, mb: 2 }}>
+    <Box sx={{ mt: 4, mb: 2 }} ref={matrixRef}>
       <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#1565c0' }}>
         Risk Assessment Matrix
       </Typography>
@@ -169,47 +208,47 @@ const RiskAssessmentMatrix = () => {
               </TableCell>
               <TableCell sx={{ fontWeight: 600, backgroundColor: '#e0e0e0' }}>Certain</TableCell>
               <TableCell sx={{ fontWeight: 700, backgroundColor: '#e0e0e0' }}>5</TableCell>
-              <TableCell sx={getRiskLevelColor(1, 5)}>Medium (5)</TableCell>
-              <TableCell sx={getRiskLevelColor(2, 5)}>Medium (10)</TableCell>
-              <TableCell sx={getRiskLevelColor(3, 5)}>High (15)</TableCell>
-              <TableCell sx={getRiskLevelColor(4, 5)}>High (20)</TableCell>
-              <TableCell sx={getRiskLevelColor(5, 5)}>High (25)</TableCell>
+              <TableCell sx={getRiskLevelColor(1, 5, isMatch(1, 5))}>Medium (5)</TableCell>
+              <TableCell sx={getRiskLevelColor(2, 5, isMatch(2, 5))}>Medium (10)</TableCell>
+              <TableCell sx={getRiskLevelColor(3, 5, isMatch(3, 5))}>High (15)</TableCell>
+              <TableCell sx={getRiskLevelColor(4, 5, isMatch(4, 5))}>High (20)</TableCell>
+              <TableCell sx={getRiskLevelColor(5, 5, isMatch(5, 5))}>High (25)</TableCell>
             </TableRow>
             <TableRow>
               <TableCell sx={{ fontWeight: 600, backgroundColor: '#e0e0e0' }}>Common</TableCell>
               <TableCell sx={{ fontWeight: 700, backgroundColor: '#e0e0e0' }}>4</TableCell>
-              <TableCell sx={getRiskLevelColor(1, 4)}>Medium (4)</TableCell>
-              <TableCell sx={getRiskLevelColor(2, 4)}>Medium (8)</TableCell>
-              <TableCell sx={getRiskLevelColor(3, 4)}>Medium (12)</TableCell>
-              <TableCell sx={getRiskLevelColor(4, 4)}>High (16)</TableCell>
-              <TableCell sx={getRiskLevelColor(5, 4)}>High (20)</TableCell>
+              <TableCell sx={getRiskLevelColor(1, 4, isMatch(1, 4))}>Medium (4)</TableCell>
+              <TableCell sx={getRiskLevelColor(2, 4, isMatch(2, 4))}>Medium (8)</TableCell>
+              <TableCell sx={getRiskLevelColor(3, 4, isMatch(3, 4))}>Medium (12)</TableCell>
+              <TableCell sx={getRiskLevelColor(4, 4, isMatch(4, 4))}>High (16)</TableCell>
+              <TableCell sx={getRiskLevelColor(5, 4, isMatch(5, 4))}>High (20)</TableCell>
             </TableRow>
             <TableRow>
               <TableCell sx={{ fontWeight: 600, backgroundColor: '#e0e0e0' }}>Possible</TableCell>
               <TableCell sx={{ fontWeight: 700, backgroundColor: '#e0e0e0' }}>3</TableCell>
-              <TableCell sx={getRiskLevelColor(1, 3)}>Low (3)</TableCell>
-              <TableCell sx={getRiskLevelColor(2, 3)}>Medium (6)</TableCell>
-              <TableCell sx={getRiskLevelColor(3, 3)}>Medium (9)</TableCell>
-              <TableCell sx={getRiskLevelColor(4, 3)}>Medium (12)</TableCell>
-              <TableCell sx={getRiskLevelColor(5, 3)}>High (15)</TableCell>
+              <TableCell sx={getRiskLevelColor(1, 3, isMatch(1, 3))}>Low (3)</TableCell>
+              <TableCell sx={getRiskLevelColor(2, 3, isMatch(2, 3))}>Medium (6)</TableCell>
+              <TableCell sx={getRiskLevelColor(3, 3, isMatch(3, 3))}>Medium (9)</TableCell>
+              <TableCell sx={getRiskLevelColor(4, 3, isMatch(4, 3))}>Medium (12)</TableCell>
+              <TableCell sx={getRiskLevelColor(5, 3, isMatch(5, 3))}>High (15)</TableCell>
             </TableRow>
             <TableRow>
               <TableCell sx={{ fontWeight: 600, backgroundColor: '#e0e0e0' }}>Unlikely</TableCell>
               <TableCell sx={{ fontWeight: 700, backgroundColor: '#e0e0e0' }}>2</TableCell>
-              <TableCell sx={getRiskLevelColor(1, 2)}>Low (2)</TableCell>
-              <TableCell sx={getRiskLevelColor(2, 2)}>Low (4)</TableCell>
-              <TableCell sx={getRiskLevelColor(3, 2)}>Medium (6)</TableCell>
-              <TableCell sx={getRiskLevelColor(4, 2)}>Medium (8)</TableCell>
-              <TableCell sx={getRiskLevelColor(5, 2)}>Medium (10)</TableCell>
+              <TableCell sx={getRiskLevelColor(1, 2, isMatch(1, 2))}>Low (2)</TableCell>
+              <TableCell sx={getRiskLevelColor(2, 2, isMatch(2, 2))}>Low (4)</TableCell>
+              <TableCell sx={getRiskLevelColor(3, 2, isMatch(3, 2))}>Medium (6)</TableCell>
+              <TableCell sx={getRiskLevelColor(4, 2, isMatch(4, 2))}>Medium (8)</TableCell>
+              <TableCell sx={getRiskLevelColor(5, 2, isMatch(5, 2))}>Medium (10)</TableCell>
             </TableRow>
             <TableRow>
               <TableCell sx={{ fontWeight: 600, backgroundColor: '#e0e0e0' }}>Rare</TableCell>
               <TableCell sx={{ fontWeight: 700, backgroundColor: '#e0e0e0' }}>1</TableCell>
-              <TableCell sx={getRiskLevelColor(1, 1)}>Low (1)</TableCell>
-              <TableCell sx={getRiskLevelColor(2, 1)}>Low (2)</TableCell>
-              <TableCell sx={getRiskLevelColor(3, 1)}>Low (3)</TableCell>
-              <TableCell sx={getRiskLevelColor(4, 1)}>Medium (4)</TableCell>
-              <TableCell sx={getRiskLevelColor(5, 1)}>Medium (5)</TableCell>
+              <TableCell sx={getRiskLevelColor(1, 1, isMatch(1, 1))}>Low (1)</TableCell>
+              <TableCell sx={getRiskLevelColor(2, 1, isMatch(2, 1))}>Low (2)</TableCell>
+              <TableCell sx={getRiskLevelColor(3, 1, isMatch(3, 1))}>Low (3)</TableCell>
+              <TableCell sx={getRiskLevelColor(4, 1, isMatch(4, 1))}>Medium (4)</TableCell>
+              <TableCell sx={getRiskLevelColor(5, 1, isMatch(5, 1))}>Medium (5)</TableCell>
             </TableRow>
             <TableRow>
               <TableCell colSpan={2} sx={{ fontWeight: 700, backgroundColor: '#6a1b9a', color: '#fff', fontSize: 13 }}>
@@ -232,6 +271,10 @@ const RiskAssessmentMatrix = () => {
       </TableContainer>
     </Box>
   );
+};
+RiskAssessmentMatrix.propTypes = {
+  highlightedRisk: PropTypes.object,
+  matrixRef: PropTypes.object,
 };
 
 // สีของ Δ% — เพิ่ม=แดง, ลด=เขียว, 0/null=เทา
@@ -279,6 +322,17 @@ const ReportSummary9 = () => {
   const [errorTypeName, setErrorTypeName] = useState('');
   const [isCompareResult, setIsCompareResult] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [highlightedRisk, setHighlightedRisk] = useState(null);
+  const matrixRef = useRef(null);
+
+  const handleLevelClick = useCallback((impact, likelihood) => {
+    if (!impact || !likelihood) return;
+    setHighlightedRisk({ impact, likelihood });
+    if (matrixRef.current) {
+      matrixRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    // ไม่มีการเคลียร์อัตโนมัติ ให้อนิเมชันแสดงค้างไว้จนกว่าจะเลือกใหม่
+  }, []);
 
   const loadReport = useCallback(
     async (authToken, options) => {
@@ -475,15 +529,11 @@ const ReportSummary9 = () => {
 
     // Add Title rows at the top
     const exportPeriodALabel = firstDateA && lastDateA
-        ? formatDateEN(firstDateA) === formatDateEN(lastDateA)
-          ? `วันที่ ${formatDateTime(formatDateEN(firstDateA))}`
-          : `ระหว่างวันที่ ${formatDateTime(formatDateEN(firstDateA))} - ${formatDateTime(formatDateEN(lastDateA))}`
+        ? formatDateRange(firstDateA, lastDateA)
         : 'ข้อมูลทั้งหมด';
     
     const exportPeriodBLabel = isCompareResult && firstDateB && lastDateB
-        ? formatDateEN(firstDateB) === formatDateEN(lastDateB)
-          ? ` หรือ วันที่ ${formatDateTime(formatDateEN(firstDateB))}`
-          : ` หรือ ระหว่างวันที่ ${formatDateTime(formatDateEN(firstDateB))} - ${formatDateTime(formatDateEN(lastDateB))}`
+        ? ` หรือ ${formatDateRange(firstDateB, lastDateB)}`
         : '';
 
     sheet.spliceRows(1, 0,
@@ -681,15 +731,8 @@ const ReportSummary9 = () => {
     saveAs(new Blob([buffer]), fileName);
   };
 
-  const periodALabel =
-    formatDateEN(firstDateA) === formatDateEN(lastDateA)
-      ? formatDateTime(formatDateEN(firstDateA))
-      : `${formatDateTime(formatDateEN(firstDateA))} - ${formatDateTime(formatDateEN(lastDateA))}`;
-  const periodBLabel = isCompareResult
-    ? formatDateEN(firstDateB) === formatDateEN(lastDateB)
-      ? formatDateTime(formatDateEN(firstDateB))
-      : `${formatDateTime(formatDateEN(firstDateB))} - ${formatDateTime(formatDateEN(lastDateB))}`
-    : '';
+  const periodALabel = formatDateRange(firstDateA, lastDateA);
+  const periodBLabel = isCompareResult ? formatDateRange(firstDateB, lastDateB) : '';
 
   return (
     <Box>
@@ -914,7 +957,12 @@ const ReportSummary9 = () => {
                         <LikelihoodChip score={r.likelihood} />
                       </TableCell>
                       <TableCell align="center">
-                        <LevelChip impact={r.impact} likelihood={r.likelihood} level={r.level} />
+                        <LevelChip 
+                          impact={r.impact} 
+                          likelihood={r.likelihood} 
+                          level={r.level} 
+                          onClick={() => handleLevelClick(r.impact, r.likelihood)} 
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -943,7 +991,7 @@ const ReportSummary9 = () => {
         </TableContainer>
       </Scrollbar>
 
-      <RiskAssessmentMatrix />
+      <RiskAssessmentMatrix highlightedRisk={highlightedRisk} matrixRef={matrixRef} />
     </Box>
   );
 };

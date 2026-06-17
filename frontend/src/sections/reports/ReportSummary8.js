@@ -44,7 +44,7 @@ import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
 import { MedErrorLevel, MedErrorTypeAll } from '../../data/DataMedError';
 import { verifyToken } from '../../libs/Auth';
-import { formatDateTime, formatDateEN } from '../../utils/formatTime';
+import { formatDateTime, formatDateEN , formatDateRange} from '../../utils/formatTime';
 
 // ============================================================================
 // Constants
@@ -286,7 +286,7 @@ const ReportSummary8 = () => {
   // ============================================================================
   const filterSummary = useMemo(() => {
     const typeName = selectedErrorType ? selectedErrorType?.error_type_name : 'ทั้งหมด';
-    const dateRange = `${formatDateTime(formatDateEN(firstDate), 1)} – ${formatDateTime(formatDateEN(lastDate), 1)}`;
+    const dateRange = formatDateRange(firstDate, lastDate);
     return { typeName, dateRange };
   }, [selectedErrorType, firstDate, lastDate]);
 

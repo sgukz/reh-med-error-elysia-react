@@ -35,7 +35,7 @@ import Scrollbar from '../../components/scrollbar';
 import { verifyToken } from '../../libs/Auth';
 
 // Utils
-import { formatDateTime, formatDateEN } from '../../utils/formatTime';
+import { formatDateEN , formatDateRange} from '../../utils/formatTime';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -299,11 +299,7 @@ const ReportSummary3 = () => {
         <Stack direction={'column'} sx={{ mb: 2 }}>
           <Typography variant="h6">ตารางหน่วยงานที่เกิดอุบัติการณ์</Typography>
           <Typography variant="body1" style={{ fontSize: 14 }}>
-            {`ข้อมูลวันที่ ${
-              dateFilter?.firstDate === dateFilter?.lastDate
-                ? formatDateTime(dateFilter?.firstDate)
-                : `${formatDateTime(dateFilter?.firstDate)} - ${formatDateTime(dateFilter?.lastDate)}`
-            }`}
+            {`ข้อมูล${formatDateRange(dateFilter?.firstDate, dateFilter?.lastDate)}`}
           </Typography>
         </Stack>
         <Scrollbar>

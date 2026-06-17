@@ -5,7 +5,7 @@
 ## ✨ Key Features (คุณสมบัติหลัก)
 
 - **Medication Error Reporting**: บันทึกข้อมูลความคลาดเคลื่อนทางยาอย่างละเอียด (วันที่, เวลา, สถานที่, ประเภท Error, ระดับความรุนแรง)
-- **Dashboard & Analytics**: แสดงผลข้อมูลสรุปสำหรับผู้บริหาร (Executive Summary) และกราฟแสดงแนวโน้ม
+- **Dashboard & Analytics (v1.25.0+)**: แสดงผลข้อมูลสรุปสำหรับผู้บริหาร (Executive Summary) พร้อม Summary Cards แสดงจำนวนอุบัติการณ์ทั้งหมด, กลุ่มยา High Alert Drugs (HAD) และความรุนแรงระดับ E-I และกราฟแสดงแนวโน้ม
 - **Drug Pair Reports (v1.13.0+)**: รายงานคู่ยาคลาดเคลื่อนแยก "จัดคลาดเคลื่อน" และ "คีย์คลาดเคลื่อน" พร้อมจำนวนอุบัติการณ์เรียงจากมาก → น้อย
 - **Error Detail Report — Summary 9 (v1.15.0+, v1.20.0, v1.20.1)**: รายงานแยกรายละเอียด Error ตาม subtype พร้อม HAD/Non-HAD, **Impact (manual) + Likelihood (AUTO badge — Chip สีตามระดับ 0-5 + tooltip EN/TH) + Level color-coded**, รองรับ **เปรียบเทียบ 2 ช่วงเวลา (Δ%)** และ Export Excel
 - **Prescription/IPD Statistics — Summary 10 (v1.16.0+)**: สถิติจำนวนใบสั่งยา (OPD) / วันนอน (IPD) — 4 ตาราง + อัตราต่อ 1,000, Admin (rule=9) กรอกข้อมูลปริมาณรายเดือนได้ใน TABLE 0, Export Excel 4 sheets

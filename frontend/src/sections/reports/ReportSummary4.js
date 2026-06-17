@@ -29,7 +29,7 @@ import Scrollbar from '../../components/scrollbar';
 import Iconify from '../../components/iconify';
 import { getDrugPairSummary } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
-import { formatDateTime, formatDateEN } from '../../utils/formatTime';
+import { formatDateEN , formatDateRange} from '../../utils/formatTime';
 
 const PAIR_TABS = [
   { value: 'dispensing', label: 'คู่ยาที่จัดคลาดเคลื่อน' },
@@ -144,10 +144,7 @@ const ReportSummary4 = () => {
     XLSX.writeFile(workbook, fileName);
   };
 
-  const dateLabel =
-    dateFilter.firstDate === dateFilter.lastDate
-      ? formatDateTime(dateFilter.firstDate)
-      : `${formatDateTime(dateFilter.firstDate)} - ${formatDateTime(dateFilter.lastDate)}`;
+  const dateLabel = formatDateRange(dateFilter.firstDate, dateFilter.lastDate);
 
   return (
     <Box>

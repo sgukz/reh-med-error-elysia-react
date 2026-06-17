@@ -29,7 +29,7 @@ import Scrollbar from '../../components/scrollbar';
 import { verifyToken } from '../../libs/Auth';
 
 // Utils
-import { formatDateTime, formatDateEN } from '../../utils/formatTime';
+import { formatDateEN , formatDateRange} from '../../utils/formatTime';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -171,11 +171,7 @@ const ReportSummary5 = () => {
         <Stack direction={'column'} sx={{ mb: 2 }}>
           <Typography variant="h6">ตารางสรุปอุบัติการณ์ความคลาดเคลื่อนแยก OPD - IPD - ผลิต - คลัง</Typography>
           <Typography variant="body1" style={{ fontSize: 14 }}>
-            {`ข้อมูลวันที่ ${
-              dateFilter?.firstDate === dateFilter?.lastDate
-                ? formatDateTime(dateFilter?.firstDate)
-                : `${formatDateTime(dateFilter?.firstDate)} - ${formatDateTime(dateFilter?.lastDate)}`
-            }`}
+            {`ข้อมูล${formatDateRange(dateFilter?.firstDate, dateFilter?.lastDate)}`}
           </Typography>
         </Stack>
         <Scrollbar>

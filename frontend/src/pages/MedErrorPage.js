@@ -90,7 +90,7 @@ import {
 } from '../libs/MedError';
 
 // utils
-import { formatDateTime } from '../utils/formatTime';
+import { formatDateTime, formatDateRange } from '../utils/formatTime';
 import { AdapterDateFnsTH } from '../utils/AdapterDateFnsTH';
 
 // ============================================================================
@@ -2391,10 +2391,7 @@ export default function MedErrorPage() {
                   <Typography variant="body1">แสดงทั้งหมด</Typography>
                 ) : (
                   <Typography variant="body1">
-                    ข้อมูลวันที่{' '}
-                    {new Date(dateFilter.dateStart).getTime() === new Date(dateFilter.dateEnd).getTime()
-                      ? formatDateTime(dateFilter.dateStart)
-                      : `${formatDateTime(dateFilter.dateStart)} ถึง ${formatDateTime(dateFilter.dateEnd)}`}
+                    ข้อมูล{formatDateRange(dateFilter.dateStart, dateFilter.dateEnd)}
                   </Typography>
                 )}
 

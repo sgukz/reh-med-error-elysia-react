@@ -53,7 +53,7 @@ export default function UserListToolbar({ dateStart, dateEnd, filterName, onFilt
         <StyledSearch
           value={filterName}
           onChange={onFilterName}
-          placeholder="ค้นหา (ภายในตาราง)"
+          placeholder="ค้นหา"
           size="small"
           startAdornment={
             <InputAdornment position="start">
