@@ -179,6 +179,8 @@ cd frontend && npx eslint <files-ที่แก้>
 
 ### 2.3 Commit
 
+**⚠️ สำคัญมาก: ต้องสอบถามและรอการยืนยัน (Confirmation) จากผู้ใช้ (User) ก่อนทำการ Commit และ Push ทุกครั้ง ห้ามรันคำสั่ง git commit และ git push ไปเองโดยพลการเด็ดขาด**
+
 ```bash
 # 1. ดูสถานะ + diff + ประวัติ commit message
 git status
