@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.4] - 2026-07-22
+
+### Fixed
+- แก้ปัญหา TypeScript compile error (No overload matches this call) ใน `ReportModel.ts` โดยใช้ `db.raw('?', [Number(errorType)])` แทนการส่งค่าตัวเลขตรงๆ เข้า `.andOn()`
+
+### Security
+- OWASP A03:2021 (Injection) — ใช้ `db.raw` ร่วมกับ parameterized bindings `?` อย่างถูกต้องเพื่อป้องกัน SQL Injection ใน Join Clause
+
+
+## [1.11.3] - 2026-07-22
+
+### Fixed
+- Fixed TypeScript compile error in `ReportModel.ts` regarding `No overload matches this call` by using `.andOnVal` instead of `.andOn` for column-to-value joins.
+- Fixed TS5108 error in backend `tsconfig.json` by updating `moduleResolution` to `bundler`.
+
+### Security
+- OWASP A03:2021 — Used `.andOnVal` for safe query parameterization instead of raw casting when joining by specific value.
+
+## [1.11.2] - 2026-07-22
+
+### Added
+- อัปเดตเมธอด `getReportSummary9` ให้คำนวณและส่งข้อมูลจำนวนอุบัติการณ์แยกตามระดับความรุนแรง (Level A-I) 
+
+### Security
+- A03:2021 — ใช้ Parameterized Query และ Query Builder (Knex) ในการประมวลผลข้อมูล Level A-I ภายใน Backend เพื่อป้องกัน SQL Injection
+
 ## [1.11.1] - 2026-05-22
 
 ### Fixed

@@ -253,6 +253,16 @@ export const updateLikelihoodCriteria = (payload, auth_token) => {
 export const getReportSummary9 = buildReportSummary('summary9');
 export const getReportSummary10 = buildReportSummary('summary10');
 
+// POST /summary11 — รายงานวิเคราะห์สาเหตุ
+export function getReportSummary11(token, data) {
+  return axios({
+    method: API_METHOD.POST,
+    url: `${API_ROUTE.REPORT_MEDERROR}/summary11`,
+    headers: authHeader(token),
+    data,
+  });
+}
+
 // TABLE 0 ของ Summary10 — ดึงเฉพาะ stat_volume
 export function getStatVolume(token, { fiscalYear }) {
   return axios({

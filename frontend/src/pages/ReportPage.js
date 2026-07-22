@@ -28,6 +28,7 @@ import ReportSummary7 from '../sections/reports/ReportSummary7';
 import ReportSummary8 from '../sections/reports/ReportSummary8';
 import ReportSummary9 from '../sections/reports/ReportSummary9';
 import ReportSummary10 from '../sections/reports/ReportSummary10';
+import ReportSummary11 from '../sections/reports/ReportSummary11';
 
 export default function ReportPage() {
   const navigate = useNavigate();
@@ -103,43 +104,20 @@ export default function ReportPage() {
                 >
                   <Tab label="แยกตามสถานที่เกิดเหตุ" value="1" />
                   <Tab label="หน่วยงานที่เกิดอุบัติการณ์" value="3" />
-                  <Tab
-                    label={
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <span>คู่ยาคลาดเคลื่อน</span>
-                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
-                      </Stack>
-                    }
-                    value="4"
-                  />
+                  <Tab label="คู่ยาคลาดเคลื่อน" value="4" />
                   <Tab label="แยกการรายงานอุบัติการณ์ตามผู้รายงาน" value="7" />
                   <Tab label="รายงานความคลาดเคลื่อน" value="8" />
+                  <Tab label="รายงานแยกรายละเอียด Error" value="9" />
+                  <Tab label="สถิติจำนวนใบสั่งยา/วันนอน" value="10" />
+                  <Tab label="สรุปอุบัติการณ์ที่ได้ RCA แล้ว" value="6" />
                   <Tab
                     label={
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        <span>รายงานแยกรายละเอียด Error</span>
+                        <span>รายงานวิเคราะห์สาเหตุ</span>
                         <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
                       </Stack>
                     }
-                    value="9"
-                  />
-                  <Tab
-                    label={
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <span>สถิติจำนวนใบสั่งยา/วันนอน</span>
-                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
-                      </Stack>
-                    }
-                    value="10"
-                  />
-                  <Tab
-                    label={
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <span>สรุปอุบัติการณ์ที่ได้ RCA แล้ว</span>
-                        <Chip label="New" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />
-                      </Stack>
-                    }
-                    value="6"
+                    value="11"
                   />
                 </TabList>
               </Box>
@@ -173,10 +151,13 @@ export default function ReportPage() {
               <TabPanel value="10">
                 <ReportSummary10 />
               </TabPanel>
+              <TabPanel value="11">
+                <ReportSummary11 />
+              </TabPanel>
             </TabContext>
           </Box>
         </Card>
       </Container>
     </>
   );
-}
+} // trigger recompile

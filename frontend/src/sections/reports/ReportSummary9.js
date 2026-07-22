@@ -189,6 +189,44 @@ LevelChip.propTypes = {
   onClick: PropTypes.func,
 };
 
+const SEVERITY_COLORS = {
+  a: { bg: '#e3f2fd', text: '#0d47a1' },
+  b: { bg: '#bbdefb', text: '#0d47a1' },
+  c: { bg: '#c8e6c9', text: '#1b5e20' },
+  d: { bg: '#81c784', text: '#1b5e20' },
+  e: { bg: '#fff59d', text: '#f57f17' },
+  f: { bg: '#fbc02d', text: '#fff' },
+  g: { bg: '#ff9800', text: '#fff' },
+  h: { bg: '#f44336', text: '#fff' },
+  i: { bg: '#b71c1c', text: '#fff' },
+};
+
+const SeverityChip = ({ level, count, showZero = false }) => {
+  if (count === undefined || count === null || count === '') return '';
+  if ((count === 0 || count === '0') && !showZero) return '';
+  const meta = SEVERITY_COLORS[level.toLowerCase()] || { bg: '#f1f5f9', text: '#475569' };
+  return (
+    <Chip
+      size="small"
+      label={count}
+      sx={{
+        fontWeight: 700,
+        fontSize: 11,
+        borderRadius: '6px',
+        minWidth: 24,
+        height: 20,
+        color: meta.text,
+        backgroundColor: meta.bg,
+      }}
+    />
+  );
+};
+SeverityChip.propTypes = {
+  level: PropTypes.string,
+  count: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  showZero: PropTypes.bool,
+};
+
 const RiskAssessmentMatrix = ({ highlightedRisk, matrixRef }) => {
   const isMatch = (impact, likelihood) => {
     return highlightedRisk?.impact === impact && highlightedRisk?.likelihood === likelihood;
@@ -420,6 +458,15 @@ const ReportSummary9 = () => {
   // คำนวณ rows ที่มี derived fields (total, delta, level)
   const enrichedRows = useMemo(() => {
     return rows.map((r) => {
+      const levelsA = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].reduce((acc, l) => {
+        acc[`level_${l}_a`] = Number(r[`level_${l}_a`]) || 0;
+        return acc;
+      }, {});
+      const levelsB = isCompareResult ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].reduce((acc, l) => {
+        acc[`level_${l}_b`] = Number(r[`level_${l}_b`]) || 0;
+        return acc;
+      }, {}) : {};
+
       const hadA = Number(r.had_a) || 0;
       const nonHadA = Number(r.non_had_a) || 0;
       const totalA = Number(r.total_a) || 0;
@@ -433,6 +480,8 @@ const ReportSummary9 = () => {
       const deltaPct = isCompareResult ? calcDeltaPct(totalA, totalB) : null;
       return {
         ...r,
+        ...levelsA,
+        ...levelsB,
         hadA,
         nonHadA,
         totalA,
@@ -449,19 +498,31 @@ const ReportSummary9 = () => {
 
   // แถวผลรวม
   const totalsRow = useMemo(() => {
+    const initialTotals = { hadA: 0, nonHadA: 0, totalA: 0, hadB: 0, nonHadB: 0, totalB: 0 };
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+      initialTotals[`level_${l}_a`] = 0;
+      initialTotals[`level_${l}_b`] = 0;
+    });
+
     return enrichedRows.reduce(
       (acc, r) => {
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+          acc[`level_${l}_a`] += r[`level_${l}_a`] || 0;
+        });
         acc.hadA += r.hadA;
         acc.nonHadA += r.nonHadA;
         acc.totalA += r.totalA;
         if (isCompareResult) {
+          ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+            acc[`level_${l}_b`] += r[`level_${l}_b`] || 0;
+          });
           acc.hadB += r.hadB;
           acc.nonHadB += r.nonHadB;
           acc.totalB += r.totalB;
         }
         return acc;
       },
-      { hadA: 0, nonHadA: 0, totalA: 0, hadB: 0, nonHadB: 0, totalB: 0 }
+      initialTotals
     );
   }, [enrichedRows, isCompareResult]);
 
@@ -508,11 +569,19 @@ const ReportSummary9 = () => {
     // Define columns
     const columns = [
       { header: 'รายละเอียด Error', key: 'detail', width: 45 },
+    ];
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+      columns.push({ header: `${l.toUpperCase()} (A)`, key: `level_${l}_a`, width: 8 });
+    });
+    columns.push(
       { header: 'HAD (A)', key: 'hadA', width: 12 },
       { header: 'Non-HAD (A)', key: 'nonHadA', width: 15 },
       { header: 'รวม (A)', key: 'totalA', width: 12 },
-    ];
+    );
     if (isCompareResult) {
+      ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+        columns.push({ header: `${l.toUpperCase()} (B)`, key: `level_${l}_b`, width: 8 });
+      });
       columns.push(
         { header: 'HAD (B)', key: 'hadB', width: 12 },
         { header: 'Non-HAD (B)', key: 'nonHadB', width: 15 },
@@ -543,11 +612,11 @@ const ReportSummary9 = () => {
       []
     );
 
-    sheet.mergeCells('A1:D1');
+    sheet.mergeCells(1, 1, 1, columns.length);
     sheet.getCell('A1').font = { bold: true, size: 14 };
-    sheet.mergeCells('A2:D2');
+    sheet.mergeCells(2, 1, 2, columns.length);
     sheet.getCell('A2').font = { bold: true, size: 12, color: { argb: 'FF1565C0' } };
-    sheet.mergeCells('A3:D3');
+    sheet.mergeCells(3, 1, 3, columns.length);
     sheet.getCell('A3').font = { bold: true, size: 11 };
 
     // Header styling (now shifted to row 5)
@@ -569,7 +638,13 @@ const ReportSummary9 = () => {
         likelihood: r.likelihood ?? '',
         level: r.level ?? '',
       };
+      ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+        rowData[`level_${l}_a`] = r[`level_${l}_a`] || 0;
+      });
       if (isCompareResult) {
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+          rowData[`level_${l}_b`] = r[`level_${l}_b`] || 0;
+        });
         rowData.hadB = r.hadB;
         rowData.nonHadB = r.nonHadB;
         rowData.totalB = r.totalB;
@@ -580,7 +655,7 @@ const ReportSummary9 = () => {
       // Color the Level cell
       if (r.impact && r.likelihood && r.level) {
         const risk = RISK_MATRIX[r.likelihood]?.[r.impact];
-        const levelCell = row.getCell(isCompareResult ? 11 : 7);
+        const levelCell = row.getCell(isCompareResult ? 29 : 16);
         if (risk === 'Low') {
           levelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4CAF50' } };
           levelCell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
@@ -604,7 +679,13 @@ const ReportSummary9 = () => {
       likelihood: '',
       level: '',
     };
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+      totalsData[`level_${l}_a`] = totalsRow[`level_${l}_a`] || 0;
+    });
     if (isCompareResult) {
+      ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].forEach(l => {
+        totalsData[`level_${l}_b`] = totalsRow[`level_${l}_b`] || 0;
+      });
       totalsData.hadB = totalsRow.hadB;
       totalsData.nonHadB = totalsRow.nonHadB;
       totalsData.totalB = totalsRow.totalB;
@@ -864,12 +945,12 @@ const ReportSummary9 = () => {
                 <StyledTableCell rowSpan={2} sx={{ minWidth: 280 }}>
                   รายละเอียด Error
                 </StyledTableCell>
-                <StyledTableCell colSpan={3} align="center">
+                <StyledTableCell colSpan={12} align="center">
                   ช่วง A
                 </StyledTableCell>
                 {isCompareResult && (
                   <>
-                    <StyledTableCell colSpan={3} align="center" sx={{ backgroundColor: '#ed6c02' }}>
+                    <StyledTableCell colSpan={12} align="center" sx={{ backgroundColor: '#ed6c02' }}>
                       ช่วง B
                     </StyledTableCell>
                     <StyledTableCell rowSpan={2} align="center">
@@ -904,11 +985,21 @@ const ReportSummary9 = () => {
                 </StyledTableCell>
               </TableRow>
               <TableRow>
+                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].map(l => (
+                  <StyledTableCell key={l} align="center" sx={{ px: 0.5 }}>
+                    <SeverityChip level={l} count={l} showZero />
+                  </StyledTableCell>
+                ))}
                 <StyledTableCell align="center">HAD</StyledTableCell>
                 <StyledTableCell align="center">Non-HAD</StyledTableCell>
                 <StyledTableCell align="center">รวม</StyledTableCell>
                 {isCompareResult && (
                   <>
+                    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].map(l => (
+                      <StyledTableCell key={`${l}-b`} align="center" sx={{ backgroundColor: '#ed6c02', px: 0.5 }}>
+                        <SeverityChip level={l} count={l} showZero />
+                      </StyledTableCell>
+                    ))}
                     <StyledTableCell align="center" sx={{ backgroundColor: '#ed6c02' }}>HAD</StyledTableCell>
                     <StyledTableCell align="center" sx={{ backgroundColor: '#ed6c02' }}>Non-HAD</StyledTableCell>
                     <StyledTableCell align="center" sx={{ backgroundColor: '#ed6c02' }}>รวม</StyledTableCell>
@@ -919,14 +1010,14 @@ const ReportSummary9 = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={isCompareResult ? 11 : 7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={isCompareResult ? 29 : 16} align="center" sx={{ py: 4 }}>
                     <CircularProgress size={22} sx={{ mr: 1 }} />
                     <Typography variant="body2" component="span">กำลังโหลดข้อมูล...</Typography>
                   </TableCell>
                 </TableRow>
               ) : _.isEmpty(enrichedRows) ? (
                 <TableRow>
-                  <TableCell colSpan={isCompareResult ? 11 : 7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={isCompareResult ? 29 : 16} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" color="text.secondary">
                       ไม่มีข้อมูล / กรุณาเลือกประเภท Error แล้วเลือกช่วงวันที่
                     </Typography>
@@ -941,11 +1032,21 @@ const ReportSummary9 = () => {
                           {r.error_type_list} {r.error_type_list_detail}
                         </Typography>
                       </TableCell>
+                      {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].map(l => (
+                        <TableCell key={l} align="center" sx={{ px: 0.5 }}>
+                          <SeverityChip level={l} count={r[`level_${l}_a`]} />
+                        </TableCell>
+                      ))}
                       <TableCell align="center">{r.hadA || ''}</TableCell>
                       <TableCell align="center">{r.nonHadA || ''}</TableCell>
                       <TableCell align="center" sx={{ fontWeight: 600 }}>{r.totalA || ''}</TableCell>
                       {isCompareResult && (
                         <>
+                          {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].map(l => (
+                            <TableCell key={`${l}-b`} align="center" sx={{ backgroundColor: '#fff8e1', px: 0.5 }}>
+                              <SeverityChip level={l} count={r[`level_${l}_b`]} />
+                            </TableCell>
+                          ))}
                           <TableCell align="center" sx={{ backgroundColor: '#fff8e1' }}>{r.hadB || ''}</TableCell>
                           <TableCell align="center" sx={{ backgroundColor: '#fff8e1' }}>{r.nonHadB || ''}</TableCell>
                           <TableCell align="center" sx={{ fontWeight: 600, backgroundColor: '#fff8e1' }}>{r.totalB || ''}</TableCell>
@@ -969,11 +1070,21 @@ const ReportSummary9 = () => {
                   {/* แถว ผลรวม */}
                   <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                     <TableCell sx={{ fontWeight: 700 }}>ผลรวม</TableCell>
+                    {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].map(l => (
+                      <TableCell key={l} align="center" sx={{ px: 0.5 }}>
+                        <SeverityChip level={l} count={totalsRow[`level_${l}_a`]} showZero />
+                      </TableCell>
+                    ))}
                     <TableCell align="center" sx={{ fontWeight: 700 }}>{totalsRow.hadA}</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 700 }}>{totalsRow.nonHadA}</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 800 }}>{totalsRow.totalA}</TableCell>
                     {isCompareResult && (
                       <>
+                        {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].map(l => (
+                          <TableCell key={`${l}-b`} align="center" sx={{ backgroundColor: '#fff3e0', px: 0.5 }}>
+                            <SeverityChip level={l} count={totalsRow[`level_${l}_b`]} showZero />
+                          </TableCell>
+                        ))}
                         <TableCell align="center" sx={{ fontWeight: 700, backgroundColor: '#fff3e0' }}>{totalsRow.hadB}</TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, backgroundColor: '#fff3e0' }}>{totalsRow.nonHadB}</TableCell>
                         <TableCell align="center" sx={{ fontWeight: 800, backgroundColor: '#fff3e0' }}>{totalsRow.totalB}</TableCell>

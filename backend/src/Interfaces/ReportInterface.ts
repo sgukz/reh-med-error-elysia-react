@@ -134,3 +134,10 @@ export interface StatVolumeUpsertBody {
     }>;
     updated_by?: string;
 }
+
+// รายงานวิเคราะห์สาเหตุ — Summary 11
+export interface GetMedErrorSummary11Options {
+    dateStart: string; // YYYY-MM-DD
+    dateEnd: string;   // YYYY-MM-DD
+    errorType?: string | string[]; // Array of selected error types, or empty for all
+}

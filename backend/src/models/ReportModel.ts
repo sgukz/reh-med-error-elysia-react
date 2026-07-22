@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 
-import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary6Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options, GetMedErrorSummary10Options, StatVolumeUpsertBody } from '../Interfaces/ReportInterface'
+import { GetMedErrorSummary1Options, GetMedErrorSummary3Options, GetMedErrorSummary6Options, GetMedErrorSummary7Options, GetMedErrorSummary8Options, GetDrugPairReportOptions, GetMedErrorSummary9Options, GetMedErrorSummary10Options, GetMedErrorSummary11Options, StatVolumeUpsertBody } from '../Interfaces/ReportInterface'
 
 export default class ReportModel {
     private db: Knex;
@@ -316,6 +316,15 @@ export default class ReportModel {
                 `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? THEN 1 END) AS total_a`,
                 [firstDateA, lastDateA]
             ),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'A' THEN 1 END) AS level_a_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'B' THEN 1 END) AS level_b_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'C' THEN 1 END) AS level_c_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'D' THEN 1 END) AS level_d_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'E' THEN 1 END) AS level_e_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'F' THEN 1 END) AS level_f_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'G' THEN 1 END) AS level_g_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'H' THEN 1 END) AS level_h_a`, [firstDateA, lastDateA]),
+            db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'I' THEN 1 END) AS level_i_a`, [firstDateA, lastDateA]),
         ];
 
         if (compare) {
@@ -331,7 +340,16 @@ export default class ReportModel {
                 db.raw(
                     `COUNT(CASE WHEN m.error_date BETWEEN ? AND ? THEN 1 END) AS total_b`,
                     [firstDateB!, lastDateB!]
-                )
+                ),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'A' THEN 1 END) AS level_a_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'B' THEN 1 END) AS level_b_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'C' THEN 1 END) AS level_c_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'D' THEN 1 END) AS level_d_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'E' THEN 1 END) AS level_e_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'F' THEN 1 END) AS level_f_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'G' THEN 1 END) AS level_g_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'H' THEN 1 END) AS level_h_b`, [firstDateB!, lastDateB!]),
+                db.raw(`COUNT(CASE WHEN m.error_date BETWEEN ? AND ? AND m.error_level = 'I' THEN 1 END) AS level_i_b`, [firstDateB!, lastDateB!])
             );
         }
 
@@ -592,6 +610,68 @@ export default class ReportModel {
                 non_had_count: Number(r.non_had_count) || 0,
                 total_count: Number(r.total_count) || 0,
             }));
+    }
+
+    // รายงานวิเคราะห์สาเหตุ — Summary11
+    async getReportSummary11(options: GetMedErrorSummary11Options) {
+        const { dateStart, dateEnd, errorType } = options;
+        const db = this.db;
+
+        const selectCols: any[] = [
+            'a.error_analysis_name as error_analysis_name',
+            db.raw(
+                `COUNT(CASE WHEN m.error_alert = 'High Alert Drugs' THEN 1 END) AS had_count`
+            ),
+            db.raw(
+                `COUNT(CASE WHEN m.error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END) AS non_had_count`
+            ),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'A' THEN 1 END) AS level_a_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'B' THEN 1 END) AS level_b_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'C' THEN 1 END) AS level_c_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'D' THEN 1 END) AS level_d_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'E' THEN 1 END) AS level_e_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'F' THEN 1 END) AS level_f_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'G' THEN 1 END) AS level_g_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'H' THEN 1 END) AS level_h_count`),
+            db.raw(`COUNT(CASE WHEN m.error_level = 'I' THEN 1 END) AS level_i_count`),
+            db.raw(`COUNT(m.error_id) AS total_count`),
+        ];
+
+        const query = db('med_error_analysis as a')
+            .leftJoin('med_error as m', function () {
+                this.on('a.error_analysis_name', '=', 'm.error_analysis')
+                    .andOnBetween('m.error_date', [dateStart, dateEnd]);
+
+                if (errorType) {
+                    if (Array.isArray(errorType) && errorType.length > 0) {
+                        this.andOnIn('m.error_type', errorType.map(Number));
+                    } else if (typeof errorType === 'string' && errorType !== '') {
+                        this.andOn('m.error_type', '=', db.raw('?', [Number(errorType)]));
+                    }
+                }
+            })
+            .select(selectCols)
+            .where('a.is_active', 'Y');
+
+        const rows = await query
+            .groupBy('a.error_analysis_id', 'a.error_analysis_name')
+            .orderBy('a.error_analysis_id', 'asc');
+
+        return rows.map((r: any) => ({
+            error_analysis_name: r.error_analysis_name,
+            had_count: Number(r.had_count) || 0,
+            non_had_count: Number(r.non_had_count) || 0,
+            level_a_count: Number(r.level_a_count) || 0,
+            level_b_count: Number(r.level_b_count) || 0,
+            level_c_count: Number(r.level_c_count) || 0,
+            level_d_count: Number(r.level_d_count) || 0,
+            level_e_count: Number(r.level_e_count) || 0,
+            level_f_count: Number(r.level_f_count) || 0,
+            level_g_count: Number(r.level_g_count) || 0,
+            level_h_count: Number(r.level_h_count) || 0,
+            level_i_count: Number(r.level_i_count) || 0,
+            total_count: Number(r.total_count) || 0,
+        }));
     }
 
 }

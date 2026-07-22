@@ -953,5 +953,35 @@ ReportRoute.post('/stat-volume', async ({ jwt, set, request, body }: any) => {
     }
 });
 
+// POST /summary11 — รายงานวิเคราะห์สาเหตุ
+ReportRoute.post('/summary11', async ({ jwt, set, request, body }: any) => {
+    try {
+        const gate = await authGate(request.headers, jwt, set);
+        if (!gate.ok) return gate.body;
+
+        const { dateStart, dateEnd, errorType } = body as any;
+
+        if (!dateStart || !dateEnd) {
+            set.status = StatusCodes.BAD_REQUEST;
+            return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: 'Missing required params: dateStart, dateEnd' };
+        }
+
+        const rows = await reports.getReportSummary11({ dateStart, dateEnd, errorType });
+
+        set.status = StatusCodes.OK;
+        return {
+            statusCode: StatusCodes.OK,
+            reportList: rows || [],
+        };
+    } catch (error) {
+        console.error("[Report] summary11 error");
+        set.status = StatusCodes.INTERNAL_SERVER_ERROR;
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            statusMessage: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        };
+    }
+});
+
 export default ReportRoute
 
