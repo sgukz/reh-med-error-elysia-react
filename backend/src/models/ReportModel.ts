@@ -202,15 +202,20 @@ export default class ReportModel {
 
     // Using Report 6 — สรุปอุบัติการณ์ที่ได้ RCA แล้ว (is_rca = 'Y')
     async getReportSummary6(options: GetMedErrorSummary6Options) {
-        const { dateStart, dateEnd, errorType } = options;
+        const { dateStart, dateEnd, errorType, depGroupId, depCode } = options;
 
         const query = this.db('med_error as me')
+            .leftJoin('med_error_dept as d', 'me.error_ward', 'd.med_error_depcode')
+            .leftJoin('med_error_dep_group as dg', 'd.med_error_dep_group_id', 'dg.med_error_dep_group_id')
             .select(
                 'me.error_id',
                 'me.error_section',
                 this.db.raw("CONCAT(me.error_date, '') as error_date"),
                 'me.error_time',
+                'me.error_ward',
                 'me.error_ward_name',
+                'd.med_error_dep_group_id',
+                'dg.med_error_dep_group_detail as med_error_dep_group_name',
                 'me.error_event',
                 'me.error_level',
                 'me.error_level_detail',
@@ -248,6 +253,18 @@ export default class ReportModel {
             query.andWhere('me.error_type', numType);
         }
 
+        if (depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
+            query.where('d.med_error_dep_group_id', Number(depGroupId));
+        }
+
+        if (depCode) {
+            if (Array.isArray(depCode) && depCode.length > 0) {
+                query.whereIn('me.error_ward', depCode);
+            } else if (typeof depCode === 'string' && depCode !== '') {
+                query.where('me.error_ward', depCode);
+            }
+        }
+
         return await query;
     }
 
@@ -275,7 +292,7 @@ export default class ReportModel {
     // แต่ละแถว: ชื่อ subtype + HAD/Non-HAD/Total ของ Period A (+ Period B ถ้ามี) + Impact + Likelihood
     // Match subtype: m.<field_for_type> LIKE CONCAT(etl.error_type_list, ' %')
     async getReportSummary9(options: GetMedErrorSummary9Options) {
-        const { firstDateA, lastDateA, firstDateB, lastDateB, errorType } = options;
+        const { firstDateA, lastDateA, firstDateB, lastDateB, errorType, depGroupId, depCode } = options;
         const numType = Number(errorType);
         const FIELD_MAP: Record<number, string> = {
             1: 'error_prescription',
@@ -290,6 +307,21 @@ export default class ReportModel {
 
         const db = this.db;
         const compare = Boolean(firstDateB && lastDateB);
+
+        let wardCodesToFilter: any[] | null = null;
+        if (depCode) {
+            const rawCodes = Array.isArray(depCode) ? depCode : [depCode];
+            const filteredCodes = rawCodes.map(c => String(c).trim()).filter(Boolean);
+            if (filteredCodes.length > 0) {
+                wardCodesToFilter = filteredCodes;
+            }
+        }
+        if (!wardCodesToFilter && depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
+            const deptsInGroup = await db('med_error_dept')
+                .where('med_error_dep_group_id', Number(depGroupId))
+                .pluck('med_error_depcode');
+            wardCodesToFilter = deptsInGroup.length > 0 ? deptsInGroup : [-1];
+        }
 
         // Fetch Likelihood Criteria แยกตามประเภท Error โดยตรง (error_type 1-6)
         // เดิม map เป็น 3 กลุ่ม — ตอนนี้แต่ละประเภทมีเกณฑ์ของตัวเอง
@@ -358,6 +390,9 @@ export default class ReportModel {
             .leftJoin('med_error as m', function () {
                 this.on('m.error_type', '=', 'etl.error_type')
                     .andOn(db.raw(`m.${field} LIKE CONCAT(etl.error_type_list, ' %')`));
+                if (wardCodesToFilter) {
+                    this.andOnIn('m.error_ward', wardCodesToFilter);
+                }
             })
             .where('etl.error_type', numType)
             .andWhere('etl.is_active', 'Y')
@@ -404,13 +439,18 @@ export default class ReportModel {
 
     // Using Report Summary 8 
     async getReportSummary8(options: GetMedErrorSummary8Options) {
-        const { firstDate, lastDate, depCode, errorType, errorLevel, errorAlert } = options;
+        const { firstDate, lastDate, depCode, errorType, errorLevel, errorAlert, depGroupId } = options;
         const query = this.db('med_error as m')
+            .leftJoin('med_error_dept as d', 'm.error_ward', 'd.med_error_depcode')
+            .leftJoin('med_error_dep_group as dg', 'd.med_error_dep_group_id', 'dg.med_error_dep_group_id')
             .select(
                 this.db.raw('CONCAT(m.error_datetime) as med_error_datetime'),
                 this.db.raw('CONCAT(m.error_date) as med_error_date'),
                 'm.error_time',
+                'm.error_ward',
                 'm.error_ward_name',
+                'd.med_error_dep_group_id',
+                'dg.med_error_dep_group_detail as med_error_dep_group_name',
                 'm.error_event',
                 'm.error_level',
                 'm.error_clear',
@@ -446,9 +486,15 @@ export default class ReportModel {
             .whereBetween('m.error_date', [firstDate, lastDate])
             .orderBy('m.error_date', 'desc');
 
+        if (depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
+            query.where('d.med_error_dep_group_id', Number(depGroupId));
+        }
+
         if (depCode) {
-            if (Array.isArray(depCode)) {
+            if (Array.isArray(depCode) && depCode.length > 0) {
                 query.whereIn('m.error_ward', depCode);
+            } else if (typeof depCode === 'string' && depCode !== '') {
+                query.where('m.error_ward', depCode);
             }
         }
 
@@ -614,8 +660,23 @@ export default class ReportModel {
 
     // รายงานวิเคราะห์สาเหตุ — Summary11
     async getReportSummary11(options: GetMedErrorSummary11Options) {
-        const { dateStart, dateEnd, errorType } = options;
+        const { dateStart, dateEnd, errorType, depGroupId, depCode } = options;
         const db = this.db;
+
+        let wardCodesToFilter: any[] | null = null;
+        if (depCode) {
+            const rawCodes = Array.isArray(depCode) ? depCode : [depCode];
+            const filteredCodes = rawCodes.map(c => String(c).trim()).filter(Boolean);
+            if (filteredCodes.length > 0) {
+                wardCodesToFilter = filteredCodes;
+            }
+        }
+        if (!wardCodesToFilter && depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
+            const deptsInGroup = await db('med_error_dept')
+                .where('med_error_dep_group_id', Number(depGroupId))
+                .pluck('med_error_depcode');
+            wardCodesToFilter = deptsInGroup.length > 0 ? deptsInGroup : [-1];
+        }
 
         const selectCols: any[] = [
             'a.error_analysis_name as error_analysis_name',
@@ -648,6 +709,10 @@ export default class ReportModel {
                     } else if (typeof errorType === 'string' && errorType !== '') {
                         this.andOn('m.error_type', '=', db.raw('?', [Number(errorType)]));
                     }
+                }
+
+                if (wardCodesToFilter) {
+                    this.andOnIn('m.error_ward', wardCodesToFilter);
                 }
             })
             .select(selectCols)

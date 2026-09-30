@@ -20,10 +20,9 @@ import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { th } from 'date-fns/locale';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../../utils/AdapterDateFnsTH';
 
 import Scrollbar from '../../components/scrollbar';
 import Iconify from '../../components/iconify';
@@ -153,20 +152,24 @@ const ReportSummary4 = () => {
       </Stack>
 
       <Stack spacing={2} direction="row" sx={{ mb: 2, py: 3 }}>
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
+        <LocalizationProvider dateAdapter={AdapterDateFnsTH}>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <DatePicker
               label="วันที่"
               value={firstDate}
               onChange={handleFirstDateChange}
-              inputFormat="d MMMM yyyy" disableMaskedInput
+              inputFormat="d MMMM yyyy"
+              disableMaskedInput
+              renderDay={renderWeekendHighlightDay}
               renderInput={(params) => <TextField {...params} size="small" fullWidth readOnly />}
             />
             <DatePicker
               label="ถึงวันที่"
               value={lastDate}
               onChange={handleLastDateChange}
-              inputFormat="d MMMM yyyy" disableMaskedInput
+              inputFormat="d MMMM yyyy"
+              disableMaskedInput
+              renderDay={renderWeekendHighlightDay}
               renderInput={(params) => <TextField {...params} size="small" fullWidth readOnly />}
             />
           </Box>

@@ -27,12 +27,12 @@ import TableRow from '@mui/material/TableRow';
 
 // DataPickerRange
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { th } from 'date-fns/locale';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../utils/AdapterDateFnsTH';
 
 
 // sections
 import { AppCurrentVisits, AppWidgetSummary } from '../sections/@dashboard/app';
+import Scrollbar from '../components/scrollbar';
 
 // Lib Auth
 import { verifyToken } from '../libs/Auth';
@@ -52,55 +52,39 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   },
 }));
 
-function getFirstAndLastDateOfMonthShort(dateString) {
-  const date = new Date(dateString);
-  const today = new Date();
+function formatDate(date) {
+  const formatDateObj = new Date(date);
+  const toTwoDigits = (num) => (num < 10 ? `0${num}` : num);
+  return `${formatDateObj.getFullYear()}-${toTwoDigits(formatDateObj.getMonth() + 1)}-${toTwoDigits(formatDateObj.getDate())}`;
+}
 
-  // วันที่แรกของเดือนจาก dateString
-  const firstDate = new Date(date.getFullYear(), date.getMonth(), 1);
-
-  const formatShortDate = (d) => {
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${year}-${month}-${day}`;
-  };
-
+function getFiscalYearRange(fiscalYearBE) {
+  const fyNumber = Number(fiscalYearBE);
+  const ceEndYear = fyNumber - 543;
+  const ceStartYear = ceEndYear - 1;
+  const startDate = new Date(ceStartYear, 9, 1); // 1 ต.ค.
+  const endDate = new Date(ceEndYear, 8, 30);   // 30 ก.ย.
   return {
-    firstDate: formatShortDate(firstDate),
-    lastDate: formatShortDate(today),
+    startDate,
+    endDate,
+    firstDate: formatDate(startDate),
+    lastDate: formatDate(endDate),
   };
 }
 
-function getCurrentDateShort() {
+function getCurrentFiscalYearBE() {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const month = now.getMonth(); // 0 = Jan ... 9 = Oct
+  return month >= 9 ? year + 544 : year + 543;
 }
 
-function formatDate(date) {
-  const formatDate = new Date(date);
-  const toTwoDigits = (num) => (num < 10 ? `0${num}` : num);
-  return `${formatDate.getFullYear()}-${toTwoDigits(formatDate.getMonth() + 1)}-${toTwoDigits(formatDate.getDate())}`;
-}
 
-const monthObj = [
-  { labelMonth: 'มกราคม', firstDate: '01-01' },
-  { labelMonth: 'กุมภาพันธ์', firstDate: '02-01' },
-  { labelMonth: 'มีนาคม', firstDate: '03-01' },
-  { labelMonth: 'เมษายน', firstDate: '04-01' },
-  { labelMonth: 'พฤษภาคม', firstDate: '05-01' },
-  { labelMonth: 'มิถุนายน', firstDate: '06-01' },
-  { labelMonth: 'กรกฎาคม', firstDate: '07-01' },
-  { labelMonth: 'สิงหาคม', firstDate: '08-01' },
-  { labelMonth: 'กันยายน', firstDate: '09-01' },
-  { labelMonth: 'ตุลาคม', firstDate: '10-01' },
-  { labelMonth: 'พฤศจิกายน', firstDate: '11-01' },
-  { labelMonth: 'ธันวาคม', firstDate: '12-01' },
-];
-
+const formatCount = (val) => {
+  if (val === null || val === undefined || val === '') return '0';
+  const num = Number(val);
+  return Number.isNaN(num) ? val : num.toLocaleString();
+};
 
 // สีระดับความรุนแรง
 const SEVERITY_COLORS = {
@@ -121,10 +105,6 @@ const columns = [
     subColumns: ['HAD', 'Non-HAD', 'Total'],
   },
   {
-    category: 'Processing error',
-    subColumns: ['HAD', 'Non-HAD', 'Total'],
-  },
-  {
     category: 'Dispensing error',
     subColumns: ['HAD', 'Non-HAD', 'Total'],
   },
@@ -136,35 +116,35 @@ const columns = [
     category: 'Administration error',
     subColumns: ['HAD', 'Non-HAD', 'Total'],
   },
+  {
+    category: 'Processing error',
+    subColumns: ['HAD', 'Non-HAD', 'Total'],
+  },
+  {
+    category: 'Transcribing error',
+    subColumns: ['HAD', 'Non-HAD', 'Total'],
+  },
 ];
 
 export default function DashboardAppPage() {
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
   const theme = useTheme();
-  const today = new Date();
 
-  // เดือน / ปีปัจจุบัน
-  const currentMonth = today.getMonth(); // 0 - 11
-  const currentYear = today.getFullYear();
+  const currentFiscalYear = useMemo(() => getCurrentFiscalYearBE(), []);
+  const initialFYRange = useMemo(() => getFiscalYearRange(currentFiscalYear), [currentFiscalYear]);
 
-  const monthSelected = monthObj[currentMonth]?.firstDate;
-  const [selectedYear, setSelectedYear] = useState(currentYear + 543);
-
-  // helper เดิมของคุณยังใช้ได้
-  const [monthAndYearCurrent, setMonthAndYearCurrent] = useState(
-    getFirstAndLastDateOfMonthShort(getCurrentDateShort())
-  );
-
-  const [fiscalYear, setFiscalYear] = useState([String(currentYear + 543)]);
+  const [selectedYear, setSelectedYear] = useState(String(currentFiscalYear));
+  const [fiscalYear, setFiscalYear] = useState([String(currentFiscalYear)]);
   const [resultDashboard, setResultDashBoard] = useState([]);
   const [rowLabels, setRowLabels] = useState([]);
 
-  // ✅ ใช้ Date ตรง ๆ ไม่ต้อง dayjs ตรงนี้
-  const [firstDate, setFirstDate] = useState(
-    new Date(today.getFullYear(), today.getMonth(), 1) // วันที่ 1 ของเดือนนี้
-  );
-  const [lastDate, setLastDate] = useState(today);
+  const [firstDate, setFirstDate] = useState(initialFYRange.startDate);
+  const [lastDate, setLastDate] = useState(initialFYRange.endDate);
+  const [monthAndYearCurrent, setMonthAndYearCurrent] = useState({
+    firstDate: initialFYRange.firstDate,
+    lastDate: initialFYRange.lastDate,
+  });
 
   const stats = useMemo(() => {
     let totalErrors = 0;
@@ -172,17 +152,19 @@ export default function DashboardAppPage() {
     let totalSevere = 0;
 
     (rowLabels || []).forEach(row => {
-      if (row.error_level !== 'Total') {
+      const isTotal = String(row?.error_level).toUpperCase() === 'TOTAL';
+      if (!isTotal) {
         const rowTotal = Number(row.total_all || 0);
         totalErrors += rowTotal;
 
         totalHad += Number(row.prescription_had || 0) + 
-                    Number(row.processing_had || 0) + 
                     Number(row.dispensing_had || 0) + 
                     Number(row.preadmin_had || 0) + 
-                    Number(row.admin_had || 0);
+                    Number(row.admin_had || 0) + 
+                    Number(row.processing_had || 0) + 
+                    Number(row.transcribing_had || 0);
 
-        if (['E', 'F', 'G', 'H', 'I'].includes(row.error_level)) {
+        if (['E', 'F', 'G', 'H', 'I'].includes(String(row?.error_level).toUpperCase())) {
           totalSevere += rowTotal;
         }
       }
@@ -250,13 +232,18 @@ export default function DashboardAppPage() {
   const handleYearChange = useCallback(
     (event) => {
       const { value } = event.target;
-      const currentDateChanged = `${Number(value) - 543}-${monthSelected}`;
       setSelectedYear(value);
-      const monthAndYearCurrentResult = getFirstAndLastDateOfMonthShort(currentDateChanged);
-      setMonthAndYearCurrent(monthAndYearCurrentResult);
-      loadDashboardResult(token, monthAndYearCurrentResult);
+      const fyRange = getFiscalYearRange(value);
+      setFirstDate(fyRange.startDate);
+      setLastDate(fyRange.endDate);
+      const formatted = {
+        firstDate: fyRange.firstDate,
+        lastDate: fyRange.lastDate,
+      };
+      setMonthAndYearCurrent(formatted);
+      loadDashboardResult(token, formatted);
     },
-    [monthSelected, token, loadDashboardResult]
+    [token, loadDashboardResult]
   );
 
   const chartColors = useMemo(
@@ -266,6 +253,7 @@ export default function DashboardAppPage() {
       theme.palette.primary.main,
       theme.palette.info.main,
       theme.palette.success.main,
+      '#8e24aa',
     ],
     [theme]
   );
@@ -368,14 +356,16 @@ export default function DashboardAppPage() {
                 </Typography>
               </Box>
             </Box>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
+            <LocalizationProvider dateAdapter={AdapterDateFnsTH}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <DatePicker
                     label="เริ่มต้น"
                     value={firstDate}
                     onChange={handleFirstDateChange}
-                    inputFormat="d MMMM yyyy" disableMaskedInput
+                    inputFormat="d MMMM yyyy"
+                    disableMaskedInput
+                    renderDay={renderWeekendHighlightDay}
                     renderInput={(params) => (
                       <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
                     )}
@@ -384,7 +374,9 @@ export default function DashboardAppPage() {
                     label="สิ้นสุด"
                     value={lastDate}
                     onChange={handleLastDateChange}
-                    inputFormat="d MMMM yyyy" disableMaskedInput
+                    inputFormat="d MMMM yyyy"
+                    disableMaskedInput
+                    renderDay={renderWeekendHighlightDay}
                     renderInput={(params) => (
                       <TextField {...params} size="small" fullWidth onClick={params.inputProps.onClick} readOnly />
                     )}
@@ -464,14 +456,15 @@ export default function DashboardAppPage() {
 </Typography>
                 </Stack>
               </Box>
-              <TableContainer sx={{ 
-                bgcolor: 'background.paper', 
-                boxShadow: (theme) => theme.customShadows.z8,
-                borderRadius: 2,
-                overflow: 'hidden',
-                border: (theme) => `1px solid ${theme.palette.divider}`
-              }}>
-                <Table sx={{ minWidth: 800 }}>
+              <Scrollbar>
+                <TableContainer sx={{ 
+                  bgcolor: 'background.paper', 
+                  boxShadow: (theme) => theme.customShadows.z8,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  border: (theme) => `1px solid ${theme.palette.divider}`
+                }}>
+                  <Table sx={{ minWidth: 1100 }}>
                   <TableHead>
                     <TableRow sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
                       <StyledTableCell align="center" rowSpan={2} sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
@@ -496,7 +489,7 @@ export default function DashboardAppPage() {
                   </TableHead>
                   <TableBody>
                     {(rowLabels || []).map((row, rowIndex) => {
-                      const isTotalRow = rowIndex === 9 || row?.error_level === 'Total';
+                      const isTotalRow = rowIndex === 9 || String(row?.error_level).toUpperCase() === 'TOTAL';
                       const sev = SEVERITY_COLORS[row?.error_level] || null;
                       
                       const cellStyle = {
@@ -529,29 +522,33 @@ export default function DashboardAppPage() {
                             )}
                           </TableCell>
                           
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.prescription_had}</TableCell>
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.prescription_nonhad}</TableCell>
-                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.prescription_total}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.prescription_had)}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.prescription_nonhad)}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{formatCount(row?.prescription_total)}</TableCell>
                           
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.processing_had}</TableCell>
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.processing_nonhad}</TableCell>
-                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.processing_total}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.dispensing_had)}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.dispensing_nonhad)}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{formatCount(row?.dispensing_total)}</TableCell>
                           
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.dispensing_had}</TableCell>
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.dispensing_nonhad}</TableCell>
-                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.dispensing_total}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.preadmin_had)}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.preadmin_nonhad)}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{formatCount(row?.preadmin_total)}</TableCell>
                           
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.preadmin_had}</TableCell>
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.preadmin_nonhad}</TableCell>
-                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.preadmin_total}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.admin_had)}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.admin_nonhad)}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{formatCount(row?.admin_total)}</TableCell>
+
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.processing_had)}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.processing_nonhad)}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{formatCount(row?.processing_total)}</TableCell>
                           
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.admin_had}</TableCell>
-                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{row?.admin_nonhad}</TableCell>
-                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{row?.admin_total}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.transcribing_had)}</TableCell>
+                          <TableCell align="center" sx={{ ...cellStyle, color: textColor, fontWeight: isTotalRow ? 'bold' : 'normal' }}>{formatCount(row?.transcribing_nonhad)}</TableCell>
+                          <TableCell align="center" sx={{ ...borderRightStyle, color: textColor, fontWeight: 'bold' }}>{formatCount(row?.transcribing_total)}</TableCell>
 
                           <TableCell align="center" sx={{ ...cellStyle, bgcolor: isTotalRow ? 'transparent' : (theme) => alpha(theme.palette.primary.main, 0.1), color: textColor }}>
                             <Typography variant="subtitle2" fontWeight="bold">
-                              {row?.total_all}
+                              {formatCount(row?.total_all)}
                             </Typography>
                           </TableCell>
                         </TableRow>
@@ -560,6 +557,7 @@ export default function DashboardAppPage() {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </Scrollbar>
             </Card>
           </Grid>
         </Grid>

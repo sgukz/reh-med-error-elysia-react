@@ -24,10 +24,10 @@ import moment from 'moment';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
-
 import _ from 'lodash';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../../utils/AdapterDateFnsTH';
+
 import Iconify from '../../components/iconify';
 import {
   getMedErrorDeptBySection,
@@ -315,7 +315,8 @@ export default function MedErrorForm({ userLogin }) {
 
   // #ใช้งานอยู่
   const handleChangeDate = (event) => {
-    const dateValue = formatDate(event.$d);
+    const d = event?.$d || (event instanceof Date ? event : new Date(event));
+    const dateValue = formatDate(d);
     setFormRegister((prestate) => ({
       ...prestate,
       error_date: dateValue,
@@ -622,7 +623,7 @@ export default function MedErrorForm({ userLogin }) {
       </Stack>
       <Card>
         <Box component="form" noValidate autoComplete="off" onSubmit={onSubmitHandler} sx={{ py: 5, px: 5 }}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDateFnsTH}>
             <Stack spacing={3}>
               <InputLabel id="demo-simple-select-label">
                 <Typography variant="span" style={{ color: color }}>
@@ -631,7 +632,9 @@ export default function MedErrorForm({ userLogin }) {
               </InputLabel>
               <DesktopDatePicker
                 label="วัน/เดือน/ปี ที่พบเหตุการณ์"
-                inputFormat="DD/MM/YYYY"
+                inputFormat="d MMMM yyyy"
+                disableMaskedInput
+                renderDay={renderWeekendHighlightDay}
                 value={formRegister.error_date}
                 name="error_date"
                 onChange={handleChangeDate}

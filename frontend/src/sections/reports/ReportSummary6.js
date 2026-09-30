@@ -32,15 +32,18 @@ import Avatar from '@mui/material/Avatar';
 import InputAdornment from '@mui/material/InputAdornment';
 import Divider from '@mui/material/Divider';
 import ButtonGroup from '@mui/material/ButtonGroup';
+import Autocomplete from '@mui/material/Autocomplete';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import ListItemText from '@mui/material/ListItemText';
 import { styled, alpha } from '@mui/material/styles';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { th } from 'date-fns/locale';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../../utils/AdapterDateFnsTH';
 
 import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
-import { getReportSummary6 } from '../../libs/MedError';
+import { getReportSummary6, getMedErrorDeptBySection } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
 import { formatDateTime, formatDateEN , formatDateRange} from '../../utils/formatTime';
 
@@ -71,6 +74,31 @@ const SEVERITY_COLORS = {
   G: { bg: 'rgba(239, 68, 68, 0.08)',   label: 'G', chipSx: { bgcolor: '#ef4444', color: '#fff' }, desc: 'อันตรายถาวร' },
   H: { bg: 'rgba(220, 38, 38, 0.10)',   label: 'H', chipSx: { bgcolor: '#dc2626', color: '#fff' }, desc: 'เกือบเสียชีวิต' },
   I: { bg: 'rgba(127, 29, 29, 0.14)',   label: 'I', chipSx: { bgcolor: '#7f1d1d', color: '#fff' }, desc: 'เสียชีวิต' },
+};
+
+const getDeptGroupChipColor = (groupId) => {
+  switch (groupId) {
+    case 1:
+      return { backgroundColor: 'rgba(20, 184, 166, 0.15)', color: '#0d9488', border: '1px solid rgba(20, 184, 166, 0.4)', fontWeight: 600 };
+    case 2:
+      return { backgroundColor: 'rgba(79, 70, 229, 0.15)', color: '#4f46e5', border: '1px solid rgba(79, 70, 229, 0.4)', fontWeight: 600 };
+    case 3:
+      return { backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.4)', fontWeight: 600 };
+    case 4:
+      return { backgroundColor: 'rgba(244, 63, 94, 0.15)', color: '#e11d48', border: '1px solid rgba(244, 63, 94, 0.4)', fontWeight: 600 };
+    case 5:
+      return { backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#0891b2', border: '1px solid rgba(6, 182, 212, 0.4)', fontWeight: 600 };
+    case 6:
+      return { backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.4)', fontWeight: 600 };
+    case 7:
+      return { backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#7c3aed', border: '1px solid rgba(139, 92, 246, 0.4)', fontWeight: 600 };
+    case 8:
+      return { backgroundColor: 'rgba(236, 72, 153, 0.15)', color: '#db2777', border: '1px solid rgba(236, 72, 153, 0.4)', fontWeight: 600 };
+    case 9:
+      return { backgroundColor: 'rgba(217, 70, 239, 0.15)', color: '#c026d3', border: '1px solid rgba(217, 70, 239, 0.4)', fontWeight: 600 };
+    default:
+      return { backgroundColor: 'rgba(148, 163, 184, 0.15)', color: '#64748b', border: '1px solid rgba(148, 163, 184, 0.4)', fontWeight: 600 };
+  }
 };
 
 const HAD_LABEL = 'High Alert Drugs';
@@ -275,6 +303,34 @@ const ReportSummary6 = () => {
   const [firstDate, setFirstDate] = useState(startOfFiscalYear());
   const [lastDate, setLastDate] = useState(dayjs());
   const [errorType, setErrorType] = useState(0);
+
+  // Department filter state
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepGroup, setSelectedDepGroup] = useState('all');
+  const [selectedDeps, setSelectedDeps] = useState([]);
+  const [selectedDepCode, setSelectedDepCode] = useState([]);
+  const [loadingDept, setLoadingDept] = useState(false);
+
+  const groupOptions = useMemo(() => {
+    const map = new Map();
+    departments.forEach((d) => {
+      const id = Number(d.med_error_dep_group_id);
+      if (id && !map.has(id)) {
+        map.set(id, d.med_error_dep_group_detail || `กลุ่ม ${id}`);
+      }
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([id, label]) => ({ id, label }));
+  }, [departments]);
+
+  const availableDepartments = useMemo(() => {
+    if (!selectedDepGroup || selectedDepGroup === 'all') {
+      return departments;
+    }
+    return departments.filter((d) => Number(d.med_error_dep_group_id) === Number(selectedDepGroup));
+  }, [departments, selectedDepGroup]);
+
   const [token, setToken] = useState(null);
 
   const [data, setData] = useState([]);
@@ -318,12 +374,29 @@ const ReportSummary6 = () => {
     }
   }, []);
 
+  const fetchDepartments = useCallback(async (authToken) => {
+    if (!authToken) return;
+    setLoadingDept(true);
+    try {
+      const result = await getMedErrorDeptBySection(authToken, 'Y');
+      const { statusCode, departmentList } = result?.data ?? {};
+      if (statusCode === 200 && Array.isArray(departmentList)) {
+        setDepartments(departmentList);
+      }
+    } catch (_e) {
+      // silent
+    } finally {
+      setLoadingDept(false);
+    }
+  }, []);
+
   useEffect(() => {
     async function init() {
       const verify = await verifyToken(null);
       const { statusCode, profile, access_token } = verify ?? {};
       if (statusCode === 200 && profile && access_token) {
         setToken(access_token);
+        fetchDepartments(access_token);
         loadReport(access_token, {
           dateStart: formatDateEN(startOfFiscalYear()),
           dateEnd: formatDateEN(dayjs()),
@@ -338,31 +411,58 @@ const ReportSummary6 = () => {
   }, []);
 
   // Refire เมื่อเปลี่ยน filter
-  const triggerLoad = (nextFirst, nextLast, nextType) => {
+  const triggerLoad = (overrides = {}) => {
     if (!token) return;
+    const nextFirst = overrides.firstDate ?? firstDate;
+    const nextLast = overrides.lastDate ?? lastDate;
+    const nextType = overrides.errorType ?? errorType;
+    const nextGroup = overrides.depGroupId ?? selectedDepGroup;
+    const nextDepCode = overrides.depCode ?? selectedDepCode;
     if (!nextFirst || !nextLast) return;
-    loadReport(token, {
+    const params = {
       dateStart: formatDateEN(nextFirst),
       dateEnd: formatDateEN(nextLast),
       errorType: nextType ?? 0,
-    });
+    };
+    if (nextGroup && nextGroup !== 'all') {
+      params.depGroupId = nextGroup;
+    }
+    if (nextDepCode && nextDepCode.length > 0) {
+      params.depCode = Array.isArray(nextDepCode) ? nextDepCode.join(',') : nextDepCode;
+    }
+    loadReport(token, params);
   };
 
   const handleFirstDateChange = (d) => {
     setFirstDate(d);
     setPage(0);
-    triggerLoad(d, lastDate, errorType);
+    triggerLoad({ firstDate: d });
   };
   const handleLastDateChange = (d) => {
     setLastDate(d);
     setPage(0);
-    triggerLoad(firstDate, d, errorType);
+    triggerLoad({ lastDate: d });
   };
   const handleErrorTypeChange = (e) => {
-    const v = Number(e.target.value);
-    setErrorType(v);
+    const val = Number(e.target.value);
+    setErrorType(val);
     setPage(0);
-    triggerLoad(firstDate, lastDate, v);
+    triggerLoad({ errorType: val });
+  };
+  const handleChangeDepGroup = (event) => {
+    const val = event.target.value;
+    setSelectedDepGroup(val);
+    setSelectedDeps([]);
+    setSelectedDepCode([]);
+    setPage(0);
+    triggerLoad({ depGroupId: val, depCode: [] });
+  };
+  const handleChangeDeps = (_event, value) => {
+    setSelectedDeps(value);
+    const depCodes = value.map((item) => item.med_error_depcode);
+    setSelectedDepCode(depCodes);
+    setPage(0);
+    triggerLoad({ depCode: depCodes });
   };
 
   const applyPreset = (presetKey) => {
@@ -372,7 +472,7 @@ const ReportSummary6 = () => {
     setFirstDate(d1);
     setLastDate(d2);
     setPage(0);
-    triggerLoad(d1, d2, errorType);
+    triggerLoad({ firstDate: d1, lastDate: d2 });
   };
 
   // ป้ายช่วงเวลาที่กำลังแสดง (สำหรับ subtitle ใต้หัวข้อ)
@@ -389,7 +489,7 @@ const ReportSummary6 = () => {
     if (!search.trim()) return data;
     const q = search.trim().toLowerCase();
     return data.filter((r) => {
-      return [r.error_event, r.error_ward_name, r.rca_text, r.error_user_name, r.error_doctor, r.error_type_name, r.error_type_detail]
+      return [r.error_event, r.error_ward_name, r.med_error_dep_group_name, r.rca_text, r.error_user_name, r.error_doctor, r.error_type_name, r.error_type_detail]
         .some((v) => String(v || '').toLowerCase().includes(q));
     });
   }, [data, search]);
@@ -456,6 +556,7 @@ const ReportSummary6 = () => {
       ลำดับ: i + 1,
       'วันที่เกิดเหตุ': formatDateTime(r.error_date, 1),
       'เวลา': r.error_time || '',
+      'กลุ่มหน่วยงาน': r.med_error_dep_group_name || '',
       'สถานที่เกิดเหตุ': r.error_ward_name || '',
       'เหตุการณ์': r.error_event || '',
       'ระดับความรุนแรง': r.error_level || '',
@@ -583,8 +684,8 @@ const ReportSummary6 = () => {
           </Stack>
 
           {/* Row 2: Filters */}
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }} flexWrap="wrap" useFlexGap>
+            <LocalizationProvider dateAdapter={AdapterDateFnsTH}>
               <Stack direction="row" spacing={1.5} alignItems="center">
                 <DatePicker
                   label="วันที่เริ่ม"
@@ -592,11 +693,12 @@ const ReportSummary6 = () => {
                   onChange={handleFirstDateChange}
                   inputFormat="d MMMM yyyy"
                   disableMaskedInput
+                  renderDay={renderWeekendHighlightDay}
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       size="small"
-                      sx={{ minWidth: 170 }}
+                      sx={{ minWidth: 160 }}
                       onClick={params.inputProps.onClick}
                       InputProps={{ ...params.InputProps, readOnly: true }}
                     />
@@ -609,11 +711,12 @@ const ReportSummary6 = () => {
                   onChange={handleLastDateChange}
                   inputFormat="d MMMM yyyy"
                   disableMaskedInput
+                  renderDay={renderWeekendHighlightDay}
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       size="small"
-                      sx={{ minWidth: 170 }}
+                      sx={{ minWidth: 160 }}
                       onClick={params.inputProps.onClick}
                       InputProps={{ ...params.InputProps, readOnly: true }}
                     />
@@ -621,7 +724,7 @@ const ReportSummary6 = () => {
                 />
               </Stack>
             </LocalizationProvider>
-            <FormControl size="small" sx={{ minWidth: 200 }}>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
               <InputLabel id="error-type-label">ประเภท Error</InputLabel>
               <Select labelId="error-type-label" label="ประเภท Error" value={errorType} onChange={handleErrorTypeChange}>
                 {ERROR_TYPES.map((t) => (
@@ -629,6 +732,65 @@ const ReportSummary6 = () => {
                 ))}
               </Select>
             </FormControl>
+
+            {/* กลุ่มหน่วยงาน */}
+            <FormControl size="small" sx={{ minWidth: 190 }}>
+              <InputLabel id="rs6-dep-group-label">กลุ่มหน่วยงาน</InputLabel>
+              <Select
+                labelId="rs6-dep-group-label"
+                id="rs6-dep-group"
+                value={selectedDepGroup}
+                label="กลุ่มหน่วยงาน"
+                onChange={handleChangeDepGroup}
+              >
+                <MenuItem value="all">ทั้งหมด</MenuItem>
+                {groupOptions.map((g) => (
+                  <MenuItem key={g.id} value={g.id}>{g.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* หน่วยงาน (กรองตามกลุ่มหน่วยงานที่เลือก) */}
+            <Autocomplete
+              multiple
+              disableCloseOnSelect
+              options={availableDepartments}
+              value={selectedDeps}
+              onChange={handleChangeDeps}
+              getOptionLabel={(option) => option.med_error_depname}
+              isOptionEqualToValue={(option, value) => option.med_error_depcode === value.med_error_depcode}
+              loading={loadingDept}
+              size="small"
+              sx={{ minWidth: 220, maxWidth: 360 }}
+              renderOption={(props, option, { selected }) => {
+                // eslint-disable-next-line react/prop-types
+                const { key, ...optionProps } = props;
+                return (
+                  <li key={key} {...optionProps}>
+                    <FormControlLabel
+                      control={<Checkbox checked={selected} size="small" />}
+                      label={<ListItemText primary={option.med_error_depname} primaryTypographyProps={{ fontSize: 13 }} />}
+                    />
+                  </li>
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="เลือกหน่วยงาน"
+                  placeholder={selectedDepGroup !== 'all' ? 'เลือกในกลุ่มนี้' : 'ค้นหาหน่วยงาน'}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingDept && <CircularProgress color="inherit" size={20} />}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
           </Stack>
         </Stack>
       </Box>
@@ -767,7 +929,24 @@ const ReportSummary6 = () => {
                       <BodyCell sx={{ color: 'text.secondary', fontWeight: 500 }}>{page * rowsPerPage + i + 1}</BodyCell>
                       <BodyCell>{formatDateTime(r.error_date, 1)}</BodyCell>
                       <BodyCell>{r.error_time || ''}</BodyCell>
-                      <BodyCell>{r.error_ward_name || ''}</BodyCell>
+                      <BodyCell>
+                        <Typography variant="body2" sx={{ fontSize: 12.5, fontWeight: 600 }}>
+                          {r.error_ward_name || ''}
+                        </Typography>
+                        {r.med_error_dep_group_name && (
+                          <Box sx={{ mt: 0.4 }}>
+                            <Chip
+                              size="small"
+                              label={r.med_error_dep_group_name}
+                              sx={{
+                                height: 20,
+                                fontSize: '0.68rem',
+                                ...getDeptGroupChipColor(Number(r.med_error_dep_group_id)),
+                              }}
+                            />
+                          </Box>
+                        )}
+                      </BodyCell>
                       <BodyCell sx={{ maxWidth: 260 }}>
                         <Tooltip title={r.error_event || ''} arrow placement="top">
                           <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>

@@ -342,7 +342,7 @@ ReportRoute.get('/summary6', async ({
 }) => {
     try {
         const headers = request.headers
-        const { dateStart, dateEnd, errorType } = query as GetMedErrorSummary6Options
+        const { dateStart, dateEnd, errorType, depGroupId, depCode } = query as GetMedErrorSummary6Options
         const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
@@ -389,7 +389,22 @@ ReportRoute.get('/summary6', async ({
             return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: 'dateStart must be <= dateEnd' };
         }
 
-        const reportList = await reports.getReportSummary6({ dateStart, dateEnd, errorType })
+        const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
+            ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
+            : undefined;
+
+        const wordsDepCode = typeof depCode === "string"
+            ? depCode.split(",").map(s => s.trim()).filter(Boolean)
+            : Array.isArray(depCode) ? depCode : [];
+        const depCodeArr = wordsDepCode.length === 0 ? undefined : wordsDepCode;
+
+        const reportList = await reports.getReportSummary6({
+            dateStart,
+            dateEnd,
+            errorType,
+            depGroupId: parsedDepGroupId,
+            depCode: depCodeArr,
+        });
 
         // Build summary (analytics)
         const total = reportList.length;
@@ -534,7 +549,7 @@ ReportRoute.get('/summary8', async ({
 }) => {
     try {
         const headers = request.headers
-        const { firstDate, lastDate, depCode, errorType, errorLevel, errorAlert } = query as GetMedErrorSummary8Options
+        const { firstDate, lastDate, depCode, errorType, errorLevel, errorAlert, depGroupId } = query as GetMedErrorSummary8Options
         const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
@@ -585,7 +600,19 @@ ReportRoute.get('/summary8', async ({
 
             const errorAlertHAD = errorAlert && (errorAlert === 'N' || errorAlert === 'Y') ? HAD[errorAlert] : ''
 
-            const dataCondition = { firstDate, lastDate, depCode: depCodeArr, errorType, errorLevel: errorLevelCodeArr, errorAlert: errorAlertHAD }
+            const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
+                ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
+                : undefined;
+
+            const dataCondition = {
+                firstDate,
+                lastDate,
+                depGroupId: parsedDepGroupId,
+                depCode: depCodeArr,
+                errorType,
+                errorLevel: errorLevelCodeArr,
+                errorAlert: errorAlertHAD
+            }
 
             const GetMedErrorReportSummaryByDept = await reports.getReportSummary8(dataCondition)
 
@@ -622,7 +649,7 @@ ReportRoute.get('/summary9', async ({
 }) => {
     try {
         const headers = request.headers
-        const { firstDateA, lastDateA, firstDateB, lastDateB, errorType } = query as GetMedErrorSummary9Options
+        const { firstDateA, lastDateA, firstDateB, lastDateB, errorType, depGroupId, depCode } = query as GetMedErrorSummary9Options
         const token = readAuthTokenFromHeaders(headers)
         const clientId = headers.get("client-id")
         let originAllow = headers.get("origin");
@@ -674,7 +701,24 @@ ReportRoute.get('/summary9', async ({
         const numType = Number(errorType);
         const errorTypeName = ERROR_TYPE_NAMES[numType] || '';
 
-        const rows = await reports.getReportSummary9({ firstDateA, lastDateA, firstDateB, lastDateB, errorType });
+        const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
+            ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
+            : undefined;
+
+        const wordsDepCode = typeof depCode === "string"
+            ? depCode.split(",").map(s => s.trim()).filter(Boolean)
+            : Array.isArray(depCode) ? depCode : [];
+        const depCodeArr = wordsDepCode.length === 0 ? undefined : wordsDepCode;
+
+        const rows = await reports.getReportSummary9({
+            firstDateA,
+            lastDateA,
+            firstDateB,
+            lastDateB,
+            errorType,
+            depGroupId: parsedDepGroupId,
+            depCode: depCodeArr,
+        });
 
         set.status = StatusCodes.OK;
         return {
@@ -959,14 +1003,29 @@ ReportRoute.post('/summary11', async ({ jwt, set, request, body }: any) => {
         const gate = await authGate(request.headers, jwt, set);
         if (!gate.ok) return gate.body;
 
-        const { dateStart, dateEnd, errorType } = body as any;
+        const { dateStart, dateEnd, errorType, depGroupId, depCode } = body as any;
 
         if (!dateStart || !dateEnd) {
             set.status = StatusCodes.BAD_REQUEST;
             return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: 'Missing required params: dateStart, dateEnd' };
         }
 
-        const rows = await reports.getReportSummary11({ dateStart, dateEnd, errorType });
+        const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
+            ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
+            : undefined;
+
+        const wordsDepCode = typeof depCode === "string"
+            ? depCode.split(",").map(s => s.trim()).filter(Boolean)
+            : Array.isArray(depCode) ? depCode : [];
+        const depCodeArr = wordsDepCode.length === 0 ? undefined : wordsDepCode;
+
+        const rows = await reports.getReportSummary11({
+            dateStart,
+            dateEnd,
+            errorType,
+            depGroupId: parsedDepGroupId,
+            depCode: depCodeArr,
+        });
 
         set.status = StatusCodes.OK;
         return {

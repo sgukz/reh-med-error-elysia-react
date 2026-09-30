@@ -10,7 +10,7 @@ import Stack from '@mui/material/Stack';
 // Form Filter
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
-import { AdapterDateFnsTH } from '../../../utils/AdapterDateFnsTH';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../../../utils/AdapterDateFnsTH';
 // component
 import Iconify from '../../../components/iconify';
 
@@ -67,14 +67,18 @@ export default function UserListToolbar({ dateStart, dateEnd, filterName, onFilt
           <Stack direction="row" alignItems="center" spacing={2} sx={{ flexWrap: 'wrap', useFlexGap: true }}>
             <DesktopDatePicker
               label="ตั้งแต่วันที่"
-              inputFormat="d MMMM yyyy" disableMaskedInput
+              inputFormat="d MMMM yyyy"
+              disableMaskedInput
+              renderDay={renderWeekendHighlightDay}
               value={dateStart}
               onChange={(e) => onFilterDate(e, 'dateStart')}
               renderInput={(params) => <TextField {...params} size="small" />}
             />
             <DesktopDatePicker
               label="ถึงวันที่"
-              inputFormat="d MMMM yyyy" disableMaskedInput
+              inputFormat="d MMMM yyyy"
+              disableMaskedInput
+              renderDay={renderWeekendHighlightDay}
               value={dateEnd}
               onChange={(e) => onFilterDate(e, 'dateEnd')}
               renderInput={(params) => <TextField {...params} size="small" />}

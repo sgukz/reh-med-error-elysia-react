@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.5] - 2026-09-30
+
+### Added — Dashboard & Report Filters Enhancement
+- เพิ่มการสรุปและคำนวณ Error Type 6 (Transcribing Error) ใน `getSummaryFromMedError` และ `getErrorSummary` ของ `DashboardModel.ts` ครบทุกมิติ (`transcribing_error`, `transcribing_had`, `transcribing_nonhad`, `transcribing_total`)
+- เพิ่ม Transcribing Error ใน Donut chart breakdown ของ `DashboardRoute.ts`
+- เพิ่มฟังก์ชันและ parameter รองรับการกรองตามกลุ่มหน่วยงาน (`med_error_dep_group_id`) ใน `ReportModel.ts` และ `ReportRoute.ts`
+
+### Fixed
+- แก้ไขการคำนวณปีงบประมาณใน `getFiscalYearFromMedError()` ให้เป็นไปตามเกณฑ์ปีงบประมาณไทย (เดือน ต.ค. - ธ.ค. ใช้นับเป็นปีงบประมาณถัดไป: `YEAR + 544`, ม.ค. - ก.ย.: `YEAR + 543`)
+
+### Security
+- OWASP A03:2021 (Injection) — ทุก query ใน `DashboardModel` และ `ReportModel` ที่เพิ่มเข้ามาใช้ Parameterized bindings (`?`) และ Knex query builder ป้องกัน SQL Injection อย่างรัดกุม
+- OWASP A04:2021 (Insecure Design) — ทำ Type coercion และ sanitizer (`Number(id)`) กับ parameter `dep_group_id` ก่อนนำไปประกอบ query
+
 ## [1.11.4] - 2026-07-22
 
 ### Fixed

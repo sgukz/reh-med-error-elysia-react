@@ -1,6 +1,7 @@
 services:
   rehAPIMedError:
-    image: sgukz/api-med-error-prod:1.11.4
+    image: sgukz/api-med-error-prod:1.11.5
+    restart: unless-stopped
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -11,5 +12,11 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
+        max-size: "20m"
         max-file: "3"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
+networks:
+  default:
+    name: api-shared-net
+    external: true

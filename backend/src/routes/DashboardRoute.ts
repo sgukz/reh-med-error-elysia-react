@@ -90,7 +90,8 @@ DashboardRoute.get('/mederror', async ({
                             { label: 'Dispensing Error', value: Number(row.dispensing_error) },
                             { label: 'Pre-Adminstration Error', value: Number(row.pre_admin_error) },
                             { label: 'Adminstration Error', value: Number(row.admin_error) },
-                            { label: 'Processing Error', value: Number(row.processing_error) }
+                            { label: 'Processing Error', value: Number(row.processing_error) },
+                            { label: 'Transcribing Error', value: Number(row.transcribing_error) }
                         ]
                     }));
 

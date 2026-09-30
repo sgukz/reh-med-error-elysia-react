@@ -297,10 +297,11 @@ export function getDrugPairSummary(token, { firstDate, lastDate, pairType }) {
 
 // summary8 มีพารามิเตอร์ extra ที่ต้องส่งแม้ค่าว่างเพื่อ backend
 export function getReportSummary8(token, conditional) {
-  const { firstDate, lastDate, depCode, errorType, errorLevel, errorAlert } = conditional ?? {};
+  const { firstDate, lastDate, depCode, errorType, errorLevel, errorAlert, depGroupId } = conditional ?? {};
   const params = new URLSearchParams();
   if (firstDate) params.append('firstDate', firstDate);
   if (lastDate) params.append('lastDate', lastDate);
+  if (depGroupId && depGroupId !== 'all') params.append('depGroupId', depGroupId);
   if (depCode) params.append('depCode', depCode);
   if (errorLevel) params.append('errorLevel', errorLevel);
   params.append('errorType', errorType ?? '');

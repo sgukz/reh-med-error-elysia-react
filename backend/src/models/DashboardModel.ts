@@ -10,11 +10,22 @@ export default class DashboardModel {
   async getFiscalYearFromMedError() {
     return this.db('med_error')
       .select(
-        this.db.raw('YEAR(error_date) + 543 AS error_year')
+        this.db.raw(`
+          CASE 
+            WHEN MONTH(error_date) >= 10 
+              THEN YEAR(error_date) + 544
+            ELSE YEAR(error_date) + 543
+          END AS error_year
+        `)
       )
-      .groupByRaw('YEAR(error_date)')
+      .groupByRaw(`
+        CASE 
+          WHEN MONTH(error_date) >= 10 
+            THEN YEAR(error_date) + 544
+          ELSE YEAR(error_date) + 543
+        END
+      `)
       .orderBy('error_year', 'desc');
-
   }
 
   async getSummaryFromMedError(firstDate: Date, lastDate: Date): Promise<any[]> {
@@ -32,7 +43,8 @@ export default class DashboardModel {
         this.db.raw('COUNT(CASE WHEN error_type = 2 THEN 1 END) AS dispensing_error'),
         this.db.raw('COUNT(CASE WHEN error_type = 3 THEN 1 END) AS pre_admin_error'),
         this.db.raw('COUNT(CASE WHEN error_type = 4 THEN 1 END) AS admin_error'),
-        this.db.raw('COUNT(CASE WHEN error_type = 5 THEN 1 END) AS processing_error')
+        this.db.raw('COUNT(CASE WHEN error_type = 5 THEN 1 END) AS processing_error'),
+        this.db.raw('COUNT(CASE WHEN error_type = 6 THEN 1 END) AS transcribing_error')
       )
       .whereBetween('error_date', [firstDate, lastDate]) // ✅ Filter by date range
       .groupByRaw(`
@@ -80,6 +92,9 @@ export default class DashboardModel {
       .select(this.db.raw(`COALESCE(COUNT(CASE WHEN et.error_type = 5 AND me.error_alert = 'High Alert Drugs' THEN 1 END),0) AS processing_had`))
       .select(this.db.raw(`COALESCE(COUNT(CASE WHEN et.error_type = 5 AND me.error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END),0) AS processing_nonhad`))
       .select(this.db.raw(`COALESCE(COUNT(CASE WHEN et.error_type = 5 THEN 1 END),0) AS processing_total`))
+      .select(this.db.raw(`COALESCE(COUNT(CASE WHEN et.error_type = 6 AND me.error_alert = 'High Alert Drugs' THEN 1 END),0) AS transcribing_had`))
+      .select(this.db.raw(`COALESCE(COUNT(CASE WHEN et.error_type = 6 AND me.error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END),0) AS transcribing_nonhad`))
+      .select(this.db.raw(`COALESCE(COUNT(CASE WHEN et.error_type = 6 THEN 1 END),0) AS transcribing_total`))
       .select(this.db.raw(`COALESCE(COUNT(me.error_id), 0) AS total_all`))
       .groupBy('el.med_error_level_code');
 
@@ -106,6 +121,9 @@ export default class DashboardModel {
       .select(this.db.raw(`COUNT(CASE WHEN error_type = 5 AND error_alert = 'High Alert Drugs' THEN 1 END) AS processing_had`))
       .select(this.db.raw(`COUNT(CASE WHEN error_type = 5 AND error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END) AS processing_nonhad`))
       .select(this.db.raw(`COUNT(CASE WHEN error_type = 5 THEN 1 END) AS processing_total`))
+      .select(this.db.raw(`COUNT(CASE WHEN error_type = 6 AND error_alert = 'High Alert Drugs' THEN 1 END) AS transcribing_had`))
+      .select(this.db.raw(`COUNT(CASE WHEN error_type = 6 AND error_alert = 'ไม่ใช่ High Alert Drugs' THEN 1 END) AS transcribing_nonhad`))
+      .select(this.db.raw(`COUNT(CASE WHEN error_type = 6 THEN 1 END) AS transcribing_total`))
       .select(this.db.raw(`COUNT(*) AS total_all`));
 
     // Union ทั้งสอง subquery

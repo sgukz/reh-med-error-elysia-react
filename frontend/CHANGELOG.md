@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.25.5] - 2026-09-30
+
+### Added
+- เพิ่มการแสดงผล Error Type 6 (Transcribing Error) ในตารางสถิติและ Donut chart ในหน้า Executive Summary (`DashboardAppPage`)
+- ปรับปรุง Datepicker ทั้งหมดทั่วทั้งระบบ (Report 1-9, Report 11, MedErrorForm, MedErrorPage, UserListToolbar, DashboardAppPage) ให้เป็นรูปแบบเดียวกันตามหน้า Executive Summary:
+  - แสดงผลปี พ.ศ. (ไทย เช่น "1 ตุลาคม 2569") ผ่าน `AdapterDateFnsTH` ทั้งในช่องกรอก (Input field) และปฏิทิน (Header & Year view)
+  - Highlight วันเสาร์ (สีม่วง `#9333ea`) และวันอาทิตย์ (สีแดง `#ef4444`) พร้อม Soft Background และ Hover Effect ผ่าน `renderWeekendHighlightDay` ส่วนกลาง
+
+### Changed
+- ปรับฟอร์แมตตัวเลขในตาราง Medication Error ในหน้า Dashboard ให้ใส่เครื่องหมายจุลภาคคั่นหลักพัน (`formatCount`, เช่น `5,635`) อ่านง่ายขึ้น
+- เพิ่มการรองรับการเลือกและกรองตามกลุ่มหน่วยงาน (Department Group) ในหน้ารายงานต่างๆ (Report 6, 8, 9, 11) และแสดงผลใน Excel Export
+
+### Fixed
+- แก้ไขปัญหาตัวเลขอุบัติการณ์ทั้งหมด (Total) ในการ์ดสรุปหน้า Dashboard ถูกนับเบิ้ล (จากเคสเปรียบเทียบ `TOTAL` case-sensitive)
+- แก้ไขปัญหาการเปลี่ยน Dropdown "ปีงบประมาณ" ในหน้า Dashboard แล้ววันที่เริ่มต้น-สิ้นสุดใน Datepicker และข้อมูลในหน้าจอไม่อัปเดตตามปีงบประมาณที่เลือก
+
+### Security
+- OWASP A03:2021 (XSS) — การแสดงผลข้อมูลตัวเลขและชื่อกลุ่มหน่วยงานผ่าน React JSX มีการ auto-escape ปลอดภัยจากการ inject สคริปต์
+- OWASP A04:2021 (Input Validation) — มีการตรวจสอบค่าก่อนแปลงตัวเลข (`formatCount`) และทำ validation ช่วงวันที่ก่อนส่งเข้า API
+
 ## [1.25.4] - 2026-07-22
 
 ### Changed

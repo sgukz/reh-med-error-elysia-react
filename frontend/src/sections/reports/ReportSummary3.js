@@ -22,9 +22,8 @@ import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { th } from 'date-fns/locale';
 import dayjs from 'dayjs';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../../utils/AdapterDateFnsTH';
 
 import { getReportSummary2, getReportSummary3, getMedErrorDeptBySection } from '../../libs/MedError';
 
@@ -214,14 +213,16 @@ const ReportSummary3 = () => {
         <Typography variant="h6">หน่วยงานที่เกิดอุบัติการณ์</Typography>
       </Stack>
       <Stack spacing={2} direction={'row'} sx={{ mb: 2, py: 3 }}>
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
+        <LocalizationProvider dateAdapter={AdapterDateFnsTH}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
               <DatePicker
                 label="วันที่"
                 value={firstDate}
                 onChange={handleFirstDateChange}
-                inputFormat="d MMMM yyyy" disableMaskedInput
+                inputFormat="d MMMM yyyy"
+                disableMaskedInput
+                renderDay={renderWeekendHighlightDay}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -237,7 +238,9 @@ const ReportSummary3 = () => {
                 label="ถึงวันที่"
                 value={lastDate}
                 onChange={handleLastDateChange}
-                inputFormat="d MMMM yyyy" disableMaskedInput
+                inputFormat="d MMMM yyyy"
+                disableMaskedInput
+                renderDay={renderWeekendHighlightDay}
                 renderInput={(params) => (
                   <TextField
                     {...params}

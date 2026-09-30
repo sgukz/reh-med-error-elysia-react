@@ -24,17 +24,22 @@ import Autocomplete from '@mui/material/Autocomplete';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
+import ListItemText from '@mui/material/ListItemText';
 import { styled, alpha } from '@mui/material/styles';
 import { keyframes } from '@emotion/react';
 
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { th } from 'date-fns/locale';
 import dayjs from 'dayjs';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../../utils/AdapterDateFnsTH';
 
 import Iconify from '../../components/iconify';
 import Scrollbar from '../../components/scrollbar';
-import { getReportSummary9 } from '../../libs/MedError';
+import { getReportSummary9, getMedErrorDeptBySection } from '../../libs/MedError';
 import { verifyToken } from '../../libs/Auth';
 import { formatDateEN , formatDateRange} from '../../utils/formatTime';
 import { MedErrorTypeAll } from '../../data/DataMedError';
@@ -355,6 +360,48 @@ const ReportSummary9 = () => {
 
   const [selectedErrorType, setSelectedErrorType] = useState(MedErrorTypeAll[0]);
 
+  // Department filter state
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepGroup, setSelectedDepGroup] = useState('all');
+  const [selectedDeps, setSelectedDeps] = useState([]);
+  const [selectedDepCode, setSelectedDepCode] = useState([]);
+  const [loadingDept, setLoadingDept] = useState(false);
+
+  const groupOptions = useMemo(() => {
+    const map = new Map();
+    departments.forEach((d) => {
+      const id = Number(d.med_error_dep_group_id);
+      if (id && !map.has(id)) {
+        map.set(id, d.med_error_dep_group_detail || `กลุ่ม ${id}`);
+      }
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([id, label]) => ({ id, label }));
+  }, [departments]);
+
+  const availableDepartments = useMemo(() => {
+    if (!selectedDepGroup || selectedDepGroup === 'all') {
+      return departments;
+    }
+    return departments.filter((d) => Number(d.med_error_dep_group_id) === Number(selectedDepGroup));
+  }, [departments, selectedDepGroup]);
+
+  const depGroupDisplayLabel = useMemo(() => {
+    if (selectedDepGroup !== 'all') {
+      const g = groupOptions.find((item) => Number(item.id) === Number(selectedDepGroup));
+      const groupName = g?.label || `กลุ่ม ${selectedDepGroup}`;
+      if (selectedDeps.length > 0) {
+        return `${groupName} (${selectedDeps.map((d) => d.med_error_depname).join(', ')})`;
+      }
+      return groupName;
+    }
+    if (selectedDeps.length > 0) {
+      return `ทั้งหมด (${selectedDeps.map((d) => d.med_error_depname).join(', ')})`;
+    }
+    return 'ทั้งหมด';
+  }, [selectedDepGroup, groupOptions, selectedDeps]);
+
   const [token, setToken] = useState(null);
   const [rows, setRows] = useState([]);
   const [errorTypeName, setErrorTypeName] = useState('');
@@ -384,6 +431,14 @@ const ReportSummary9 = () => {
           firstDateA: periodA.firstDate,
           lastDateA: periodA.lastDate,
         };
+        const currentGroup = options.depGroupId ?? selectedDepGroup;
+        if (currentGroup && currentGroup !== 'all') {
+          params.depGroupId = currentGroup;
+        }
+        const currentDepCode = options.depCode ?? selectedDepCode;
+        if (currentDepCode && currentDepCode.length > 0) {
+          params.depCode = Array.isArray(currentDepCode) ? currentDepCode.join(',') : currentDepCode;
+        }
         if (withCompare && periodB) {
           params.firstDateB = periodB.firstDate;
           params.lastDateB = periodB.lastDate;
@@ -407,8 +462,24 @@ const ReportSummary9 = () => {
         setIsLoading(false);
       }
     },
-    []
+    [selectedDepGroup, selectedDepCode]
   );
+
+  const fetchDepartments = useCallback(async (authToken) => {
+    if (!authToken) return;
+    setLoadingDept(true);
+    try {
+      const result = await getMedErrorDeptBySection(authToken, 'Y');
+      const { statusCode, departmentList } = result?.data ?? {};
+      if (statusCode === 200 && Array.isArray(departmentList)) {
+        setDepartments(departmentList);
+      }
+    } catch (_e) {
+      // silent
+    } finally {
+      setLoadingDept(false);
+    }
+  }, []);
 
   // เรียก load เมื่อ filter เปลี่ยน — ใช้ค่าจาก state ตอนเรียก
   const triggerLoad = useCallback(
@@ -426,12 +497,14 @@ const ReportSummary9 = () => {
         : null;
       loadReport(token, {
         errType: overrides.errType ?? selectedErrorType,
+        depGroupId: overrides.depGroupId ?? selectedDepGroup,
+        depCode: overrides.depCode ?? selectedDepCode,
         periodA,
         periodB,
         withCompare: useCompare,
       });
     },
-    [token, selectedErrorType, firstDateA, lastDateA, compareMode, firstDateB, lastDateB, loadReport]
+    [token, selectedErrorType, selectedDepGroup, selectedDepCode, firstDateA, lastDateA, compareMode, firstDateB, lastDateB, loadReport]
   );
 
   useEffect(() => {
@@ -440,9 +513,12 @@ const ReportSummary9 = () => {
       const { statusCode, profile, access_token: newToken } = verify ?? {};
       if (statusCode === 200 && profile) {
         setToken(newToken || null);
+        fetchDepartments(newToken);
         // โหลดข้อมูลครั้งแรกด้วย Period A เดือนปัจจุบัน + ประเภท Error แรก
         loadReport(newToken, {
           errType: MedErrorTypeAll[0],
+          depGroupId: 'all',
+          depCode: [],
           periodA: { firstDate: formatDateEN(startOfMonth), lastDate: formatDateEN(today) },
           periodB: null,
           withCompare: false,
@@ -559,6 +635,21 @@ const ReportSummary9 = () => {
     triggerLoad({ compareMode: next });
   };
 
+  const handleChangeDepGroup = (event) => {
+    const val = event.target.value;
+    setSelectedDepGroup(val);
+    setSelectedDeps([]);
+    setSelectedDepCode([]);
+    triggerLoad({ depGroupId: val, depCode: [] });
+  };
+
+  const handleChangeDeps = (_event, value) => {
+    setSelectedDeps(value);
+    const depCodes = value.map((item) => item.med_error_depcode);
+    setSelectedDepCode(depCodes);
+    triggerLoad({ depCode: depCodes });
+  };
+
   // Excel Export ด้วย exceljs รองรับสีและภาพ
   const handleExportExcel = async () => {
     if (_.isEmpty(enrichedRows)) return;
@@ -606,18 +697,18 @@ const ReportSummary9 = () => {
         : '';
 
     sheet.spliceRows(1, 0,
-      ['ข้อมูลรายละเอียดประเภท Error'],
-      [`${errorTypeName || 'ทุกประเภท'}`],
-      [`${exportPeriodALabel}${exportPeriodBLabel}`],
+      [`${errorTypeName || (selectedErrorType?.error_type_name ?? 'Prescription Error')}`],
+      [`ช่วง A: ${exportPeriodALabel}${exportPeriodBLabel ? ` | ช่วง B: ${exportPeriodBLabel}` : ''}`],
+      [`กลุ่มหน่วยงาน : ${depGroupDisplayLabel}`],
       []
     );
 
     sheet.mergeCells(1, 1, 1, columns.length);
-    sheet.getCell('A1').font = { bold: true, size: 14 };
+    sheet.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FF1565C0' } };
     sheet.mergeCells(2, 1, 2, columns.length);
-    sheet.getCell('A2').font = { bold: true, size: 12, color: { argb: 'FF1565C0' } };
+    sheet.getCell('A2').font = { bold: true, size: 11 };
     sheet.mergeCells(3, 1, 3, columns.length);
-    sheet.getCell('A3').font = { bold: true, size: 11 };
+    sheet.getCell('A3').font = { bold: true, size: 11, color: { argb: 'FF333333' } };
 
     // Header styling (now shifted to row 5)
     sheet.getRow(5).eachCell((cell) => {
@@ -832,7 +923,7 @@ const ReportSummary9 = () => {
       </Stack>
 
       <Stack spacing={2} direction="row" sx={{ mb: 2, py: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
+        <LocalizationProvider dateAdapter={AdapterDateFnsTH}>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mr: 1, color: 'primary.main' }}>
               ช่วง A:
@@ -843,6 +934,7 @@ const ReportSummary9 = () => {
               onChange={handleFirstA}
               inputFormat="d MMMM yyyy"
               disableMaskedInput
+              renderDay={renderWeekendHighlightDay}
               renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
             />
             <DatePicker
@@ -851,6 +943,7 @@ const ReportSummary9 = () => {
               onChange={handleLastA}
               inputFormat="d MMMM yyyy"
               disableMaskedInput
+              renderDay={renderWeekendHighlightDay}
               renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
             />
 
@@ -861,10 +954,71 @@ const ReportSummary9 = () => {
               getOptionLabel={(option) => (option ? option.error_type_name : '')}
               isOptionEqualToValue={(option, value) => option?.error_type === value?.error_type}
               size="small"
-              sx={{ width: 280 }}
+              sx={{ width: 260 }}
               disableClearable
               renderInput={(params) => (
                 <TextField {...params} label="ประเภท Error *" placeholder="เลือก 1 ประเภท" />
+              )}
+            />
+
+            {/* กลุ่มหน่วยงาน */}
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel id="rs9-dep-group-label">กลุ่มหน่วยงาน</InputLabel>
+              <Select
+                labelId="rs9-dep-group-label"
+                id="rs9-dep-group"
+                value={selectedDepGroup}
+                label="กลุ่มหน่วยงาน"
+                onChange={handleChangeDepGroup}
+              >
+                <MenuItem value="all">ทั้งหมด</MenuItem>
+                {groupOptions.map((g) => (
+                  <MenuItem key={g.id} value={g.id}>
+                    {g.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* หน่วยงาน (กรองตามกลุ่มหน่วยงานที่เลือก) */}
+            <Autocomplete
+              multiple
+              disableCloseOnSelect
+              options={availableDepartments}
+              value={selectedDeps}
+              onChange={handleChangeDeps}
+              getOptionLabel={(option) => option.med_error_depname}
+              isOptionEqualToValue={(option, value) => option.med_error_depcode === value.med_error_depcode}
+              loading={loadingDept}
+              size="small"
+              sx={{ minWidth: 240, maxWidth: 360 }}
+              renderOption={(props, option, { selected }) => {
+                // eslint-disable-next-line react/prop-types
+                const { key, ...optionProps } = props;
+                return (
+                  <li key={key} {...optionProps}>
+                    <FormControlLabel
+                      control={<Checkbox checked={selected} size="small" />}
+                      label={<ListItemText primary={option.med_error_depname} primaryTypographyProps={{ fontSize: 13 }} />}
+                    />
+                  </li>
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="เลือกหน่วยงาน"
+                  placeholder={selectedDepGroup !== 'all' ? 'เลือกในกลุ่มนี้' : 'ค้นหาหน่วยงาน'}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingDept && <CircularProgress color="inherit" size={20} />}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
               )}
             />
 
@@ -885,6 +1039,7 @@ const ReportSummary9 = () => {
                   onChange={handleFirstB}
                   inputFormat="d MMMM yyyy"
                   disableMaskedInput
+                  renderDay={renderWeekendHighlightDay}
                   renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
                 />
                 <DatePicker
@@ -893,6 +1048,7 @@ const ReportSummary9 = () => {
                   onChange={handleLastB}
                   inputFormat="d MMMM yyyy"
                   disableMaskedInput
+                  renderDay={renderWeekendHighlightDay}
                   renderInput={(params) => <TextField {...params} size="small" sx={{ width: 200 }} readOnly />}
                 />
               </>
@@ -913,7 +1069,7 @@ const ReportSummary9 = () => {
       )}
 
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-        <Stack direction="column">
+        <Stack direction="column" spacing={0.5}>
           <Typography variant="h6" sx={{ color: 'primary.main' }}>
             {errorTypeName || (selectedErrorType?.error_type_name ?? '')}
           </Typography>
@@ -924,6 +1080,9 @@ const ReportSummary9 = () => {
                 {' '}| ช่วง B: <b style={{ color: '#ed6c02' }}>{periodBLabel}</b>
               </>
             )}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            กลุ่มหน่วยงาน : <b style={{ color: '#1565c0' }}>{depGroupDisplayLabel}</b>
           </Typography>
         </Stack>
         <Button

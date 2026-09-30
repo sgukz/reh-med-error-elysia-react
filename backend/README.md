@@ -17,8 +17,8 @@ API สำหรับระบบรายงานความคลาดเ�
 - **Med Error Management:** API สำหรับจัดการรายงานความคลาดเคลื่อนทางยา
 - **Master Data:** ประเภท Error พร้อม **Impact + Likelihood Score (1-5 ต่อตัว)** สำหรับคำนวณ Level = Impact + Likelihood
 - **Likelihood Criteria (v1.11.0):** เกณฑ์ความถี่ → คะแนน Likelihood แยก **6 ตารางตามประเภท Error** (`error_type` 1-6) ใน `med_error_likelihood_criteria`; `GET/PUT /med-error/likelihood` (PUT จำกัด rule=9), Summary 9 คำนวณคะแนนต่อประเภทอัตโนมัติจากความถี่ในช่วงเวลา
-- **Dashboard:** ข้อมูลสรุปสำหรับหน้า Dashboard
-- **Reports:** ระบบรายงานผล (summary 1–10 + drug pair) — Summary 6 = สรุปอุบัติการณ์ที่ได้ RCA แล้ว (มี analytics summary card), Summary 9 = รายละเอียด Error subtype + เปรียบเทียบ 2 ช่วงเวลา + Δ%, Summary 10 = สถิติใบสั่งยา/วันนอน (อัตรา/1,000)
+- **Dashboard (v1.11.5):** ข้อมูลสรุปสำหรับหน้า Dashboard รองรับ Error Type 6 (Transcribing Error) ครบทุกมิติ และคำนวณปีงบประมาณไทยถูกต้องตามเกณฑ์
+- **Reports (v1.11.5):** ระบบรายงานผล (summary 1–10 + drug pair) — รองรับการกรองตามกลุ่มหน่วยงาน (`dep_group_id`), Summary 6 = สรุปอุบัติการณ์ที่ได้ RCA แล้ว (มี analytics summary card), Summary 9 = รายละเอียด Error subtype + เปรียบเทียบ 2 ช่วงเวลา + Δ%, Summary 10 = สถิติใบสั่งยา/วันนอน (อัตรา/1,000)
 - **MOPH Alert:** แจ้งเตือนเหตุการณ์ระดับรุนแรง (ระดับ D–I) ผ่าน MOPH Notify
 
 > **หมายเหตุ v1.5.0:** เปลี่ยนกลไก authentication ไปใช้ **HTTP-only cookie** ลด attack surface ของ XSS (ฝั่ง browser อ่าน token ไม่ได้) — backend ยังรองรับ Authorization Bearer header เป็น fallback เพื่อความสะดวกระหว่าง transition

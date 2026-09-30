@@ -91,7 +91,7 @@ import {
 
 // utils
 import { formatDateTime, formatDateRange } from '../utils/formatTime';
-import { AdapterDateFnsTH } from '../utils/AdapterDateFnsTH';
+import { AdapterDateFnsTH, renderWeekendHighlightDay } from '../utils/AdapterDateFnsTH';
 
 // ============================================================================
 // Constants
@@ -1425,7 +1425,9 @@ export default function MedErrorPage() {
                   </InputLabel>
                   <DesktopDatePicker
                     label="วัน/เดือน/ปี ที่พบเหตุการณ์"
-                    inputFormat="d MMMM yyyy" disableMaskedInput
+                    inputFormat="d MMMM yyyy"
+                    disableMaskedInput
+                    renderDay={renderWeekendHighlightDay}
                     value={formRegister.error_date}
                     name="error_date"
                     onChange={handleChangeDate}
