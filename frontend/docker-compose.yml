@@ -6,9 +6,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - "127.0.0.1:3016:80"
-    restart: always
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
+        max-size: "20m"
         max-file: "3"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
+networks:
+  default:
+    name: app-shared-net
+    external: true

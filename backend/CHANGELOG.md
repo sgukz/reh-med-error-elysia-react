@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - กลุ่ม OPD: `dep_group_id 1,5,6` (OPD/OPD2/OPD-Pri) — ไม่เปลี่ยน
 - ตัดออก: `dep_group_id 3` (งานคลัง), `4` (งานผลิต) — ไม่นับในทั้ง IPD และ OPD
 
+### Added — Deployment & Docker Optimization
+- เพิ่ม `hotdeploy.sh` สำหรับ Rsync ซิงก์โค้ดและ Hot Rebuild container ด้วย Near-Zero Downtime รองรับการรันจาก `/home/sgdev/deploy-med-error`
+- ปรับปรุง `Dockerfile` ให้ใช้ official `oven/bun:1.3.0-alpine` ตรงตามเวอร์ชันที่พัฒนา
+- ปรับปรุง Docker caching layer โดยย้ายการติดตั้ง `tzdata` ไปยัง base stage
+- เพิ่ม `LABEL version="1.11.6"` ให้กับ Docker Image
+
 ### Security
 - OWASP A03:2021 — Knex parameterized bindings และ `whereIn()` ป้องกัน SQL Injection ทุก query ที่เพิ่ม/แก้ไข
 

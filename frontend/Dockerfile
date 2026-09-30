@@ -1,4 +1,6 @@
+# Version: 1.25.5
 FROM nginx:alpine
+LABEL version="1.25.5"
 
 # ตั้งค่า Timezone เป็น Asia/Bangkok
 ENV TZ=Asia/Bangkok

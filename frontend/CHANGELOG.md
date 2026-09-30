@@ -11,6 +11,7 @@
 ### Changed
 - ปรับฟอร์แมตตัวเลขในตาราง Medication Error ในหน้า Dashboard ให้ใส่เครื่องหมายจุลภาคคั่นหลักพัน (`formatCount`, เช่น `5,635`) อ่านง่ายขึ้น
 - เพิ่มการรองรับการเลือกและกรองตามกลุ่มหน่วยงาน (Department Group) ในหน้ารายงานต่างๆ (Report 6, 8, 9, 11) และแสดงผลใน Excel Export
+- ปรับแต่ง `docker-compose.yml` (network: `app-shared-net`, `restart: unless-stopped`, `security_opt: seccomp:unconfined`, async non-blocking logging) และเพิ่ม Version label ให้ `Dockerfile`
 
 ### Fixed
 - แก้ไขปัญหาตัวเลขอุบัติการณ์ทั้งหมด (Total) ในการ์ดสรุปหน้า Dashboard ถูกนับเบิ้ล (จากเคสเปรียบเทียบ `TOTAL` case-sensitive)

@@ -1,43 +1,37 @@
-# use the official Bun image
-# see all versions at https://hub.docker.com/r/oven/bun/tags
-FROM oven/bun:1.1.26-alpine AS base
+# Version: 1.11.6
+# ใช้ official Bun image ตรงตามเวอร์ชันที่พัฒนา (1.3.0)
+FROM oven/bun:1.3.0-alpine AS base
+LABEL version="1.11.6"
+
+# ติดตั้ง tzdata สำหรับ timezone Asia/Bangkok ตั้งแต่ base stage เพื่อให้ cache ถาวร
 ENV TZ=Asia/Bangkok
-WORKDIR /usr/src/app
-
-# install dependencies into temp directory
-# this will cache them and speed up future builds
-FROM base AS install
-RUN mkdir -p /temp/dev
-COPY package.json bun.lock* /temp/dev/
-RUN cd /temp/dev && bun install --frozen-lockfile
-
-# install with --production (exclude devDependencies)
-RUN mkdir -p /temp/prod
-COPY package.json bun.lock* /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
-
-# copy node_modules from temp directory
-# then copy all (non-ignored) project files into the image
-FROM base AS prerelease
-COPY --from=install /temp/dev/node_modules node_modules
-COPY . .
-
-# [optional] tests & build
-ENV NODE_ENV=production
-# RUN bun test
-# RUN bun run build
-
-# copy production dependencies and source code into final image
-FROM base AS release
-COPY --from=install --chown=bun:bun /temp/prod/node_modules node_modules
-COPY --chown=bun:bun . .
-
-# Install tzdata for Alpine
 RUN apk add --no-cache tzdata && \
     cp /usr/share/zoneinfo/$TZ /etc/localtime && \
     echo $TZ > /etc/timezone
 
-# run the app
+WORKDIR /usr/src/app
+
+# ติดตั้ง dependencies เฉพาะ production (exclude devDependencies)
+FROM base AS install
+RUN mkdir -p /temp/prod
+COPY package.json bun.lock* /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
+
+# Final Production Image
+FROM base AS release
+LABEL version="1.11.6"
+
+# Copy เฉพาะ node_modules สำหรับ production
+COPY --from=install --chown=bun:bun /temp/prod/node_modules node_modules
+
+# Copy ซอร์สโค้ดของแอปพลิเคชัน
+COPY --chown=bun:bun . .
+
+ENV NODE_ENV=production
+
+# รันด้วย User bun เพื่อความปลอดภัย (Non-root user)
 USER bun
 EXPOSE 8003/tcp
-CMD [ "bun", "run", "dev" ]
+
+# รันแอปพลิเคชันโดยตรงในโหมด production
+CMD [ "bun", "run", "src/index.ts" ]
