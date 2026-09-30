@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.6] - 2026-09-30
+
+### Fixed — ReportSummary10: IPD ward_group mapping
+- แก้ไข `getReportSummary10` ใน `ReportModel.ts` — เพิ่ม `dep_group_id` 7 (กลับบ้าน), 8 (TPN), 9 (เคมีบำบัด) เข้ากลุ่ม IPD ในการนับ Error Count
+- ก่อนหน้านี้นับเฉพาะ `dep_group_id = 2` (IPD ตรงๆ) ทำให้หน่วยงาน IPD อื่นๆ หายไปจากรายงาน
+- กลุ่ม OPD: `dep_group_id 1,5,6` (OPD/OPD2/OPD-Pri) — ไม่เปลี่ยน
+- ตัดออก: `dep_group_id 3` (งานคลัง), `4` (งานผลิต) — ไม่นับในทั้ง IPD และ OPD
+
+### Security
+- OWASP A03:2021 — Knex parameterized bindings และ `whereIn()` ป้องกัน SQL Injection ทุก query ที่เพิ่ม/แก้ไข
+
 ## [1.11.5] - 2026-09-30
 
 ### Added — Dashboard & Report Filters Enhancement

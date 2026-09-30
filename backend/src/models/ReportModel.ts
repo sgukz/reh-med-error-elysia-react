@@ -614,7 +614,9 @@ export default class ReportModel {
     }
 
     // นับ Error แยก HAD/Non-HAD ตามเดือน × error_type × ward_group (IPD/OPD)
-    // IPD = med_error_dep_group_id 2; OPD = 1, 5, 6
+    // IPD = dep_group_id 2 (IPD), 7 (กลับบ้าน), 8 (TPN), 9 (เคมีบำบัด)
+    // OPD = dep_group_id 1 (OPD), 5 (OPD2), 6 (OPD-Pri)
+    // ตัดออก: 3 (งานคลัง), 4 (งานผลิต) — ไม่นับใน IPD/OPD
     async getReportSummary10(options: GetMedErrorSummary10Options) {
         const fiscalYearBE = Number(options.fiscalYear);
         const months = this.fiscalYearToMonths(fiscalYearBE);
@@ -629,7 +631,7 @@ export default class ReportModel {
                 this.db.raw('MONTH(m.error_date) AS error_month'),
                 this.db.raw('YEAR(m.error_date) AS error_year'),
                 this.db.raw(`CASE
-                    WHEN d.med_error_dep_group_id = 2 THEN 'IPD'
+                    WHEN d.med_error_dep_group_id IN (2,7,8,9) THEN 'IPD'
                     WHEN d.med_error_dep_group_id IN (1,5,6) THEN 'OPD'
                     ELSE 'OTHER'
                 END AS ward_group`),
@@ -639,7 +641,7 @@ export default class ReportModel {
             )
             .innerJoin('med_error_dept as d', 'm.error_ward', 'd.med_error_depcode')
             .whereBetween('m.error_date', [firstDate, lastDate])
-            .whereIn('d.med_error_dep_group_id', [1, 2, 5, 6])
+            .whereIn('d.med_error_dep_group_id', [1, 2, 5, 6, 7, 8, 9])
             .whereIn('m.error_type', [1, 2, 3, 4, 5, 6])
             .groupByRaw(`m.error_type, MONTH(m.error_date), YEAR(m.error_date), ward_group`)
             .orderByRaw(`m.error_type ASC, error_year ASC, error_month ASC`);
