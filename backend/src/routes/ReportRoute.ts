@@ -29,6 +29,23 @@ const ALLOWED_ORIGINS = new Set((origin || "").split(",").map(o => o.trim()));
 const reports = new ReportModel(DBSec)
 const mederror = new MedErrorModel(DBSec)
 
+function parseDepGroupIds(input: any): number[] | undefined {
+    if (input === undefined || input === null || input === '' || input === 'all') {
+        return undefined;
+    }
+    const rawList = Array.isArray(input)
+        ? input
+        : typeof input === 'string'
+            ? input.split(',')
+            : [input];
+
+    const ids = rawList
+        .map((v: any) => parseInt(String(v).trim(), 10))
+        .filter((n: number) => Number.isFinite(n) && n > 0);
+
+    return ids.length > 0 ? ids : undefined;
+}
+
 const ReportRoute = new Elysia({ prefix: `/reports` });
 
 //Report 1
@@ -389,9 +406,7 @@ ReportRoute.get('/summary6', async ({
             return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: 'dateStart must be <= dateEnd' };
         }
 
-        const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
-            ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
-            : undefined;
+        const parsedDepGroupId = parseDepGroupIds(depGroupId);
 
         const wordsDepCode = typeof depCode === "string"
             ? depCode.split(",").map(s => s.trim()).filter(Boolean)
@@ -600,9 +615,7 @@ ReportRoute.get('/summary8', async ({
 
             const errorAlertHAD = errorAlert && (errorAlert === 'N' || errorAlert === 'Y') ? HAD[errorAlert] : ''
 
-            const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
-                ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
-                : undefined;
+            const parsedDepGroupId = parseDepGroupIds(depGroupId);
 
             const dataCondition = {
                 firstDate,
@@ -701,9 +714,7 @@ ReportRoute.get('/summary9', async ({
         const numType = Number(errorType);
         const errorTypeName = ERROR_TYPE_NAMES[numType] || '';
 
-        const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
-            ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
-            : undefined;
+        const parsedDepGroupId = parseDepGroupIds(depGroupId);
 
         const wordsDepCode = typeof depCode === "string"
             ? depCode.split(",").map(s => s.trim()).filter(Boolean)
@@ -1010,9 +1021,7 @@ ReportRoute.post('/summary11', async ({ jwt, set, request, body }: any) => {
             return { statusCode: StatusCodes.BAD_REQUEST, statusMessage: 'Missing required params: dateStart, dateEnd' };
         }
 
-        const parsedDepGroupId = depGroupId !== undefined && depGroupId !== '' && depGroupId !== 'all'
-            ? Math.max(0, parseInt(String(depGroupId), 10) || 0)
-            : undefined;
+        const parsedDepGroupId = parseDepGroupIds(depGroupId);
 
         const wordsDepCode = typeof depCode === "string"
             ? depCode.split(",").map(s => s.trim()).filter(Boolean)

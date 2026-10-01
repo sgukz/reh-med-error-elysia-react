@@ -9,6 +9,19 @@ export default class ReportModel {
         this.db = db;
     }
 
+    private extractDepGroupIds(depGroupId: any): number[] {
+        if (!depGroupId || depGroupId === 'all') return [];
+        const rawList = Array.isArray(depGroupId)
+            ? depGroupId
+            : typeof depGroupId === 'string'
+                ? depGroupId.split(',')
+                : [depGroupId];
+
+        return rawList
+            .map((v: any) => parseInt(String(v).trim(), 10))
+            .filter((n: number) => Number.isFinite(n) && n > 0);
+    }
+
     // Using Report 1
     async getReportSummary1(
         options: GetMedErrorSummary1Options
@@ -253,8 +266,9 @@ export default class ReportModel {
             query.andWhere('me.error_type', numType);
         }
 
-        if (depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
-            query.where('d.med_error_dep_group_id', Number(depGroupId));
+        const groupIds = this.extractDepGroupIds(depGroupId);
+        if (groupIds.length > 0) {
+            query.whereIn('d.med_error_dep_group_id', groupIds);
         }
 
         if (depCode) {
@@ -316,9 +330,10 @@ export default class ReportModel {
                 wardCodesToFilter = filteredCodes;
             }
         }
-        if (!wardCodesToFilter && depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
+        const groupIds = this.extractDepGroupIds(depGroupId);
+        if (!wardCodesToFilter && groupIds.length > 0) {
             const deptsInGroup = await db('med_error_dept')
-                .where('med_error_dep_group_id', Number(depGroupId))
+                .whereIn('med_error_dep_group_id', groupIds)
                 .pluck('med_error_depcode');
             wardCodesToFilter = deptsInGroup.length > 0 ? deptsInGroup : [-1];
         }
@@ -486,8 +501,9 @@ export default class ReportModel {
             .whereBetween('m.error_date', [firstDate, lastDate])
             .orderBy('m.error_date', 'desc');
 
-        if (depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
-            query.where('d.med_error_dep_group_id', Number(depGroupId));
+        const groupIds = this.extractDepGroupIds(depGroupId);
+        if (groupIds.length > 0) {
+            query.whereIn('d.med_error_dep_group_id', groupIds);
         }
 
         if (depCode) {
@@ -673,9 +689,10 @@ export default class ReportModel {
                 wardCodesToFilter = filteredCodes;
             }
         }
-        if (!wardCodesToFilter && depGroupId && depGroupId !== 'all' && Number(depGroupId) > 0) {
+        const groupIds = this.extractDepGroupIds(depGroupId);
+        if (!wardCodesToFilter && groupIds.length > 0) {
             const deptsInGroup = await db('med_error_dept')
-                .where('med_error_dep_group_id', Number(depGroupId))
+                .whereIn('med_error_dep_group_id', groupIds)
                 .pluck('med_error_depcode');
             wardCodesToFilter = deptsInGroup.length > 0 ? deptsInGroup : [-1];
         }

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.25.6] - 2026-10-01
+
+### Added — Department Group Multi-Select Filter (UI & Export)
+- ปรับเปลี่ยนตัวกรอง "กลุ่มหน่วยงาน" ในหน้ารายงานทั้งหมด (`ReportSummary8`, `ReportSummary9`, `ReportSummary6`, `ReportSummary11`) จาก Single Select เป็น **Autocomplete Multiselect** พร้อม Checkbox และ Chip เหมือนกับ "เลือกหน่วยงาน"
+- ปรับปรุง Cascading Filter: รายการใน "เลือกหน่วยงาน" จะกรองเฉพาะหน่วยงานที่สังกัดในกลุ่มที่เลือก และทำการ Prune ล้างหน่วยงานที่หลุดออกจากกลุ่มที่เลือกใหม่อัตโนมัติ ป้องกันข้อมูลขัดแย้ง
+- อัปเดต Subtitle บนการ์ดสรุปและส่วนหัวของ Excel Export ให้แสดงชื่อกลุ่มหน่วยงานที่เลือกทั้งหมด (เช่น `กลุ่มหน่วยงาน: OPD, OPD2` หรือ `กลุ่มหน่วยงาน: ทั้งหมด`)
+
+### Security
+- OWASP A03:2021 (XSS) — Escape ชื่อกลุ่มและหน่วยงานที่เลือกในทุกจุดของการแสดงผล JSX และ Text label
+- OWASP A04:2021 (Input Validation) — มีการตรวจสอบชนิดข้อมูลและการ sanitize array ของ group id ก่อนส่งเข้า API
+
 ## [1.25.5] - 2026-09-30
 
 ### Added

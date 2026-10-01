@@ -29,7 +29,7 @@ export interface GetMedErrorSummary9Options {
     firstDateB?: string; // YYYY-MM-DD — Period B เริ่มต้น (optional, สำหรับ compare)
     lastDateB?: string;  // YYYY-MM-DD — Period B สิ้นสุด
     errorType: string | number; // 1-6 (required)
-    depGroupId?: number | string;
+    depGroupId?: number | string | (number | string)[];
     depCode?: string | string[];
 }
 
@@ -51,7 +51,7 @@ export interface Summary9Row {
 export interface GetMedErrorSummary8Options {
     firstDate: string; // YYYY-MM-DD
     lastDate: string;   // YYYY-MM-DD
-    depGroupId?: number | string;
+    depGroupId?: number | string | (number | string)[];
     depCode?: string | string[];
     errorLevel?: string | string[];
     errorType?: string;
@@ -77,7 +77,7 @@ export interface GetMedErrorSummary6Options {
     dateStart: string;  // YYYY-MM-DD
     dateEnd: string;    // YYYY-MM-DD
     errorType?: string | number;  // 0 = ทั้งหมด, 1-6 = filter
-    depGroupId?: number | string;
+    depGroupId?: number | string | (number | string)[];
     depCode?: string | string[];
 }
 
@@ -148,6 +148,6 @@ export interface GetMedErrorSummary11Options {
     dateStart: string; // YYYY-MM-DD
     dateEnd: string;   // YYYY-MM-DD
     errorType?: string | string[]; // Array of selected error types, or empty for all
-    depGroupId?: number | string;
+    depGroupId?: number | string | (number | string)[];
     depCode?: string | string[];
 }

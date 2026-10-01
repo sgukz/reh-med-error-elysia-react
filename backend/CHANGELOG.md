@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.7] - 2026-10-01
+
+### Added — Department Group Multi-Select Support
+- เพิ่มการรองรับ `depGroupId` แบบ Multi-select (array, comma-separated string, หรือ single value) ใน `ReportInterface.ts` (`GetMedErrorSummary6Options`, `8`, `9`, `11`)
+- เพิ่มฟังก์ชัน `parseDepGroupIds` ใน `ReportRoute.ts` สำหรับแปลงและ sanitize `depGroupId` ทุกรูปแบบให้เป็น `number[]` ที่ถูกต้องปลอดภัย
+- ปรับปรุง `ReportModel.ts` เมธอด `getReportSummary6`, `getReportSummary8`, `getReportSummary9`, `getReportSummary11` ให้ใช้ `.whereIn()` กรองตามกลุ่มหน่วยงานหลายกลุ่มพร้อมกันได้อย่างแม่นยำ
+
+### Security
+- OWASP A03:2021 (Injection) — ตรวจสอบและแปลง ID ทุกค่าด้วย `parseInt(..., 10)` กรองเฉพาะจำนวนเต็มบวก และใช้ Knex `whereIn` parameterized bindings ป้องกัน SQL Injection ทุกจุด
+- OWASP A04:2021 (Insecure Design) — ป้องกัน bypass ด้วย default-fallback เมื่อไม่ส่งกลุ่มหรือส่งค่าว่าง จะดึงข้อมูลทั้งหมดตามปกติโดยไม่เกิด runtime error
+
 ## [1.11.6] - 2026-09-30
 
 ### Fixed — ReportSummary10: IPD ward_group mapping

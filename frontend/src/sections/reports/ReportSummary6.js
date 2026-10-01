@@ -306,7 +306,7 @@ const ReportSummary6 = () => {
 
   // Department filter state
   const [departments, setDepartments] = useState([]);
-  const [selectedDepGroup, setSelectedDepGroup] = useState('all');
+  const [selectedDepGroups, setSelectedDepGroups] = useState([]);
   const [selectedDeps, setSelectedDeps] = useState([]);
   const [selectedDepCode, setSelectedDepCode] = useState([]);
   const [loadingDept, setLoadingDept] = useState(false);
@@ -325,11 +325,12 @@ const ReportSummary6 = () => {
   }, [departments]);
 
   const availableDepartments = useMemo(() => {
-    if (!selectedDepGroup || selectedDepGroup === 'all') {
+    if (selectedDepGroups.length === 0) {
       return departments;
     }
-    return departments.filter((d) => Number(d.med_error_dep_group_id) === Number(selectedDepGroup));
-  }, [departments, selectedDepGroup]);
+    const groupSet = new Set(selectedDepGroups.map((g) => Number(g.id)));
+    return departments.filter((d) => groupSet.has(Number(d.med_error_dep_group_id)));
+  }, [departments, selectedDepGroups]);
 
   const [token, setToken] = useState(null);
 
@@ -416,7 +417,7 @@ const ReportSummary6 = () => {
     const nextFirst = overrides.firstDate ?? firstDate;
     const nextLast = overrides.lastDate ?? lastDate;
     const nextType = overrides.errorType ?? errorType;
-    const nextGroup = overrides.depGroupId ?? selectedDepGroup;
+    const nextGroup = overrides.depGroupId !== undefined ? overrides.depGroupId : selectedDepGroups.map((g) => g.id);
     const nextDepCode = overrides.depCode ?? selectedDepCode;
     if (!nextFirst || !nextLast) return;
     const params = {
@@ -424,8 +425,8 @@ const ReportSummary6 = () => {
       dateEnd: formatDateEN(nextLast),
       errorType: nextType ?? 0,
     };
-    if (nextGroup && nextGroup !== 'all') {
-      params.depGroupId = nextGroup;
+    if (Array.isArray(nextGroup) ? nextGroup.length > 0 : (nextGroup && nextGroup !== 'all')) {
+      params.depGroupId = Array.isArray(nextGroup) ? nextGroup.join(',') : nextGroup;
     }
     if (nextDepCode && nextDepCode.length > 0) {
       params.depCode = Array.isArray(nextDepCode) ? nextDepCode.join(',') : nextDepCode;
@@ -449,13 +450,24 @@ const ReportSummary6 = () => {
     setPage(0);
     triggerLoad({ errorType: val });
   };
-  const handleChangeDepGroup = (event) => {
-    const val = event.target.value;
-    setSelectedDepGroup(val);
-    setSelectedDeps([]);
-    setSelectedDepCode([]);
+  const handleChangeDepGroups = (_event, value) => {
+    setSelectedDepGroups(value);
+    const groupIds = value.map((g) => g.id);
+    const groupSet = new Set(groupIds.map(Number));
+
+    // Cascading auto-prune: ล้างเฉพาะหน่วยงานที่ไม่สังกัดในกลุ่มที่เลือกใหม่ออกอัตโนมัติ
+    let nextDeps = selectedDeps;
+    let nextDepCodes = selectedDepCode;
+    if (groupIds.length > 0) {
+      nextDeps = selectedDeps.filter((d) => groupSet.has(Number(d.med_error_dep_group_id)));
+      nextDepCodes = nextDeps.map((d) => d.med_error_depcode);
+      if (nextDeps.length !== selectedDeps.length) {
+        setSelectedDeps(nextDeps);
+        setSelectedDepCode(nextDepCodes);
+      }
+    }
     setPage(0);
-    triggerLoad({ depGroupId: val, depCode: [] });
+    triggerLoad({ depGroupId: groupIds, depCode: nextDepCodes });
   };
   const handleChangeDeps = (_event, value) => {
     setSelectedDeps(value);
@@ -626,6 +638,22 @@ const ReportSummary6 = () => {
                   ช่วง <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>{filterSummary.dateRange}</Box>
                   {' · '}ประเภท{' '}
                   <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>{filterSummary.typeName}</Box>
+                  {selectedDepGroups.length > 0 && (
+                    <>
+                      {' · '}กลุ่ม{' '}
+                      <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>
+                        {selectedDepGroups.map((g) => g.label).join(', ')}
+                      </Box>
+                    </>
+                  )}
+                  {selectedDeps.length > 0 && (
+                    <>
+                      {' · '}หน่วยงาน{' '}
+                      <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>
+                        {selectedDeps.length} แห่ง
+                      </Box>
+                    </>
+                  )}
                 </Typography>
               </Box>
             </Box>
@@ -733,22 +761,37 @@ const ReportSummary6 = () => {
               </Select>
             </FormControl>
 
-            {/* กลุ่มหน่วยงาน */}
-            <FormControl size="small" sx={{ minWidth: 190 }}>
-              <InputLabel id="rs6-dep-group-label">กลุ่มหน่วยงาน</InputLabel>
-              <Select
-                labelId="rs6-dep-group-label"
-                id="rs6-dep-group"
-                value={selectedDepGroup}
-                label="กลุ่มหน่วยงาน"
-                onChange={handleChangeDepGroup}
-              >
-                <MenuItem value="all">ทั้งหมด</MenuItem>
-                {groupOptions.map((g) => (
-                  <MenuItem key={g.id} value={g.id}>{g.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {/* กลุ่มหน่วยงาน (Multiselect) */}
+            <Autocomplete
+              multiple
+              disableCloseOnSelect
+              options={groupOptions}
+              value={selectedDepGroups}
+              onChange={handleChangeDepGroups}
+              getOptionLabel={(option) => option.label}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              size="small"
+              sx={{ minWidth: 200, maxWidth: 360 }}
+              renderOption={(props, option, { selected }) => {
+                // eslint-disable-next-line react/prop-types
+                const { key, ...optionProps } = props;
+                return (
+                  <li key={key} {...optionProps}>
+                    <FormControlLabel
+                      control={<Checkbox checked={selected} size="small" />}
+                      label={<ListItemText primary={option.label} primaryTypographyProps={{ fontSize: 13 }} />}
+                    />
+                  </li>
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="กลุ่มหน่วยงาน"
+                  placeholder={selectedDepGroups.length > 0 ? '' : 'ทั้งหมด'}
+                />
+              )}
+            />
 
             {/* หน่วยงาน (กรองตามกลุ่มหน่วยงานที่เลือก) */}
             <Autocomplete
@@ -778,7 +821,7 @@ const ReportSummary6 = () => {
                 <TextField
                   {...params}
                   label="เลือกหน่วยงาน"
-                  placeholder={selectedDepGroup !== 'all' ? 'เลือกในกลุ่มนี้' : 'ค้นหาหน่วยงาน'}
+                  placeholder={selectedDepGroups.length > 0 ? 'เลือกในกลุ่มที่ระบุ' : 'ค้นหาหน่วยงาน'}
                   InputProps={{
                     ...params.InputProps,
                     endAdornment: (

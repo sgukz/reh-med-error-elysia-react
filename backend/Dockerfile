@@ -1,7 +1,7 @@
-# Version: 1.11.6
+# Version: 1.11.7
 # ใช้ official Bun image ตรงตามเวอร์ชันที่พัฒนา (1.3.0)
 FROM oven/bun:1.3.0-alpine AS base
-LABEL version="1.11.6"
+LABEL version="1.11.7"
 
 # ติดตั้ง tzdata สำหรับ timezone Asia/Bangkok ตั้งแต่ base stage เพื่อให้ cache ถาวร
 ENV TZ=Asia/Bangkok
@@ -19,7 +19,7 @@ RUN cd /temp/prod && bun install --frozen-lockfile --production
 
 # Final Production Image
 FROM base AS release
-LABEL version="1.11.6"
+LABEL version="1.11.7"
 
 # Copy เฉพาะ node_modules สำหรับ production
 COPY --from=install --chown=bun:bun /temp/prod/node_modules node_modules

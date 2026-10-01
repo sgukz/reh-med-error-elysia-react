@@ -20,9 +20,9 @@ DEST_DIR="/data-docker/data-deploy/sgdev/api-med-error-node22-bun-elysia-prod"
 
 # หากรัน script จากภายในโฟลเดอร์ /home/sgdev/deploy-med-error หรือ subfolder
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -d "$ORIGINAL_CWD" ] && [[ "$ORIGINAL_CWD" == *"/deploy-med-error"* ]]; then
+if [ -d "$ORIGINAL_CWD" ] && [[ "$ORIGINAL_CWD" == *"/deploy-med-error"* || "$ORIGINAL_CWD" == *"/deploy-mederror"* ]]; then
     SOURCE_DIR="$ORIGINAL_CWD"
-elif [ -d "$SCRIPT_DIR" ] && [[ "$SCRIPT_DIR" == *"/deploy-med-error"* ]]; then
+elif [ -d "$SCRIPT_DIR" ] && [[ "$SCRIPT_DIR" == *"/deploy-med-error"* || "$SCRIPT_DIR" == *"/deploy-mederror"* ]]; then
     SOURCE_DIR="$SCRIPT_DIR"
 fi
 

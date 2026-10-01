@@ -19,10 +19,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Chip from '@mui/material/Chip';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import ListItemText from '@mui/material/ListItemText';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -147,7 +143,7 @@ export default function ReportSummary11() {
 
   // Department filter state
   const [departments, setDepartments] = useState([]);
-  const [selectedDepGroup, setSelectedDepGroup] = useState('all');
+  const [selectedDepGroups, setSelectedDepGroups] = useState([]);
   const [selectedDeps, setSelectedDeps] = useState([]);
   const [selectedDepCode, setSelectedDepCode] = useState([]);
   const [loadingDept, setLoadingDept] = useState(false);
@@ -166,11 +162,12 @@ export default function ReportSummary11() {
   }, [departments]);
 
   const availableDepartments = useMemo(() => {
-    if (!selectedDepGroup || selectedDepGroup === 'all') {
+    if (selectedDepGroups.length === 0) {
       return departments;
     }
-    return departments.filter((d) => Number(d.med_error_dep_group_id) === Number(selectedDepGroup));
-  }, [departments, selectedDepGroup]);
+    const groupSet = new Set(selectedDepGroups.map((g) => Number(g.id)));
+    return departments.filter((d) => groupSet.has(Number(d.med_error_dep_group_id)));
+  }, [departments, selectedDepGroups]);
   
   const [token, setToken] = useState(null);
   const [rows, setRows] = useState([]);
@@ -190,14 +187,15 @@ export default function ReportSummary11() {
           dateEnd: periodA.lastDate,
           errorType: errorTypeIds,
         };
-        const currentGroup = options.depGroupId ?? selectedDepGroup;
-        if (currentGroup && currentGroup !== 'all') {
-          params.depGroupId = currentGroup;
+        const currentGroups = options.depGroupId !== undefined ? options.depGroupId : selectedDepGroups.map((g) => g.id);
+        if (Array.isArray(currentGroups) ? currentGroups.length > 0 : (currentGroups && currentGroups !== 'all')) {
+          params.depGroupId = Array.isArray(currentGroups) ? currentGroups.join(',') : currentGroups;
         }
         const currentDepCode = options.depCode ?? selectedDepCode;
         if (currentDepCode && currentDepCode.length > 0) {
           params.depCode = Array.isArray(currentDepCode) ? currentDepCode : [currentDepCode];
         }
+
         const res = await getReportSummary11(authToken, params);
         const data = res?.data ?? {};
         if (data.statusCode === 200 && Array.isArray(data.reportList)) {
@@ -211,7 +209,7 @@ export default function ReportSummary11() {
         setIsLoading(false);
       }
     },
-    [selectedDepGroup, selectedDepCode]
+    [selectedDepGroups, selectedDepCode]
   );
 
   const triggerLoad = useCallback(
@@ -223,13 +221,13 @@ export default function ReportSummary11() {
       if (periodA.firstDate && periodA.lastDate) {
         loadReport(token, {
           errType: overrides.errType ?? selectedErrorType,
-          depGroupId: overrides.depGroupId ?? selectedDepGroup,
+          depGroupId: overrides.depGroupId ?? selectedDepGroups.map((g) => g.id),
           depCode: overrides.depCode ?? selectedDepCode,
           periodA,
         });
       }
     },
-    [token, selectedErrorType, selectedDepGroup, selectedDepCode, firstDateA, lastDateA, loadReport]
+    [token, selectedErrorType, selectedDepGroups, selectedDepCode, firstDateA, lastDateA, loadReport]
   );
 
   const fetchDepartments = useCallback(async (authToken) => {
@@ -274,12 +272,23 @@ export default function ReportSummary11() {
     triggerLoad({ errType: value || FILTER_OPTIONS[0] });
   };
 
-  const handleChangeDepGroup = (event) => {
-    const val = event.target.value;
-    setSelectedDepGroup(val);
-    setSelectedDeps([]);
-    setSelectedDepCode([]);
-    triggerLoad({ depGroupId: val, depCode: [] });
+  const handleChangeDepGroups = (_event, value) => {
+    setSelectedDepGroups(value);
+    const groupIds = value.map((g) => g.id);
+    const groupSet = new Set(groupIds.map(Number));
+
+    // Cascading auto-prune: ล้างเฉพาะหน่วยงานที่ไม่สังกัดในกลุ่มที่เลือกใหม่ออกอัตโนมัติ
+    let nextDeps = selectedDeps;
+    let nextDepCodes = selectedDepCode;
+    if (groupIds.length > 0) {
+      nextDeps = selectedDeps.filter((d) => groupSet.has(Number(d.med_error_dep_group_id)));
+      nextDepCodes = nextDeps.map((d) => d.med_error_depcode);
+      if (nextDeps.length !== selectedDeps.length) {
+        setSelectedDeps(nextDeps);
+        setSelectedDepCode(nextDepCodes);
+      }
+    }
+    triggerLoad({ depGroupId: groupIds, depCode: nextDepCodes });
   };
 
   const handleChangeDeps = (_event, values) => {
@@ -315,14 +324,14 @@ export default function ReportSummary11() {
   const errorTypeNames = selectedErrorType.error_type_name;
 
   let filterLabel = '';
-  if (selectedDepGroup !== 'all') {
-    const g = groupOptions.find((item) => Number(item.id) === Number(selectedDepGroup));
-    filterLabel = `กลุ่มหน่วยงาน: ${g?.label || selectedDepGroup}`;
+  if (selectedDepGroups.length > 0) {
+    const groupText = selectedDepGroups.map((g) => g.label).join(', ');
+    filterLabel = `กลุ่มหน่วยงาน: ${groupText}`;
     if (selectedDeps.length > 0) {
-      filterLabel += ` (${selectedDeps.map(d => d.med_error_depname).join(', ')})`;
+      filterLabel += ` (${selectedDeps.map((d) => d.med_error_depname).join(', ')})`;
     }
   } else if (selectedDeps.length > 0) {
-    filterLabel = `หน่วยงาน: ${selectedDeps.map(d => d.med_error_depname).join(', ')}`;
+    filterLabel = `หน่วยงาน: ${selectedDeps.map((d) => d.med_error_depname).join(', ')}`;
   }
 
   const exportExcel = async () => {
@@ -497,24 +506,37 @@ export default function ReportSummary11() {
           renderInput={(params) => <TextField {...params} label="ประเภท Error *" size="small" sx={{ minWidth: 260 }} />}
         />
 
-        {/* กลุ่มหน่วยงาน */}
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="rs11-dep-group-label">กลุ่มหน่วยงาน</InputLabel>
-          <Select
-            labelId="rs11-dep-group-label"
-            id="rs11-dep-group"
-            value={selectedDepGroup}
-            label="กลุ่มหน่วยงาน"
-            onChange={handleChangeDepGroup}
-          >
-            <MenuItem value="all">ทั้งหมด</MenuItem>
-            {groupOptions.map((g) => (
-              <MenuItem key={g.id} value={g.id}>
-                {g.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        {/* กลุ่มหน่วยงาน (Multiselect) */}
+        <Autocomplete
+          multiple
+          disableCloseOnSelect
+          options={groupOptions}
+          value={selectedDepGroups}
+          onChange={handleChangeDepGroups}
+          getOptionLabel={(option) => option.label}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          size="small"
+          sx={{ minWidth: 200, maxWidth: 360 }}
+          renderOption={(props, option, { selected }) => {
+            // eslint-disable-next-line react/prop-types
+            const { key, ...optionProps } = props;
+            return (
+              <li key={key} {...optionProps}>
+                <FormControlLabel
+                  control={<Checkbox checked={selected} size="small" />}
+                  label={<ListItemText primary={option.label} primaryTypographyProps={{ fontSize: 13 }} />}
+                />
+              </li>
+            );
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="กลุ่มหน่วยงาน"
+              placeholder={selectedDepGroups.length > 0 ? '' : 'ทั้งหมด'}
+            />
+          )}
+        />
 
         {/* หน่วยงาน (กรองตามกลุ่มหน่วยงานที่เลือก) */}
         <Autocomplete
@@ -544,7 +566,7 @@ export default function ReportSummary11() {
             <TextField
               {...params}
               label="เลือกหน่วยงาน"
-              placeholder={selectedDepGroup !== 'all' ? 'เลือกในกลุ่มนี้' : 'ค้นหาหน่วยงาน'}
+              placeholder={selectedDepGroups.length > 0 ? 'เลือกในกลุ่มที่ระบุ' : 'ค้นหาหน่วยงาน'}
               InputProps={{
                 ...params.InputProps,
                 endAdornment: (

@@ -166,7 +166,7 @@ const ReportSummary8 = () => {
   const [dataReport, setDataReport] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
-  const [selectedDepGroup, setSelectedDepGroup] = useState('all');
+  const [selectedDepGroups, setSelectedDepGroups] = useState([]);
   const [selectedDeps, setSelectedDeps] = useState([]);
   const [selectedDepCode, setSelectedDepCode] = useState([]);
   const [selectedErrorLevel, setSelectedErrorLevel] = useState([]);
@@ -190,13 +190,14 @@ const ReportSummary8 = () => {
       .map(([id, label]) => ({ id, label }));
   }, [departments]);
 
-  // Filter available departments by selected group
+  // Filter available departments by selected groups (Union of selected groups, or all if none)
   const availableDepartments = useMemo(() => {
-    if (!selectedDepGroup || selectedDepGroup === 'all') {
+    if (selectedDepGroups.length === 0) {
       return departments;
     }
-    return departments.filter((d) => Number(d.med_error_dep_group_id) === Number(selectedDepGroup));
-  }, [departments, selectedDepGroup]);
+    const groupSet = new Set(selectedDepGroups.map((g) => Number(g.id)));
+    return departments.filter((d) => groupSet.has(Number(d.med_error_dep_group_id)));
+  }, [departments, selectedDepGroups]);
 
   // Table state
   const [search, setSearch] = useState('');
@@ -211,12 +212,12 @@ const ReportSummary8 = () => {
   const buildFilter = useCallback((overrides = {}) => ({
     firstDate: formatDateEN(overrides.firstDate ?? firstDate),
     lastDate: formatDateEN(overrides.lastDate ?? lastDate),
-    depGroupId: overrides.depGroupId ?? selectedDepGroup,
+    depGroupId: overrides.depGroupId ?? selectedDepGroups.map((g) => g.id),
     depCode: overrides.depCode ?? selectedDepCode,
     errorType: overrides.errorType ?? selectedErrorTypeCode ?? '',
     errorLevel: overrides.errorLevel ?? selectedErrorLevelCode,
     errorAlert: overrides.errorAlert ?? selectedErrorAlert ?? '',
-  }), [firstDate, lastDate, selectedDepGroup, selectedDepCode, selectedErrorTypeCode, selectedErrorLevelCode, selectedErrorAlert]);
+  }), [firstDate, lastDate, selectedDepGroups, selectedDepCode, selectedErrorTypeCode, selectedErrorLevelCode, selectedErrorAlert]);
 
   const loadReportResult = useCallback(async (authToken, filter) => {
     if (!authToken) return;
@@ -260,7 +261,7 @@ const ReportSummary8 = () => {
         const initFilter = {
           firstDate: formatDateEN(dayjs().startOf('month')),
           lastDate: formatDateEN(dayjs()),
-          depGroupId: 'all',
+          depGroupId: [],
           depCode: [],
           errorType: '',
           errorLevel: [],
@@ -303,12 +304,23 @@ const ReportSummary8 = () => {
     triggerLoad({ firstDate: d1, lastDate: d2 });
   };
 
-  const handleChangeDepGroup = (event) => {
-    const val = event.target.value;
-    setSelectedDepGroup(val);
-    setSelectedDeps([]);
-    setSelectedDepCode([]);
-    triggerLoad({ depGroupId: val, depCode: [] });
+  const handleChangeDepGroups = (_event, value) => {
+    setSelectedDepGroups(value);
+    const groupIds = value.map((g) => g.id);
+    const groupSet = new Set(groupIds.map(Number));
+
+    // Cascading auto-prune: ล้างเฉพาะหน่วยงานที่ไม่สังกัดในกลุ่มที่เลือกใหม่ออกอัตโนมัติ
+    let nextDeps = selectedDeps;
+    let nextDepCodes = selectedDepCode;
+    if (groupIds.length > 0) {
+      nextDeps = selectedDeps.filter((d) => groupSet.has(Number(d.med_error_dep_group_id)));
+      nextDepCodes = nextDeps.map((d) => d.med_error_depcode);
+      if (nextDeps.length !== selectedDeps.length) {
+        setSelectedDeps(nextDeps);
+        setSelectedDepCode(nextDepCodes);
+      }
+    }
+    triggerLoad({ depGroupId: groupIds, depCode: nextDepCodes });
   };
 
   const handleChangeDeps = (_event, value) => {
@@ -458,6 +470,14 @@ const ReportSummary8 = () => {
                 </Typography>
                 <Typography sx={{ fontSize: 12.5, color: '#475569', mt: 0.5 }}>
                   ช่วง <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>{filterSummary.dateRange}</Box>
+                  {selectedDepGroups.length > 0 && (
+                    <>
+                      {' · '}กลุ่ม{' '}
+                      <Box component="span" sx={{ fontWeight: 700, color: '#0d9488' }}>
+                        {selectedDepGroups.map((g) => g.label).join(', ')}
+                      </Box>
+                    </>
+                  )}
                   {selectedDeps.length > 0 && (
                     <>
                       {' · '}หน่วยงาน{' '}
@@ -563,25 +583,38 @@ const ReportSummary8 = () => {
                   )}
                 />
               </Grid>
-              {/* กลุ่มหน่วยงาน */}
+              {/* กลุ่มหน่วยงาน (Multiselect) */}
               <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth size="small">
-                  <InputLabel id="rs8-dep-group-label">กลุ่มหน่วยงาน</InputLabel>
-                  <Select
-                    labelId="rs8-dep-group-label"
-                    id="rs8-dep-group"
-                    value={selectedDepGroup}
-                    label="กลุ่มหน่วยงาน"
-                    onChange={handleChangeDepGroup}
-                  >
-                    <MenuItem value="all">ทั้งหมด</MenuItem>
-                    {groupOptions.map((g) => (
-                      <MenuItem key={g.id} value={g.id}>
-                        {g.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  multiple
+                  disableCloseOnSelect
+                  options={groupOptions}
+                  value={selectedDepGroups}
+                  onChange={handleChangeDepGroups}
+                  getOptionLabel={(option) => option.label}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  size="small"
+                  renderOption={(props, option, { selected }) => {
+                    // eslint-disable-next-line react/prop-types
+                    const { key, ...optionProps } = props;
+                    return (
+                      <li key={key} {...optionProps}>
+                        <FormControlLabel
+                          control={<Checkbox checked={selected} size="small" />}
+                          label={<ListItemText primary={option.label} primaryTypographyProps={{ fontSize: 13 }} />}
+                        />
+                      </li>
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      variant="outlined"
+                      label="กลุ่มหน่วยงาน"
+                      placeholder={selectedDepGroups.length > 0 ? '' : 'ทั้งหมด'}
+                    />
+                  )}
+                />
               </Grid>
 
               {/* หน่วยงาน (กรองตามกลุ่มหน่วยงานที่เลือก) */}
@@ -613,7 +646,7 @@ const ReportSummary8 = () => {
                       {...params}
                       variant="outlined"
                       label="เลือกหน่วยงาน"
-                      placeholder={selectedDepGroup !== 'all' ? 'เลือกในกลุ่มนี้' : 'ค้นหาหน่วยงาน'}
+                      placeholder={selectedDepGroups.length > 0 ? 'เลือกในกลุ่มที่ระบุ' : 'ค้นหาหน่วยงาน'}
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (

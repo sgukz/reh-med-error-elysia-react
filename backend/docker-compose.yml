@@ -1,6 +1,6 @@
 services:
   rehAPIMedError:
-    image: sgukz/api-med-error-prod:1.11.6
+    image: sgukz/api-med-error-prod:1.11.7
     restart: unless-stopped
     build:
       context: .
